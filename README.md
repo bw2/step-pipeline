@@ -6,7 +6,7 @@ Python library that makes it easier to define pipelines that
 
 This library lets you define the steps, their input and output files, commands, etc. and then submits your pipeline to the execution environment. 
 
-The main benefit is that it takes care of common pipeline aspects like 
+The main benefit is that it takes care of common pipeline aspects like: 
 - before submitting the pipeline for execution, it skips steps whose outputs already exist and are newer than the inputs, and also checks initial input files so the pipeline doesn't immediately crash because an input file doesn't exist 
 - localizes input files and delocalizes output files using different strategies (copy, gcfuse, etc.)
 - defines command-line args for forcing re-execution of some steps
