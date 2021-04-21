@@ -14,6 +14,7 @@ The main benefit is that it takes care of common pipeline aspects like:
 - defines command-line args for skipping some steps and/or forcing re-execution of others
 - optionally provides profiling info by starting a background process within a container to record cpu and memory at regular intervals while commands are running
 - notifies you via slack or email when the pipeline completes
+- generates a graph of the pipeline DAG
 
 Downsides:
 - some of these features only work if specific tools are installed inside the container or VM
