@@ -1,0 +1,2 @@
+# step_pipeline
+Python library that makes it easier to define pipelines that 1) run in container or VM execution environments like Batch, Terra, SGE, etc. and 2) are made up of "steps" which localize some input files, run some commands, and de-localize the output files. This library lets you define the steps, their input and output files, etc. and then submits your pipeline to the execution environment. The main benefit of using the library is that it takes care of common pipeline aspects like skipping steps if their outputs already exist and are newer than their inputs. 
