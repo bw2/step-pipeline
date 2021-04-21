@@ -12,7 +12,7 @@ The main benefit is that it takes care of common pipeline aspects like:
   b) skips steps whose outputs already exist and are newer than the inputs
 - localizes input files and delocalizes output files using different strategies (copy, gcfuse, etc.)
 - defines command-line args for forcing re-execution of some steps
-- optionally measures cpu and memory by starting a background process within a container to record cpu and memory at regular intervals while commands are running
+- optionally provides profiling info by starting a background process within a container to record cpu and memory at regular intervals while commands are running
 - notifies you via slack or email when the pipeline completes
 
 Downsides:
