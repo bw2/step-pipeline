@@ -16,4 +16,4 @@ The main benefit is that it takes care of common pipeline aspects like:
 - notifies you via slack or email when the pipeline completes
 
 Downsides:
-- some of these features only work if specific tools are installed inside the execution enviroment (container or VM). 
+- some of these features only work if specific tools are installed inside the container or VM. 
