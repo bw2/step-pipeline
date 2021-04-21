@@ -2,7 +2,7 @@
 
 Python library that makes it easier to define pipelines that 
 1) run in container or VM execution environments like Batch, Terra, SGE, etc. 
-2) are made up of "steps" which localize some input files, run some commands, and delocalize the output files. 
+2) are made up of "steps" that localize some input files, run some commands, and delocalize the output files. 
 
 This library lets you define the steps, their input and output files, commands, etc. and then submits your pipeline to the execution environment. 
 
