@@ -1,13 +1,11 @@
 """This module contains Hail Batch-specific extensions of the generic _Pipeline and _Step classes"""
 import os
 import stat
-
-from step_pipeline import _Pipeline, _Step, LocalizationStrategy, DelocalizationStrategy
 import tempfile
-
 import hailtop.batch as hb
 
-from .utils import _check_storage_region
+from pipeline import _Pipeline, _Step, LocalizationStrategy, DelocalizationStrategy
+from utils import check_gcloud_storage_region
 
 
 class _BatchPipeline(_Pipeline):
@@ -429,12 +427,12 @@ class _BatchStep(_Step):
                 LocalizationStrategy.HAIL_BATCH_GCSFUSE_VIA_TEMP_BUCKET):
             pass  # these will be handled in _transfer_input(..)
         else:
-            raise Exception(f"Unsupported localization strategy: {localization_strategy}")
+            raise ValueError(f"Unsupported localization strategy: {localization_strategy}")
 
     def _transfer_input(self, input_spec):
         args = self._parse_args()
         if args.acceptable_storage_regions:
-            _check_storage_region(
+            check_gcloud_storage_region(
                 input_spec,
                 expected_regions=args.acceptable_storage_regions,
                 gcloud_project=args.gcloud_project,
@@ -458,7 +456,7 @@ class _BatchStep(_Step):
                 LocalizationStrategy.HAIL_BATCH_GCSFUSE_VIA_TEMP_BUCKET):
             self._handle_input_transfer_using_gcsfuse(input_spec)
         else:
-            raise Exception(f"Unsupported localization strategy: {localization_strategy}")
+            raise ValueError(f"Unsupported localization strategy: {localization_strategy}")
 
     def _generate_gsutil_copy_command(self, source_path, destination_dir):
         args = self._parse_args()
@@ -527,4 +525,4 @@ class _BatchStep(_Step):
         elif delocalization_strategy == DelocalizationStrategy.GSUTIL_COPY:
             pass  # GSUTIL_COPY was already handled in _preprocess_output(..)
         else:
-            raise Exception(f"Unsupported delocalization strategy: {delocalization_strategy}")
+            raise ValueError(f"Unsupported delocalization strategy: {delocalization_strategy}")

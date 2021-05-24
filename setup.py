@@ -1,30 +1,43 @@
 import os
 import sys
 from setuptools import setup, find_packages
-
-command = sys.argv[-1]
-if command == 'publish':
-    os.system('rm -rf dist')
-    os.system('python3 setup.py sdist')
-    os.system('python3 setup.py bdist_wheel')
-    os.system('twine upload dist/*whl dist/*gz')
-    sys.exit()
+from setuptools.command.build_py import build_py
 
 with open("README.md", "rt") as fh:
     long_description = fh.read()
 
 install_requires = [
     "configargparse>=1.4.1",
-#    "hail",
+    "hail",
     "mock",
-#    "coverage",
 ]
+
+
+class CoverageCommand(build_py):
+    """Run all unittests and generate a coverage report."""
+    def run(self):
+        os.system("python3 -m coverage run ./setup.py test "
+                  "&& python3 -m coverage html --include=src/*.py "
+                  "&& open htmlcov/index.html")
+
+
+class PublishCommand(build_py):
+    """Publish package to PyPI"""
+    def run(self):
+        os.system("rm -rf dist")
+        os.system("python3 setup.py sdist"
+                  "&& python3 setup.py bdist_wheel"
+                  "&& twine upload dist/*whl dist/*gz")
 
 setup(
     name='step_pipeline',
     version="0.1",
     description="Pipeline library that simplifies creation of pipelines that run on top of hail Batch and other compute enviornments",
     install_requires=install_requires,
+    cmdclass={
+        'coverage': CoverageCommand,
+        'publish': PublishCommand,
+    },
     long_description_content_type="text/markdown",
     long_description=long_description,
     packages=find_packages(where="src/"),
