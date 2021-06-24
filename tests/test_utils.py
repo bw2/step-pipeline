@@ -1,9 +1,6 @@
-import datetime
-
 import configargparse
 import hail as hl
 import os
-import sys
 import unittest
 from step_pipeline import pipeline
 from step_pipeline import utils
@@ -18,10 +15,11 @@ HG38_PATH_WITH_STAR = "gs://gcp-public-data--broad-references/hg38/v0/Homo_sapie
 HG38_DBSNP_PATH = "gs://gcp-public-data--broad-references/hg38/v0/Homo_sapiens_assembly38.dbsnp138.vcf.gz"
 HG38_DBSNP_PATH_WITH_STAR = f"{HG38_DBSNP_PATH}*"
 
+
 class PipelineTest(pipeline._Pipeline):
     """Subclass _Pipeline to override all abstract methods so that it can be instanciated."""
 
-    def _run(self):
+    def run(self):
         pass
 
     def new_step(self, short_name, step_number=None):

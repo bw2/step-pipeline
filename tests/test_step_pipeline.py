@@ -1,4 +1,5 @@
 import configargparse
+import mock
 import unittest
 from step_pipeline import pipeline
 from tests.test_utils import PipelineTest

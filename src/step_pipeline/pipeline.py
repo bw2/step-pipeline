@@ -183,19 +183,29 @@ class _Pipeline(ABC):
         """Creates a new step that depends on this step"""
 
     @abstractmethod
-    def _run(self):
+    def run(self):
         """Submits a pipeline to an execution engine such as Batch, Terra, SGE, etc. by setting up the
         execution environment and then calling the generic self._transfer_all_steps(..) method.
         """
 
-    def _parse_args(self):
+    def __enter__(self):
+        pass
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self._argument_parser.parse_args()
+
+        # execute pipeline
+        print(f"Starting {name or ''} pipeline:")
+        self.run()
+
+    def _get_args(self):
         args, _ = self._argument_parser.parse_known_args(ignore_help_args=True)
         return args
 
     def _transfer_all_steps(self):
         """Independent of a specific execution engine"""
 
-        args = self._parse_args()
+        args = self._get_args()
 
         steps_to_run_next = [s for s in self._all_steps if not s.has_upstream_steps()]
         print("Steps to run next: ", steps_to_run_next)
@@ -243,13 +253,13 @@ class _Step(ABC):
 
     def __init__(
             self,
-            pipeline,
-            short_name,
-            arg_name=None,
-            step_number=None,
-            output_dir=None,
-            default_localization_strategy=None,
-            default_delocalization_strategy=None
+            pipeline: _Pipeline,
+            short_name: str,
+            arg_name: str = None,
+            step_number: int = None,
+            output_dir: str = None,
+            default_localization_strategy: str = None,
+            default_delocalization_strategy: str = None,
     ):
         """_Step constructor
 
@@ -268,7 +278,8 @@ class _Step(ABC):
         self._inputs = []
         self._outputs = []
 
-        self._commands = []
+        self._commands = []   # used for BashJobs
+        self._calls = []  # use for PythonJobs
 
         self._upstream_steps = []  # this step depends on these steps
         self._downstream_steps = []  # steps that depend on this step
@@ -474,6 +485,7 @@ class _Step(ABC):
         """
         Adds a command to post to slack. Requires python3 and pip to be installed in the execution environment.
         """
+
         argument_parser = self._pipeline.get_config_arg_parser()
         args, _ = argument_parser.parse_known_args(ignore_help_args=True)
         slack_token = slack_token or args.slack_token
@@ -528,7 +540,7 @@ EOF""")
         :return:
         """
 
-        args = self._parse_args()
+        args = self._get_args()
         if not gcloud_credentials_path:
             gcloud_credentials_path = args.gcloud_credentials_path
             if not gcloud_credentials_path:
@@ -554,8 +566,8 @@ EOF""")
         if debug:
             self.command(f"gcloud auth list")  # print auth list again to show that 'gcloud config set account' succeeded.
 
-    def _parse_args(self):
-        return self._pipeline.parse_args()
+    def _get_args(self):
+        return self._pipeline.get_args()
 
     def _get_supported_localization_strategies(self):
         return {
@@ -602,10 +614,9 @@ EOF""")
             raise ValueError(f"Unsupported delocalization strategy: {delocalization_strategy}")
 
     def _add_profiling_commands(self):
-        pass
+        raise ValueError("Not yet implemented")
 
 
-@contextlib.contextmanager
 def step_pipeline(
         name=None,
         execution_engine=ExecutionEngine.HAIL_BATCH,
@@ -639,10 +650,4 @@ def step_pipeline(
     else:
         raise ValueError(f"Unsupported execution_engine: '{execution_engine}'")
 
-    yield pipeline
-
-    argument_parser.parse_args()
-
-    # execute pipeline
-    print(f"Starting {name or ''} pipeline:")
-    pipeline._run()
+    return pipeline

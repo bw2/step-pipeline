@@ -1,11 +1,24 @@
 """This module contains Hail Batch-specific extensions of the generic _Pipeline and _Step classes"""
+
+from __future__ import annotations
+
 import os
 import stat
 import tempfile
+from enum import Enum
+from typing import Union
+
 import hailtop.batch as hb
 
-from pipeline import _Pipeline, _Step, LocalizationStrategy, DelocalizationStrategy
-from utils import check_gcloud_storage_region
+from .pipeline import _Pipeline, _Step, LocalizationStrategy, DelocalizationStrategy
+from .utils import check_gcloud_storage_region
+
+DEFAULT_PYTHON_IMAGE = "hailgenetics/hail:0.2.67"
+
+
+class BatchStepType(Enum):
+    PYTHON = "python"
+    BASH = "bash"
 
 
 class _BatchPipeline(_Pipeline):
@@ -42,8 +55,12 @@ class _BatchPipeline(_Pipeline):
         )
         batch_args.add_argument(
             "--batch-default-image",
-            type=int,
             help="Default docker container."
+        )
+        batch_args.add_argument(
+            "--batch-default-python-image",
+            help="Default docker container to use for Python jobs.",
+            default=DEFAULT_PYTHON_IMAGE,
         )
         batch_args.add_argument(
             "--batch-open-ui",
@@ -85,27 +102,27 @@ class _BatchPipeline(_Pipeline):
         self._requester_pays_project = None
         self._cancel_after_n_failures = None
         self._default_image = None
+        self._default_python_image = None
         self._default_memory = None
         self._default_cpu = None
         self._default_storage = None
         self._default_timeout = None
 
-
     def new_step(
             self,
-            short_name,
-            step_number=None,
-            depends_on=None,
-            image=None,
-            cpu=None,
-            memory=None,
-            storage=None,
-            always_run=False,
-            timeout=None,
-            write_commands_to_script_first=False,
-            save_script_to_output_dir=False,
-            profile_cpu_and_memory_usage=False,
-            reuse_job_from_previous_step=None,
+            short_name: str,
+            step_number: int = None,
+            depends_on: _Step = None,
+            image: str = None,
+            cpu: Union[str, float, int] = None,
+            memory: Union[str, float, int] = None,
+            storage: Union[str, int] = None,
+            always_run: bool = False,
+            timeout: Union[float, int] = None,
+            write_commands_to_script: bool = False,
+            save_script_to_output_dir: bool = False,
+            profile_cpu_and_memory_usage: bool = False,
+            reuse_job_from_previous_step: bool = None,
     ):
         """
 
@@ -132,7 +149,7 @@ class _BatchPipeline(_Pipeline):
             storage=storage,
             always_run=always_run,
             timeout=timeout,
-            write_commands_to_script_first=write_commands_to_script_first,
+            write_commands_to_script=write_commands_to_script,
             save_script_to_output_dir=save_script_to_output_dir,
             profile_cpu_and_memory_usage=profile_cpu_and_memory_usage,
             reuse_job_from_previous_step=reuse_job_from_previous_step,
@@ -152,12 +169,14 @@ class _BatchPipeline(_Pipeline):
             buckets.
         """
         self._requester_pays_project = requester_pays_project
+        return self
 
     def cancel_after_n_failures(self, cancel_after_n_failures):
         """
         :param cancel_after_n_failures: Automatically cancel the batch after N failures have occurred.
         """
         self._cancel_after_n_failures = cancel_after_n_failures
+        return self
 
     def default_image(self, default_image):
         """
@@ -165,27 +184,44 @@ class _BatchPipeline(_Pipeline):
             of the image including any repository prefix and tags if desired (default tag is latest).
         """
         self._default_image = default_image
+        return self
 
-    def default_memory(self, default_memory):
+    def default_python_image(self, default_python_image):
+        """
+        :param default_python_image:  (Optional[str]) – The image to use for Python jobs.
+            The image specified must have the dill package installed. If default_python_image is not specified,
+            then a Docker image will automatically be created for you with the base image
+            hailgenetics/python-dill:[major_version].[minor_version]-slim and the Python packages specified by
+            python_requirements will be installed. The default name of the image is batch-python with a random string
+            for the tag unless python_build_image_name is specified. If the ServiceBackend is the backend, the locally
+            built image will be pushed to the repository specified by image_repository.
+        """
+        self._default_python_image = default_python_image
+        return self
+
+    def default_memory(self, default_memory: Union[str, int]):
         """
         :param default_memory: (Union[int, str, None]) – Memory setting to use by default if not specified by a job.
             Only applicable if a docker image is specified for the LocalBackend or the ServiceBackend. See Job.memory().
         """
         self._default_memory = default_memory
+        return self
 
-    def default_cpu(self, default_cpu):
+    def default_cpu(self, default_cpu: Union[str, int, float]):
         """
         :param default_cpu: (Union[float, int, str, None]) – CPU setting to use by default if not specified by a job.
             Only applicable if a docker image is specified for the LocalBackend or the ServiceBackend. See Job.cpu().
         """
         self._default_cpu = default_cpu
+        return self
 
-    def default_storage(self, default_storage):
+    def default_storage(self, default_storage: Union[str, int]):
         """
         :param default_storage: Storage setting to use by default if not specified by a job. Only applicable for the
             ServiceBackend. See Job.storage().
         """
         self._default_storage = default_storage
+        return self
 
     def default_timeout(self, default_timeout):
         """
@@ -193,45 +229,58 @@ class _BatchPipeline(_Pipeline):
             ServiceBackend. If None, there is no timeout.
         """
         self._default_timeout = default_timeout
+        return self
 
-    def _run(self):
-
-        # pass pipeline to the Batch service
-        args = self._parse_args()
-
-        self._backend = hb.ServiceBackend(billing_project=args.batch_billing_project, bucket=args.batch_temp_bucket)
+    def run(self):
+        """
+        Pass pipeline to the Batch service
+        """
+        args = self._get_args()
 
         try:
-            self._batch = hb.Batch(
-                backend=self._backend,
-                name=self.name,
-                requester_pays_project=args.gcloud_project,  # The name of the Google project to be billed when accessing requester pays buckets.
-                cancel_after_n_failures=self._cancel_after_n_failures or args.batch_cancel_after_n_failures,  # Automatically cancel the batch after N failures have occurre
-                default_image=self._default_image or args.batch_default_image,  #(Optional[str]) – Default docker image to use for Bash jobs. This must be the full name of the image including any repository prefix and tags if desired (default tag is latest).
-                default_memory=self._default_memory, # (Union[int, str, None]) – Memory setting to use by default if not specified by a job. Only applicable if a docker image is specified for the LocalBackend or the ServiceBackend. See Job.memory().
-                default_cpu=self._default_cpu,  # (Union[float, int, str, None]) – CPU setting to use by default if not specified by a job. Only applicable if a docker image is specified for the LocalBackend or the ServiceBackend. See Job.cpu().
-                default_storage=self._default_storage,  # Storage setting to use by default if not specified by a job. Only applicable for the ServiceBackend. See Job.storage().
-                default_timeout=self._default_timeout,  # Maximum time in seconds for a job to run before being killed. Only applicable for the ServiceBackend. If None, there is no timeout.
-            )
+            self._create_batch_obj()
 
             num_steps_transferred = self._transfer_all_steps()
+
             if num_steps_transferred == 0:
                 print("No steps to run. Exiting..")
                 return
 
-            self._batch.run(
-                dry_run=args.dry_run,
-                verbose=args.verbose,
-                delete_scratch_on_exit=None,  # If True, delete temporary directories with intermediate files
-                wait=args.batch_wait,  # If True, wait for the batch to finish executing before returning
-                open=args.batch_open_ui,  # If True, open the UI page for the batch
-                disable_progress_bar=args.batch_disable_progress_bar,  # If True, disable the progress bar.
-                callback=None,  # If not None, a URL that will receive at most one POST request after the entire batch completes.
-            )
-
+            self._run_batch_obj()
         finally:
             if isinstance(self._backend, hb.ServiceBackend):
                 self._backend.close()
+
+    def _create_batch_obj(self):
+        args = self._get_args()
+
+        self._backend = hb.ServiceBackend(billing_project=args.batch_billing_project, bucket=args.batch_temp_bucket)
+        self._batch = hb.Batch(
+            backend=self._backend,
+            name=self.name,
+            project=args.gcloud_project,
+            requester_pays_project=args.gcloud_project,  # The name of the Google project to be billed when accessing requester pays buckets.
+            cancel_after_n_failures=self._cancel_after_n_failures or args.batch_cancel_after_n_failures,  # Automatically cancel the batch after N failures have occurre
+            default_image=self._default_image or args.batch_default_image,  #(Optional[str]) – Default docker image to use for Bash jobs. This must be the full name of the image including any repository prefix and tags if desired (default tag is latest).
+            default_python_image=self._default_python_image or args.default_python_image,
+            default_memory=self._default_memory, # (Union[int, str, None]) – Memory setting to use by default if not specified by a job. Only applicable if a docker image is specified for the LocalBackend or the ServiceBackend. See Job.memory().
+            default_cpu=self._default_cpu,  # (Union[float, int, str, None]) – CPU setting to use by default if not specified by a job. Only applicable if a docker image is specified for the LocalBackend or the ServiceBackend. See Job.cpu().
+            default_storage=self._default_storage,  # Storage setting to use by default if not specified by a job. Only applicable for the ServiceBackend. See Job.storage().
+            default_timeout=self._default_timeout,  # Maximum time in seconds for a job to run before being killed. Only applicable for the ServiceBackend. If None, there is no timeout.
+        )
+
+    def _run_batch_obj(self):
+        args = self._get_args()
+
+        self._batch.run(
+            dry_run=args.dry_run,
+            verbose=args.verbose,
+            delete_scratch_on_exit=None,  # If True, delete temporary directories with intermediate files
+            wait=args.batch_wait,  # If True, wait for the batch to finish executing before returning
+            open=args.batch_open_ui,  # If True, open the UI page for the batch
+            disable_progress_bar=args.batch_disable_progress_bar,  # If True, disable the progress bar.
+            callback=None,  # If not None, a URL that will receive at most one POST request after the entire batch completes.
+        )
 
 
 class _BatchStep(_Step):
@@ -250,13 +299,13 @@ class _BatchStep(_Step):
             always_run=False,
             timeout=None,
             output_dir=None,
+            step_type=BatchStepType.BASH,
             default_localization_strategy=None,
             default_delocalization_strategy=None,
-            write_commands_to_script_first=False,
+            write_commands_to_script=False,
             save_script_to_output_dir=False,
             profile_cpu_and_memory_usage=False,
             reuse_job_from_previous_step=None,
-
     ):
         super().__init__(
             pipeline,
@@ -267,13 +316,15 @@ class _BatchStep(_Step):
             default_localization_strategy=default_localization_strategy,
             default_delocalization_strategy=default_delocalization_strategy,
         )
+
         self._image = image
         self._cpu = cpu
         self._memory = memory
         self._storage = storage
         self._always_run = always_run
         self._timeout = timeout
-        self._write_commands_to_script_first = write_commands_to_script_first
+        self._step_type = step_type
+        self._write_commands_to_script = write_commands_to_script
         self._save_script_to_output_dir = save_script_to_output_dir
         self._profile_cpu_and_memory_usage = profile_cpu_and_memory_usage
         self._reuse_job_from_previous_step = reuse_job_from_previous_step
@@ -284,23 +335,45 @@ class _BatchStep(_Step):
         self._paths_localized_via_temp_bucket = set()
         self._buckets_mounted_via_gcsfuse = set()
 
-    #def create_substep(self):
-    #    super().create_substep()
-    #
-    #    raise ValueError("Not yet implemented")
+    def cpu(self, cpu: Union[str, int]) -> _Step:
+        self._cpu = cpu
+        return self
+
+    def memory(self, memory: Union[str, int, float]) -> _Step:
+        self._memory = memory
+        return self
+
+    def storage(self, storage: Union[str, int]) -> _Step:
+        self._storage = storage
+        return self
+
+    def always_run(self, always_run: bool) -> _Step:
+        self._always_run = always_run
+        return self
+
+    def timeout(self, timeout: Union[float, int]) -> _Step:
+        self._timeout = timeout
+        return self
 
     def _transfer_step(self):
         """This method is called if the step does need to run"""
 
-        # create (or reuse) Job
+        # make Job object
         batch = self._pipeline._batch
         if self._reuse_job_from_previous_step:
+            # reuse previous Job
             if self._reuse_job_from_previous_step._job:
                 self._job = self._reuse_job_from_previous_step._job
             else:
                 raise Exception(f"previous job not set: {self._reuse_job_from_previous_step}")
         else:
-            self._job = batch.new_job(name=self.short_name)
+            # create new job
+            if self._step_type == BatchStepType.PYTHON:
+                self._job = batch.new_python_job(name=self.short_name)
+            elif self._step_type == BatchStepType.BASH:
+                self._job = batch.new_bash_job(name=self.short_name)
+            else:
+                raise ValueError(f"Unexpected BatchStepType: {self._step_type}")
 
         self._unique_batch_id = abs(hash(batch)) % 10**9
         self._unique_job_id = abs(hash(self._job)) % 10**9
@@ -327,10 +400,7 @@ class _BatchStep(_Step):
                 raise ValueError(f"Unexpected memory arg type: {type(self._memory)}")
 
         if self._storage is not None:
-            if self._storage < 1 or self._storage > 1000:
-                raise ValueError(f"Disk size arg is {self._storage}. This is outside the range of 1 to 1000 Gb")
-
-            self._job.storage(f'{self._storage}Gi')
+            self._job.storage(self._storage)
 
         if self._timeout is not None:
             self._job.timeout(self._timeout)
@@ -348,9 +418,9 @@ class _BatchStep(_Step):
             self._transfer_input(input_spec)
 
         # transfer commands
-        if self._write_commands_to_script_first:
+        if self._write_commands_to_script:
             # write to script
-            args = self._parse_args()
+            args = self._get_args()
 
             script_lines = []
             # set bash options for easier debugging and to make command execution more robust
@@ -430,7 +500,7 @@ class _BatchStep(_Step):
             raise ValueError(f"Unsupported localization strategy: {localization_strategy}")
 
     def _transfer_input(self, input_spec):
-        args = self._parse_args()
+        args = self._get_args()
         if args.acceptable_storage_regions:
             check_gcloud_storage_region(
                 input_spec,
@@ -459,18 +529,18 @@ class _BatchStep(_Step):
             raise ValueError(f"Unsupported localization strategy: {localization_strategy}")
 
     def _generate_gsutil_copy_command(self, source_path, destination_dir):
-        args = self._parse_args()
+        args = self._get_args()
         gsutil_command = f"gsutil"
         if args.gcloud_project:
             gsutil_command += f" -u {args.gcloud_project}"
         return f"time {gsutil_command} -m cp -r '{source_path}' '{destination_dir}'"
 
     def _handle_input_transfer_using_gcsfuse(self, input_spec):
-        args = self._parse_args()
+        args = self._get_args()
 
         source_path = input_spec["source_path"]
         source_path_without_protocol = input_spec["source_path_without_protocol"]
-        filename = input_spec["filename"]
+        #filename = input_spec["filename"]
 
         localization_strategy = input_spec["localization_strategy"]
         if localization_strategy == LocalizationStrategy.HAIL_BATCH_GCSFUSE_VIA_TEMP_BUCKET:
