@@ -1,5 +1,4 @@
 import os
-import sys
 from setuptools import setup, find_packages
 from setuptools.command.build_py import build_py
 

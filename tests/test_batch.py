@@ -45,7 +45,7 @@ class TestPipeline(unittest.TestCase):
             timeout=False,
             write_commands_to_script=True,
             save_script_to_output_dir=True,
-            profile_cpu_and_memory_usage=True,
+            profile_cpu_memory_and_disk_usage=True,
             reuse_job_from_previous_step=step1,
         )
 

@@ -17,7 +17,7 @@ HG38_DBSNP_PATH_WITH_STAR = f"{HG38_DBSNP_PATH}*"
 
 
 class PipelineTest(pipeline._Pipeline):
-    """Subclass _Pipeline to override all abstract methods so that it can be instanciated."""
+    """Subclass _Pipeline to override the abstract methods so it can be instanciated."""
 
     def run(self):
         pass
@@ -55,7 +55,7 @@ class Test(unittest.TestCase):
 
         self.assertRaisesRegex(
             ValueError,
-            "Unexpected glob_path type ",
+            "Unexpected argument type ",
             _generate_gs_path_to_file_stat_dict,
             ["/dir/file.txt"],
         )

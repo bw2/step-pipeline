@@ -1,20 +1,23 @@
 # step-pipeline
 
-Python library that makes it easier to define pipelines that 
-1) run in container or VM execution environments like Batch, Terra, SGE, etc. 
-2) are made up of "steps" that localize some input files, run some commands, and delocalize the output files. 
+Python library for defining and executing pipelines that run in container or VM execution environments like 
+Hail Batch, Terra, SGE, etc., and that localize/delocalize input/output files to cloud storage services like 
+Google Storage buckets. Currently, it supports Hail Batch and Google Cloud Storage only.  
 
-This library lets you define the steps, their input and output files, commands, etc. and then submits your pipeline to the execution environment. 
+The main goal of this library is to reduce repetitive code in your python pipeline definition script (PPDS) by 
+taking care of common pipeline needs such as skipping execution steps that don't need to run because their 
+output files already exist.
 
-The main benefit is that it takes care of common pipeline aspects like: 
-- before submitting the pipeline for execution, it  
+The things it takes care of include: 
+- before submitting your pipeline for execution, it  
   a) checks pipeline input files and throws an error if any are missing.  
   b) skips steps whose outputs already exist and are newer than the inputs. 
-- localizes input files and delocalizes output files using different strategies (copy, gcfuse, etc.)
-- defines command-line args for skipping some steps and/or forcing re-execution of others
-- optionally provides profiling info by starting a background process within a container to record cpu and memory at regular intervals while commands are running
+- adds command-line args to your PPDS for skipping some steps and/or forcing re-execution of others
+- provides a simplified API for localizing input files and delocalizing output files using different strategies 
+  (copy, gcfuse, etc.)
 - notifies you via slack or email when the pipeline completes
-- generates a graph of the pipeline DAG
+- optionally, records profiling info by starting a background process within the job execution container to record cpu 
+  and memory at regular intervals while your commands are running
+- optionally, generates an image of the pipeline DAG
 
-Downsides:
-- some of these features only work if specific tools are installed inside the container or VM
+NOTE: some features, such as profiling, only work if specific tools are installed inside your execution container or VM

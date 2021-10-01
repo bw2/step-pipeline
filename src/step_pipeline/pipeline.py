@@ -1,26 +1,26 @@
 """
-This module implements a "Step" abstraction which makes it easier to write pipelines with less repetitive code.
-It handles checking which steps can be skipped because they already ran, etc.
+The core object in this library is a "Step" which encapsulates a pipeline job or task.
+A single Step represents a set of commands which together produce output file(s), and which can be
+skipped if the output files already exist (and are newer than the input files).
 
-To make things less abstract, the docs below assume Hail Batch is the execution engine. However, this module
-is designed for other execution engines to be added over time - such as "local", "cromwell", "SGE", "dsub", etc.
+A Step object, besides checking input and output files to decide if it needs to run, is responsible for:
+- localizing/delocalizing the input/output files
+- defining argparse args for skipping or forcing execution
+- optionally, collecting timing and profiling info on cpu, memory & disk-use while the Step is running. It
+does this by adding a background process to the container to record cpu, memory and disk usage every 10 seconds,
+and to localize/delocalize a .tsv file that accumulates these stats across all steps being profiled.
 
-A single Step contains a set of commands which together produce some output file(s), and which can be
-skipped if the output files already exist (and are newer than any input files unless a --force arg is used).
-
-Besides doing these checks on inputs/outputs, a Step will automatically define argparse args for skipping or forcing
-the step's execution, localize/delocalize the input/output files, and possibly collect timing and profiling info
-on memory & disk use (such as starting a background command to record free memory and disk use every 10 seconds,
-localizing/delocalizing a .tsv file that accumulates memory and other stats for all steps)
+For concreteness, the docs below are written with Hail Batch as the execution engine. However, this library is designed
+to eventually accommodate other backends - such as "local", "cromwell", "SGE", "dsub", etc.
 
 By default, a Step corresponds on a single Batch Job, but in some cases the same Batch Job may be reused for
-multiple steps (for example, step 1 creates a VCF and step 2 tabixes it), or
+multiple steps (for example, step 1 creates a VCF and step 2 tabixes it).
 
-Specifically, this wrapper will allow code that looks like:
+This library allows code that looks like:
 
-with batch_wrapper.batch_pipeline(desc="merge vcfs and compute per-chrom counts") as bp:
-     bp.add_argument("--my-flag", action="store_true", help="toggle something")
-     args = bp.parse_known_args() # if needed, parse argparse args that have been defined so far
+with pipeline.step_pipeline(desc="merge vcfs and compute per-chrom counts") as sp:
+     sp.add_argument("--my-flag", action="store_true", help="toggle something")
+     args = sp.parse_known_args() # if needed, parse command-line args that have been defined so far
 
      # step 1 is automatically skipped if the output file gs://my-bucket/outputs/merged.vcf.gz already exists and is newer than all part*.vcf input files.
      s1 = bp.new_step(label="merge vcfs", memory=16)  # internally, this creates a Batch Job object and also defines new argparse args like --skip-step1
@@ -51,8 +51,9 @@ with batch_wrapper.batch_pipeline(desc="merge vcfs and compute per-chrom counts"
      s3_gather_job = s3.new_job(cpu=0.5, depends_on=counting_jobs)
      ...
 
-# here the wrapper will parse commmand-line args, decide which steps to skip, pass the DAG to Batch, and then call batch.run
+# here the wrapper will parse command-line args, decide which steps to skip, pass the DAG to Batch, and then call batch.run
 
+Ths is a summary of the main classes and utilities in the Step library:
 
 _Step:
     - not specific to any execution engine
@@ -65,7 +66,7 @@ _Step:
         - list of downstream steps
         - name
     - methods:
-        - next_step(self, name, reuse_job=False, cpu=None, memory=None, disk=None)
+        - new_step(self, name, reuse_job=False, cpu=None, memory=None, disk=None)
         - command(self, command)
         - input(self, path, name=None, use_gcsfuse=False)
         - input_glob(self, glob, name=None, use_gcsfuse=False)
@@ -92,7 +93,6 @@ from abc import ABC, abstractmethod
 from enum import Enum
 
 import configargparse
-import contextlib
 import os
 import re
 
@@ -101,39 +101,47 @@ from .utils import are_outputs_up_to_date
 
 class ExecutionEngine:
     HAIL_BATCH = "hail_batch"
-    CROMWELL = "cromwell"
-    DSUB = "dsub"
+    #CROMWELL = "cromwell"
+    #DSUB = "dsub"
 
 
 class LocalizationStrategy(Enum):
-    COPY = ("copy", "localized/")
+    """This class defines localization strategies. The 2-tuple contains a label and a subdirectory where to put files"""
+    COPY = ("copy", "local_copy")
 
-    GSUTIL_COPY = ("gsutil_copy", "localized/")  # requires gsutil to already be installed
+    """GSUTIL_COPY requires gsutil to be installed inside the execution container"""
+    GSUTIL_COPY = ("gsutil_copy", "local_copy")
 
-    HAIL_HADOOP_COPY = ("hail_hadoop_copy", "localized/")  # requires python3 and hail to already be installed
-    HAIL_BATCH_GCSFUSE = ("hail_batch_gcsfuse", "gcsfuse_mounts/")
-    HAIL_BATCH_GCSFUSE_VIA_TEMP_BUCKET = ("hail_batch_gcsfuse_via_temp_bucket", "gcsfuse_mounts/")
+    """HAIL_HADOOP_COPY requires python3 and hail to be installed inside the execution container"""
+    HAIL_HADOOP_COPY = ("hail_hadoop_copy", "local_copy") 
+    HAIL_BATCH_GCSFUSE = ("hail_batch_gcsfuse", "gcsfuse")
+    HAIL_BATCH_GCSFUSE_VIA_TEMP_BUCKET = ("hail_batch_gcsfuse_via_temp_bucket", "gcsfuse")
 
-    def __init__(self, name, subdir="localized/"):
-        self._name = name
+    def __init__(self, label, subdir="local_copy"):
+        self._label = label
         self._subdir = subdir
 
     def __str__(self):
-        return self._name
+        return self._label
 
     def __repr__(self):
-        return self._name
+        return self._label
 
     def get_subdir_name(self):
         return self._subdir
 
 
 class DelocalizationStrategy(Enum):
+    """This class defines delocalization strategies. The value represents a name for each strategy"""
+
+    """HAIL_HADOOP_COPY requires python3 and hail to be installed inside the execution container"""
     COPY = "copy"
 
-    GSUTIL_COPY = "gsutil_copy"  # requires gsutil to already be installed
+    """GSUTIL_COPY requires gsutil to be installed inside the execution container"""
+    GSUTIL_COPY = "gsutil_copy"
 
-    HAIL_HADOOP_COPY = "hail_hadoop_copy"  # requires python3 and hail to already be installed
+    """HAIL_HADOOP_COPY requires python3 and hail to be installed inside the execution container"""
+    HAIL_HADOOP_COPY = "hail_hadoop_copy"
 
     def __str__(self):
         return self.value
@@ -142,26 +150,170 @@ class DelocalizationStrategy(Enum):
         return self.value
 
 
+class _InputSpec:
+    """An InputSpec stores metadata about an input file to a Step"""
+
+    def __init__(self,
+        source_path: str,
+        name: str = None,
+        localization_strategy: str = None,
+        localization_root_dir: str = None,
+    ):
+
+        self.source_path = source_path
+        self.localization_strategy = localization_strategy
+
+        self.source_bucket = None
+        if source_path.startswith("gs://"):
+            self.source_path_without_protocol = re.sub("^gs://", "", source_path)
+            self.source_bucket = self.source_path_without_protocol.split("/")[0]
+        elif source_path.startswith("http://") or source_path.startswith("https://"):
+            self.source_path_without_protocol = re.sub("^http[s]?://", "", source_path).split("?")[0]
+        else:
+            self.source_path_without_protocol = source_path
+
+        self.source_dir = os.path.dirname(self.source_path_without_protocol)
+        self.filename = os.path.basename(self.source_path_without_protocol).replace("*", "_._")
+
+        self.name = name or self.filename
+
+        subdir = localization_strategy.get_subdir_name()
+        destination_dir = os.path.join(localization_root_dir, subdir, self.source_dir.strip("/"))
+        destination_dir = destination_dir.replace("*", "___")
+
+        self.local_dir = destination_dir
+        self.local_path = os.path.join(destination_dir, self.filename)
+
+    def get_source_path(self):
+        return self.source_path
+
+    def get_source_bucket(self):
+        return self.source_bucket
+
+    def get_source_path_without_protocol(self):
+        return self.source_path_without_protocol
+
+    def get_source_dir(self):
+        return self.source_dir
+
+    def get_filename(self):
+        return self.filename
+
+    def get_input_name(self):
+        return self.name
+
+    def get_local_path(self):
+        return self.local_path
+
+    def get_local_dir(self):
+        return self.local_dir
+
+    def get_localization_strategy(self):
+        return self.localization_strategy
+
+
+class _OutputSpec:
+    """An OutputSpec stores metadata about an output file from a Step"""
+
+    def __init__(self,
+        local_path: str,
+        destination_dir: str = None,
+        destination_path: str = None,
+        name: str = None,
+        delocalization_strategy: str = None):
+
+        self.local_path = local_path
+        self.local_dir = os.path.dirname(local_path)
+        self.name = name
+        self.delocalization_strategy = delocalization_strategy
+
+        if destination_path:
+            self.destination_filename = os.path.basename(destination_path)
+        elif "*" not in local_path:
+            self.destination_filename = os.path.basename(local_path)
+        else:
+            self.destination_filename = None
+
+        if destination_dir:
+            self.destination_dir = destination_dir
+            if destination_path:
+                if os.path.isabs(destination_path) or destination_path.startswith("gs://"):
+                    raise ValueError(f"destination_dir ({destination_dir}) specified even though destination_path provided as "
+                                 f"an absolution path ({destination_path})")
+                self.destination_path = os.path.join(destination_dir, destination_path)
+            elif self.destination_filename:
+                self.destination_path = os.path.join(destination_dir, self.destination_filename)
+            else:
+                self.destination_path = destination_dir
+
+        elif destination_path:
+            self.destination_path = destination_path
+            self.destination_dir = os.path.dirname(self.destination_path)
+        else:
+            raise ValueError("Neither destination_dir nor destination_path were specified.")
+
+        if "*" in self.destination_path:
+            raise ValueError(f"destination path ({destination_path}) cannot contain wildcards (*)")
+
+    def get_destination_path(self):
+        return self.destination_path
+
+    def get_destination_dir(self):
+        return self.destination_dir
+
+    def get_destination_filename(self):
+        return self.destination_filename
+
+    def get_output_name(self):
+        return self.name
+
+    def get_local_path(self):
+        return self.local_path
+
+    def get_local_dir(self):
+        return self.local_dir
+
+    def get_delocalization_strategy(self):
+        return self.delocalization_strategy
+
+
+
 class _Pipeline(ABC):
-    """The parent class for _Pipeline classes such as _BatchPipeline that implement pipeline operations for a specific
-    execution engine. The parent class is general, and doesn't have execution-engine-specific code.
-    The _Pipeline object is returned to the user and serves as the gateway for accessing this module's functionality.
-    Its public methods are factories for creating steps.
+    """The _Pipeline object is returned to the user and serves as the gateway for accessing all other functionality in 
+    this library. It is the parent class for execution-engine-specific classes such as _BatchPipeline.
+    _Pipeline itself is generic in the sense that it doesn't have code specific to a particular execution engine.
+    
+    Its public methods are factory methods for creating Steps.
     It also has some private methods that implement the generic aspects of traversing the DAG and transferring
     all steps to a specific execution engine.
     """
 
-    def __init__(self, argument_parser, name=None):
-        self._argument_parser = argument_parser
+    def __init__(self, name=None, config_arg_parser=None):
+        """Constructor.
+
+        Args:
+            name (str): A name for the pipeline.
+            config_arg_parser (configargparse.ArgumentParser): For defining pipeline command-line args.
+        """
+        if config_arg_parser is None:
+            config_arg_parser = configargparse.ArgumentParser(
+                add_config_file_help=True,
+                add_env_var_help=True,
+                formatter_class=configargparse.HelpFormatter,
+                ignore_unknown_config_file_keys=True,
+                config_file_parser_class=configargparse.YAMLConfigFileParser,
+            )
+
         self.name = name
+        self._config_arg_parser = config_arg_parser
         self._all_steps = []
 
-        argument_parser.add_argument("-v", "--verbose", action='count', default=0, help="Print more info")
-        argument_parser.add_argument("-c", "--config-file", help="YAML config file path", is_config_file_arg=True)
-        argument_parser.add_argument("--dry-run", action="store_true", help="Don't run commands, just print them.")
-        argument_parser.add_argument("-f", "--force", action="store_true", help="Force execution of all steps.")
+        config_arg_parser.add_argument("-v", "--verbose", action='count', default=0, help="Print more info")
+        config_arg_parser.add_argument("-c", "--config-file", help="YAML config file path", is_config_file_arg=True)
+        config_arg_parser.add_argument("--dry-run", action="store_true", help="Don't run commands, just print them.")
+        config_arg_parser.add_argument("-f", "--force", action="store_true", help="Force execution of all steps.")
 
-        grp = argument_parser.add_argument_group("notifications")
+        grp = config_arg_parser.add_argument_group("notifications")
         grp.add_argument("--slack-token", env_var="SLACK_TOKEN", help="Slack token to use for notifications")
         grp.add_argument("--slack-channel", env_var="SLACK_CHANNEL", help="Slack channel to use for notifications")
 
@@ -176,7 +328,11 @@ class _Pipeline(ABC):
         p.add_argument("--my-arg")
         args = p.parse_args()
         """
-        return self._argument_parser
+        return self._config_arg_parser
+
+    def parse_args(self):
+        args, _ = self._config_arg_parser.parse_known_args(ignore_help_args=True)
+        return args
 
     @abstractmethod
     def new_step(self, short_name, step_number=None):
@@ -184,57 +340,65 @@ class _Pipeline(ABC):
 
     @abstractmethod
     def run(self):
-        """Submits a pipeline to an execution engine such as Batch, Terra, SGE, etc. by setting up the
+        """Submits a pipeline to an execution engine such as Hail Batch. In performs any initialization of the specific
         execution environment and then calling the generic self._transfer_all_steps(..) method.
         """
 
+    @abstractmethod
+    def _get_localization_root_dir(self, localization_strategy):
+        """Returns the top level directory where files should be localized. For example /data/mounted_disk/"""
+
     def __enter__(self):
-        pass
+        """Enables code like:
+
+        with step_pipeline() as sp:
+            sp.new_step(..)
+            ..
+        """
+        return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        """Runs at the completion of a 'with' block .. """
+        
+        # confirm all required args have been provided
         self._argument_parser.parse_args()
 
         # execute pipeline
-        print(f"Starting {name or ''} pipeline:")
+        print(f"Starting {self.name or ''} pipeline:")
         self.run()
-
-    def _get_args(self):
-        args, _ = self._argument_parser.parse_known_args(ignore_help_args=True)
-        return args
 
     def _transfer_all_steps(self):
         """Independent of a specific execution engine"""
 
-        args = self._get_args()
+        args = self.parse_args()
 
         steps_to_run_next = [s for s in self._all_steps if not s.has_upstream_steps()]
-        print("Steps to run next: ", steps_to_run_next)
+        print("Next steps: ", steps_to_run_next)
         num_steps_transferred = 0
         while steps_to_run_next:
             for step in steps_to_run_next:
                 if not step._commands:
-                    print("Skipping step: ", step, " because it doesn't contain any commands")
+                    print(f"Skipping {step}. No commands found.")
                     continue
 
+                # decide whether to skip this step
                 skip_requested = any(args.get(skip_arg_name) for skip_arg_name in step._skip_this_step_arg_names)
-                step_needs_to_run = (
-                        args.force
-                        or any(args.get(force_arg_name) for force_arg_name in step._force_this_step_arg_names)
-                        or not are_outputs_up_to_date(step)
-                        or any(not s._is_being_skipped for s in step._upstream_steps))
-                step._is_being_skipped = skip_requested or not step_needs_to_run
+
+                is_being_forced = args.force or any(
+                    args.get(force_arg_name) for force_arg_name in step._force_this_step_arg_names)
+                all_upstream_steps_skipped = all(s._is_being_skipped for s in step._upstream_steps)
+                no_need_to_run_step = not is_being_forced and are_outputs_up_to_date(step) and all_upstream_steps_skipped
+                step._is_being_skipped = skip_requested or no_need_to_run_step
 
                 if step._is_being_skipped:
-                    print(f"Skipping step: {step}")
+                    print(f"Skipping {step}")
                 else:
-                    print(f"Running step {step}")
-                    step._transfer_input()
+                    print(f"Running {step}")
                     step._transfer_step()
-                    step._transfer_output()
                     num_steps_transferred += 1
 
             # next, process all steps that depend on the previously-completed steps
-            steps_to_run_next = [s for step in steps_to_run_next for s in step._downstream_steps]
+            steps_to_run_next = [downstream_step for step in steps_to_run_next for downstream_step in step._downstream_steps]
 
         return num_steps_transferred
 
@@ -332,59 +496,36 @@ class _Step(ABC):
         """Adds a command"""
         self._commands.append(command)
 
-    def input_glob(self, glob, destination_root_dir=None, name=None, localization_strategy=None):
-        self.input(glob, name=name, destination_root_dir=destination_root_dir, localization_strategy=localization_strategy)
+    def input_glob(self, glob, name=None, localization_strategy=None):
+        return self.input(glob, name=name, localization_strategy=localization_strategy)
 
     def input(self,
               source_path: str,
-              destination_root_dir: str = "/",
               name: str = None,
-              localization_strategy: str = None
-              ):
+              localization_strategy: str = None):
         """Specifies an input file or glob.
 
         :param source_path:
         :param name:
-        :param destination_root_dir:
         :param localization_strategy:
         :return: input spec dictionary with these keys:
 
         """
-        localization_strategy = localization_strategy or self._default_localization_strategy or LocalizationStrategy.COPY
+        localization_strategy = localization_strategy or self._default_localization_strategy
 
         # validate inputs
-        if localization_strategy in (
+        if not source_path.startswith("gs://") and localization_strategy in (
                 LocalizationStrategy.GSUTIL_COPY,
                 LocalizationStrategy.HAIL_BATCH_GCSFUSE,
-                LocalizationStrategy.HAIL_BATCH_GCSFUSE_VIA_TEMP_BUCKET) and not source_path.startswith("gs://"):
+                LocalizationStrategy.HAIL_BATCH_GCSFUSE_VIA_TEMP_BUCKET):
             raise ValueError(f"source_path '{source_path}' doesn't start with gs://")
 
-        input_spec = {
-            "source_path": source_path,
-            "destination_root_dir": destination_root_dir,
-            "localization_strategy": localization_strategy,
-        }
-
-        if source_path.startswith("gs://"):
-            input_spec["source_path_without_protocol"] = re.sub("^gs://", "", source_path)
-            input_spec["source_bucket"] = input_spec["source_path_without_protocol"].split("/")[0]
-        elif source_path.startswith("http://") or source_path.startswith("https://"):
-            input_spec["source_path_without_protocol"] = re.sub("^http[s]?://", "", source_path).split("?")[0]
-        else:
-            input_spec["source_path_without_protocol"] = source_path
-
-        input_spec["filename"] = os.path.basename(input_spec["source_path_without_protocol"]).replace("*", "_._")
-        input_spec["source_dir"] = os.path.dirname(input_spec["source_path_without_protocol"])
-        subdir = localization_strategy.get_subdir_name()
-        destination_dir = os.path.join(destination_root_dir, subdir, input_spec["source_dir"].strip("/"))
-        destination_dir = destination_dir.replace("*", "_._")
-
-        input_spec["local_dir"] = destination_dir
-        input_spec["local_path"] = os.path.join(destination_dir, input_spec["filename"])
-
-        if not name:
-            name = input_spec["filename"]
-        input_spec["name"] = name
+        input_spec = _InputSpec(
+            source_path=source_path,
+            name=name,
+            localization_strategy=localization_strategy,
+            localization_root_dir=self._pipeline._get_localization_root_dir(localization_strategy),
+        )
 
         self._preprocess_input(input_spec)
         self._inputs.append(input_spec)
@@ -392,72 +533,71 @@ class _Step(ABC):
         return input_spec
 
     def use_the_same_inputs_as(self, other_step, localization_strategy=None):
+        localization_strategy = localization_strategy or self._default_localization_strategy
+
         input_specs = []
-        for input in other_step._inputs:
+        for other_step_input_spec in other_step._inputs:
             input_spec = self.input(
-                source_path=input["path"],
-                name=input["name"],
-                destination_root_dir=input["destination_root_dir"],
-                localization_strategy=localization_strategy if localization_strategy is not None else input["localization_strategy"],
+                source_path=other_step_input_spec.source_path,
+                name=other_step_input_spec.name,
+                localization_strategy=localization_strategy or other_step_input_spec.localization_strategy,
             )
             input_specs.append(input_spec)
         return input_specs
 
-    def use_previous_step_outputs_as_inputs(self, previous_step, destination_root_dir=None, localization_strategy=None):
+    def use_previous_step_outputs_as_inputs(self, previous_step, localization_strategy=None):
         self.depends_on(previous_step)
 
-        localization_strategy = localization_strategy or self._default_localization_strategy or LocalizationStrategy.COPY
+        localization_strategy = localization_strategy or self._default_localization_strategy
 
         input_specs = []
-        for output in previous_step._outputs:
+        for output_spec in previous_step._outputs:
             input_spec = self.input(
-                source_path=output["path"],
-                name=output["name"],
-                destination_root_dir=destination_root_dir,
+                source_path=output_spec.destination_path,
+                name=output_spec.name,
                 localization_strategy=localization_strategy,
             )
             input_specs.append(input_spec)
 
         return input_specs
 
-    def output(self, local_path, destination_path=None, destination_dir=None, name=None, delocalization_strategy=DelocalizationStrategy.COPY):
-        if not destination_dir and not destination_path and not self._output_dir:
-            raise ValueError("No output destination specified")
+    def output_dir(self, path):
+        """If output is a relative path, it will be relative to this dir"""
+        self._output_dir = path
 
-        if destination_path and destination_dir and (os.path.isabs(destination_path) or destination_path.startswith("gs://")):
-            raise ValueError(f"destination_dir ({destination_dir}) specified even though destination_path provided as "
-                             f"an absolution path ({destination_path})")
+    def output(
+            self,
+            local_path,
+            destination_path: str = None,
+            destination_dir: str = None,
+            name: str = None,
+            delocalization_strategy: str = None
+    ):
+        """Specify a pipeline output file.
 
-        if not destination_dir and self._output_dir:
-            destination_dir = self._output_dir
+        Args:
+            local_path:
+            destination_path:
+            destination_dir:
+            name:
+            delocalization_strategy:
 
-        destination_filename = os.path.basename(destination_path) if destination_path else os.path.basename(local_path)
-
-        if destination_dir and (not destination_path or not os.path.isabs(destination_path)):
-            destination_path = os.path.join(destination_dir, destination_filename)
-
-        if "*" in destination_path:
-            raise ValueError(f"destination path ({destination_path}) cannot contain wildcards (*)")
-
-        delocalization_strategy = delocalization_strategy or self._default_delocalization_strategy or DelocalizationStrategy.COPY
-        output_spec = {
-            "name": name or destination_filename,
-            "destination_filename": destination_filename,
-            "local_path": local_path,
-            "destination_dir": os.path.dirname(destination_path),
-            "destination_path": destination_path,
-            "delocalization_strategy": delocalization_strategy,
-        }
+        Returns:
+            output spec
+        """
+        output_spec = _OutputSpec(
+            local_path=local_path,
+            destination_dir=destination_dir or self._output_dir,
+            destination_path=destination_path,
+            name=name,
+            delocalization_strategy=delocalization_strategy or self._default_delocalization_strategy,
+        )
 
         self._preprocess_output(output_spec)
 
         self._outputs.append(output_spec)
 
         return output_spec
-
-    def output_dir(self, path):
-        """If output is a relative path, it will be relative to this dir"""
-        self._output_dir = path
 
     def depends_on(self, step):
         if isinstance(step, _Step):
@@ -486,8 +626,7 @@ class _Step(ABC):
         Adds a command to post to slack. Requires python3 and pip to be installed in the execution environment.
         """
 
-        argument_parser = self._pipeline.get_config_arg_parser()
-        args, _ = argument_parser.parse_known_args(ignore_help_args=True)
+        args = self._pipeline.parse_args()
         slack_token = slack_token or args.slack_token
         if not slack_token:
             raise ValueError("slack token not provided")
@@ -495,7 +634,10 @@ class _Step(ABC):
         if not channel:
             raise ValueError("slack channel not specified")
 
-        self.command("python3 -m pip install slacker")
+        if not hasattr(self, "_already_installed_slacker"):
+            self.command("python3 -m pip install slacker")
+            self._already_installed_slacker = True
+
         self.command(f"""python3 <<EOF
 from slacker import Slacker
 slack = Slacker("{slack_token}")
@@ -534,13 +676,14 @@ EOF""")
                 "weisburd@broadinstitute.org",
                 "seqr-project")
 
-        :param gcloud_credentials_path: google bucket path that contains your .config folder
-        :param gcloud_user_account: user account to activate
-        :param gcloud_project: (optional) set this as the default gcloud project
-        :return:
+        Args:
+            gcloud_credentials_path (str): google bucket path that contains your .config folder. This value can be specified via command line or a config file instead.
+            gcloud_user_account (str): user account to activate. This value can be specified via command line or a config file instead.
+            gcloud_project (str): set this as the default gcloud project. This value can be specified via command line or a config file instead.
+            debug (bool): Whether to add extra commands that are helpful for troubleshooting issues with the auth steps.
         """
 
-        args = self._get_args()
+        args = self.parse_args()
         if not gcloud_credentials_path:
             gcloud_credentials_path = args.gcloud_credentials_path
             if not gcloud_credentials_path:
@@ -556,6 +699,7 @@ EOF""")
 
         if debug:
             self.command(f"gcloud auth list")
+        
         self.command(f"gcloud auth activate-service-account --key-file /gsa-key/key.json")
         self.command(f"gsutil -m cp -r {os.path.join(gcloud_credentials_path, '.config')} /tmp/")
         self.command(f"rm -rf ~/.config")
@@ -563,11 +707,12 @@ EOF""")
         self.command(f"gcloud config set account {gcloud_user_account}")
         if gcloud_project:
             self.command(f"gcloud config set project {gcloud_project}")
+        
         if debug:
-            self.command(f"gcloud auth list")  # print auth list again to show that 'gcloud config set account' succeeded.
+            self.command(f"gcloud auth list")  # print auth list again to check if 'gcloud config set account' succeeded
 
-    def _get_args(self):
-        return self._pipeline.get_args()
+    def parse_args(self):
+        return self._pipeline.parse_args()
 
     def _get_supported_localization_strategies(self):
         return {
@@ -580,36 +725,45 @@ EOF""")
         }
 
     def _add_commands_for_hail_hadoop_copy(self, source_path, destination_dir):
-        self.command("python3 -m pip install hail")
-        self.command(f"mkdir -p {destination_dir}")
+        if not hasattr(self, "_already_installed_hail"):
+            self.command("python3 -m pip install hail")
+        self._already_installed_hail = True
+
+        #self.command(f"mkdir -p {destination_dir}")
         self.command(f"""python3 <<EOF
 import hail as hl
-hl.hadoop_copy("{source_path}", "{destination_dir}/")
+hl.hadoop_copy("{source_path}", "{destination_dir}")
 EOF""")
 
     def _preprocess_input(self, input_spec):
-        localization_strategy = input_spec["localization_strategy"]
+        """This method is called by step.input(..) at input definition time, regardless of whether the step runs or not.
+        It's meant to perform validation and initialization steps that are fast and don't require a network connection.
+        _Step subclasses can override this method to perform execution-engine-specific pre-processing of inputs.
+        """
+        localization_strategy = input_spec.localization_strategy
         if localization_strategy not in self._get_supported_localization_strategies():
             raise ValueError(f"Unsupported localization strategy: {localization_strategy}")
 
         if localization_strategy == LocalizationStrategy.HAIL_HADOOP_COPY:
-            self._add_commands_for_hail_hadoop_copy(input_spec["source_path"], input_spec["local_dir"])
+            self._add_commands_for_hail_hadoop_copy(input_spec.source_path, input_spec.local_dir)
 
     def _transfer_input(self, input_spec):
-        localization_strategy = input_spec["localization_strategy"]
+        """This method is called when the pipeline is being transferred to the execution engine, and only if the Step
+        is not being skipped."""
+        localization_strategy = input_spec.localization_strategy
         if localization_strategy not in self._get_supported_localization_strategies():
             raise ValueError(f"Unsupported localization strategy: {localization_strategy}")
 
     def _preprocess_output(self, output_spec):
-        delocalization_strategy = output_spec["delocalization_strategy"]
+        delocalization_strategy = output_spec.delocalization_strategy
         if delocalization_strategy not in self._get_supported_delocalization_strategies():
             raise ValueError(f"Unsupported delocalization strategy: {delocalization_strategy}")
 
         if delocalization_strategy == DelocalizationStrategy.HAIL_HADOOP_COPY:
-            self._add_commands_for_hail_hadoop_copy(output_spec["local_path"], output_spec["destination_dir"])
+            self._add_commands_for_hail_hadoop_copy(output_spec.local_path, output_spec.destination_dir)
 
     def _transfer_output(self, output_spec):
-        delocalization_strategy = output_spec["delocalization_strategy"]
+        delocalization_strategy = output_spec.delocalization_strategy
         if delocalization_strategy not in self._get_supported_delocalization_strategies():
             raise ValueError(f"Unsupported delocalization strategy: {delocalization_strategy}")
 
@@ -617,37 +771,3 @@ EOF""")
         raise ValueError("Not yet implemented")
 
 
-def step_pipeline(
-        name=None,
-        execution_engine=ExecutionEngine.HAIL_BATCH,
-        config_file="~/.step_pipeline",
-):
-    """Creates and starts a pipeline.
-
-    :param name: (optional) pipeline name that will appear
-    :param execution_engine:
-    :param config_file:
-
-    Usage:
-        with step_pipeline(args) as sp:
-            ... step definitions ...
-    """
-
-    # define argparser
-    argument_parser = configargparse.ArgumentParser(
-        add_config_file_help=True,
-        add_env_var_help=True,
-        formatter_class=configargparse.HelpFormatter,
-        default_config_files=[config_file],
-        ignore_unknown_config_file_keys=True,
-        config_file_parser_class=configargparse.YAMLConfigFileParser,
-    )
-
-    # create and yield the pipeline
-    if execution_engine == ExecutionEngine.HAIL_BATCH:
-        from batch import _BatchPipeline
-        pipeline = _BatchPipeline(argument_parser, name=name)
-    else:
-        raise ValueError(f"Unsupported execution_engine: '{execution_engine}'")
-
-    return pipeline

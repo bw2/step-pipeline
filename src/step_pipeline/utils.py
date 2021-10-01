@@ -14,10 +14,10 @@ LOCAL_TIMEZONE = pytz.timezone("US/Eastern") #datetime.now(timezone.utc).astimez
 
 def _generate_gs_path_to_file_stat_dict(glob_path):
     """Runs "gsutil ls -l {glob}" and returns a dictionary that maps each gs:// file to
-    its size in bytes. This appears to be faster than running hl.hadoop_ls(..).
+    its size in bytes. This is faster than running hl.hadoop_ls(..).
     """
     if not isinstance(glob_path, str):
-        raise ValueError(f"Unexpected glob_path type {str(type(glob_path))}: {glob_path}")
+        raise ValueError(f"Unexpected argument type {str(type(glob_path))}: {glob_path}")
 
     if not glob_path.startswith("gs://"):
         raise ValueError(f"{glob_path} path doesn't start with gs://")
@@ -140,7 +140,7 @@ def _file_stat__cached(path):
 
 def are_any_inputs_missing(step, verbose=False) -> bool:
     for input_spec in step._inputs:
-        input_path = input_spec["source_path"]
+        input_path = input_spec.source_path
         if not _file_exists__cached(input_path):
             if verbose:
                 print(f"Input missing: {input_path}")
@@ -158,7 +158,7 @@ def are_outputs_up_to_date(step, verbose=False) -> bool:
     latest_input_path = None
     latest_input_modified_date = datetime(2, 1, 1, tzinfo=LOCAL_TIMEZONE)
     for input_spec in step._inputs:
-        input_path = input_spec["source_path"]
+        input_path = input_spec.source_path
         if not _file_exists__cached(input_path):
             raise ValueError(f"Input path doesn't exist: {input_path}")
 
@@ -171,11 +171,10 @@ def are_outputs_up_to_date(step, verbose=False) -> bool:
     oldest_output_path = None
     oldest_output_modified_date = datetime.now(LOCAL_TIMEZONE)
     for output_spec in step._outputs:
-        output_path = output_spec["destination_path"]
-        if not _file_exists__cached(output_path):
+        if not _file_exists__cached(output_spec.destination_path):
             return False
 
-        stat_list = _file_stat__cached(output_path)
+        stat_list = _file_stat__cached(output_spec.destination_path)
         for stat in stat_list:
             oldest_output_modified_date = min(oldest_output_modified_date, stat["modification_time"])
             oldest_output_path = stat["path"]
