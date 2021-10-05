@@ -360,7 +360,7 @@ class _Pipeline(ABC):
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Runs at the completion of a 'with' block .. """
         
-        # confirm all required args have been provided
+        # confirm that all required command-line args were specified
         self._argument_parser.parse_args()
 
         # execute pipeline
@@ -729,7 +729,7 @@ EOF""")
             self.command("python3 -m pip install hail")
         self._already_installed_hail = True
 
-        #self.command(f"mkdir -p {destination_dir}")
+        self.command(f"mkdir -p {destination_dir}")
         self.command(f"""python3 <<EOF
 import hail as hl
 hl.hadoop_copy("{source_path}", "{destination_dir}")

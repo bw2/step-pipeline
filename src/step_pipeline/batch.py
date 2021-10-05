@@ -14,8 +14,8 @@ import hailtop.batch as hb
 from .pipeline import _Pipeline, _Step, LocalizationStrategy, DelocalizationStrategy
 from .utils import check_gcloud_storage_region
 
-DEFAULT_BASH_IMAGE = "gcr.io/google-appengine/python"  # from https://github.com/GoogleCloudPlatform/python-runtime
-DEFAULT_PYTHON_IMAGE = "hailgenetics/hail:0.2.67"
+# TODO get latest tag via https://hub.docker.com/v2/repositories/hailgenetics/genetics/tags/ ?
+DEFAULT_BASH_IMAGE = DEFAULT_PYTHON_IMAGE = "hailgenetics/hail:0.2.77"
 
 
 class BatchStepType(Enum):
@@ -23,10 +23,15 @@ class BatchStepType(Enum):
     BASH = "bash"
 
 
+class BatchBackend(Enum):
+    LOCAL = "local"
+    SERVICE = "service"
+
+
 class _BatchPipeline(_Pipeline):
     """This class contains Hail Batch-specific extensions of the _Pipeline class"""
 
-    def __init__(self, name=None, config_arg_parser=None):
+    def __init__(self, name=None, config_arg_parser=None, backend=BatchBackend.SERVICE):
         """
         _BatchPipeline constructor
 
@@ -37,34 +42,22 @@ class _BatchPipeline(_Pipeline):
 
         self._argument_parser = config_arg_parser
         batch_args = config_arg_parser.add_argument_group("hail batch")
+
+        #grp = batch_args.add_mutually_exclusive_group(required=True)
+        #grp.add_argument("--local", action="store_true", help="Run the pipeline locally using Batch LocalBackend")
+        #grp.add_argument("--cluster", action="store_true", help="Run the pipeline on the Batch cluster")
+
         batch_args.add_argument(
             "--batch-billing-project",
             env_var="BATCH_BILLING_PROJECT",
-            required=True,
             help="Batch requires a billing project for compute costs. To set up a billing project, email the hail team.")
         batch_args.add_argument(
             "--batch-temp-bucket",
             env_var="BATCH_TEMP_BUCKET",
-            required=True,
             help="Batch requires a temp bucket it can use to store files. The Batch service account must have Admin access "
                  "to this bucket. To get the name of your Batch service account, go to https://auth.hail.is/user. Then, to "
                  "grant Admin permissions, run "
                  "gsutil iam ch serviceAccount:[SERVICE_ACCOUNT_NAME]:objectAdmin gs://[BUCKET_NAME]")
-        batch_args.add_argument(
-            "--batch-open-ui",
-            action="store_true",
-            help="Open batch dashboard page after submitting the jobs."
-        )
-        batch_args.add_argument(
-            "--batch-wait",
-            action="store_true",
-            help="Don't exit until the batch completes."
-        )
-        batch_args.add_argument(
-            "--batch-disable-progress-bar",
-            action="store_true",
-            help="Disable progress bar."
-        )
 
         gcloud_args = config_arg_parser.add_argument_group("google cloud")
         gcloud_args.add_argument(
@@ -88,6 +81,7 @@ class _BatchPipeline(_Pipeline):
             help="If specified, the pipeline will check that input buckets are in this region to avoid egress charges", 
         )
 
+        self._backend_type = backend
         self._requester_pays_project = None
         self._cancel_after_n_failures = None
         self._default_image = DEFAULT_BASH_IMAGE
@@ -96,6 +90,7 @@ class _BatchPipeline(_Pipeline):
         self._default_cpu = None
         self._default_storage = None
         self._default_timeout = None
+        self._backend = None
 
     def new_step(
         self,
@@ -109,12 +104,11 @@ class _BatchPipeline(_Pipeline):
         always_run: bool = False,
         timeout: Union[float, int] = None,
         profile_cpu_memory_and_disk_usage: bool = False,
-        reuse_job_from_previous_step: bool = None,
+        reuse_job_from_previous_step: _BatchStep = None,
         write_commands_to_script: bool = False,
         save_script_to_output_dir: bool = False,
     ):
         """
-
         :param short_name:
         :param step_number:
         :param depends_on:
@@ -146,6 +140,7 @@ class _BatchPipeline(_Pipeline):
             reuse_job_from_previous_step=reuse_job_from_previous_step,
             write_commands_to_script=write_commands_to_script,
             save_script_to_output_dir=save_script_to_output_dir,
+            step_type=BatchStepType.BASH,
         )
 
         if depends_on:
@@ -235,7 +230,8 @@ class _BatchPipeline(_Pipeline):
                 print("No steps to run. Exiting..")
                 return
 
-            self._run_batch_obj()
+            result = self._run_batch_obj()
+            return result
         finally:
             if isinstance(self._backend, hb.ServiceBackend):
                 self._backend.close()
@@ -246,7 +242,17 @@ class _BatchPipeline(_Pipeline):
     def _create_batch_obj(self):
         args = self.parse_args()
 
-        self._backend = hb.ServiceBackend(billing_project=args.batch_billing_project, bucket=args.batch_temp_bucket)
+        if self._backend_type == BatchBackend.LOCAL:
+            self._backend = hb.LocalBackend()
+        elif self._backend_type == BatchBackend.SERVICE:
+            if not args.batch_billing_project:
+                raise ValueError("--batch-billing-project must be set when --cluster is used")
+            if not args.batch_temp_bucket:
+                raise ValueError("--batch-temp-bucket must be set when --cluster is used")
+            self._backend = hb.ServiceBackend(billing_project=args.batch_billing_project, bucket=args.batch_temp_bucket)
+        else:
+            raise Exception(f"Unexpected _backend_type: {self._backend_type}")
+
         self._batch = hb.Batch(
             backend=self._backend,
             name=self.name,
@@ -264,15 +270,25 @@ class _BatchPipeline(_Pipeline):
     def _run_batch_obj(self):
         args = self.parse_args()
 
-        self._batch.run(
-            dry_run=args.dry_run,
-            verbose=args.verbose,
-            delete_scratch_on_exit=None,  # If True, delete temporary directories with intermediate files
-            wait=args.batch_wait,  # If True, wait for the batch to finish executing before returning
-            open=args.batch_open_ui,  # If True, open the UI page for the batch
-            disable_progress_bar=args.batch_disable_progress_bar,  # If True, disable the progress bar.
-            callback=None,  # If not None, a URL that will receive at most one POST request after the entire batch completes.
-        )
+        if self._backend_type == BatchBackend.LOCAL:
+            # Hail Batch LocalBackend mode doesn't support some of the args suported by ServiceBackend
+            result = self._batch.run(dry_run=args.dry_run, verbose=args.verbose)
+        elif self._backend_type == BatchBackend.SERVICE:
+            result = self._batch.run(
+                dry_run=args.dry_run,
+                verbose=args.verbose,
+                delete_scratch_on_exit=None,  # If True, delete temporary directories with intermediate files
+                wait=True,  # If True, wait for the batch to finish executing before returning
+                open=False,  # If True, open the UI page for the batch
+                disable_progress_bar=False,  # If True, disable the progress bar.
+                callback=None,  # If not None, a URL that will receive at most one POST request after the entire batch completes.
+            )
+        else:
+            raise Exception(f"Unexpected _backend_type: {self._backend_type}")
+
+        # The Batch pipeline returns an undocumented result object which can be used to retrieve the Job's status code
+        # and logs
+        return result
 
 
 class _BatchStep(_Step):
@@ -292,12 +308,12 @@ class _BatchStep(_Step):
             timeout=None,
             output_dir=None,
             step_type=BatchStepType.BASH,
-            default_localization_strategy=LocalizationStrategy.COPY,
-            default_delocalization_strategy=DelocalizationStrategy.COPY,
             profile_cpu_memory_and_disk_usage=False,
             reuse_job_from_previous_step=None,
             write_commands_to_script=False,
             save_script_to_output_dir=False,
+            default_localization_strategy=LocalizationStrategy.COPY,
+            default_delocalization_strategy=DelocalizationStrategy.COPY,
     ):
         super().__init__(
             pipeline,
@@ -391,7 +407,7 @@ class _BatchStep(_Step):
             else:
                 raise ValueError(f"Unexpected memory arg type: {type(self._memory)}")
 
-        if self._storage is not None:
+        if self._storage:
             self._job.storage(self._storage)
 
         if self._timeout is not None:
@@ -476,6 +492,10 @@ class _BatchStep(_Step):
         if input_spec.localization_strategy == LocalizationStrategy.GSUTIL_COPY:
             if not input_spec.source_path.startswith("gs://"):
                 raise ValueError(f"Expected gs:// path but instead found '{input_spec.local_dir}'")
+            self.command(f"mkdir -p '{input_spec.local_dir}'")
+            self.command(self._generate_gsutil_copy_command(input_spec.source_path, input_spec.local_dir))
+            self.command(f"ls -lh '{input_spec.local_path}'")   # check that file was copied successfully
+
         elif input_spec.localization_strategy in (
                 LocalizationStrategy.COPY,
                 LocalizationStrategy.HAIL_BATCH_GCSFUSE,
@@ -496,13 +516,12 @@ class _BatchStep(_Step):
                 verbose=args.verbose)
 
         if input_spec.localization_strategy == LocalizationStrategy.GSUTIL_COPY:
-            self.command(f"mkdir -p '{input_spec.local_dir}'")
-            self.command(self._generate_gsutil_copy_command(input_spec.source_path, input_spec.local_dir))
-            self.command(f"ls -lh '{input_spec.local_path}'")   # check that file was copied successfully
+            pass
         elif input_spec.localization_strategy == LocalizationStrategy.COPY:
-            input_obj = self._job._batch.read_input(input_spec.source_path)
-            self._job.command(f"mkdir -p '{input_spec.local_dir}'")
-            self._job.command(f"mv {input_obj} {input_spec.local_path}")
+            input_spec.read_input_obj = self._job._batch.read_input(input_spec.source_path)
+            if self._step_type == BatchStepType.BASH:
+                self._job.command(f"mkdir -p '{input_spec.local_dir}'")
+                self._job.command(f"mv {input_spec.read_input_obj} {input_spec.local_path}")
         elif input_spec.localization_strategy in (
             LocalizationStrategy.HAIL_BATCH_GCSFUSE,
             LocalizationStrategy.HAIL_BATCH_GCSFUSE_VIA_TEMP_BUCKET):
@@ -577,12 +596,8 @@ class _BatchStep(_Step):
             raise ValueError(f"Unsupported delocalization strategy: {output_spec.delocalization_strategy}")
 
 
-def batch_pipeline(name=None, config_file="~/.step_pipeline"):
+def batch_pipeline(name=None, backend=BatchBackend.SERVICE, config_file="~/.step_pipeline"):
     """Creates a pipeline object.
-
-    :param name: (optional) pipeline name that will appear
-    :param execution_engine:
-    :param config_file: Path of optional config file with pipeline settings.
 
     Usage:
         with step_pipeline("my pipeline") as sp:
@@ -595,6 +610,13 @@ def batch_pipeline(name=None, config_file="~/.step_pipeline"):
         s = sp.new_step(..)
         ...
         sp.run()
+
+    Args:
+        name (str):
+        use_local_backend (bool): If specified,
+        config_file (str):
+
+
     """
 
     config_arg_parser = configargparse.ArgumentParser(
@@ -607,4 +629,4 @@ def batch_pipeline(name=None, config_file="~/.step_pipeline"):
     )
 
     # create and yield the pipeline
-    return _BatchPipeline(name=name, config_arg_parser=config_arg_parser)
+    return _BatchPipeline(name=name, config_arg_parser=config_arg_parser, backend=backend)
