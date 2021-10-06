@@ -298,7 +298,7 @@ class _BatchStep(_Step):
             self,
             pipeline,
             short_name=None,
-            arg_name=None,
+            arg_suffix=None,
             step_number=None,
             image=None,
             cpu=None,
@@ -318,7 +318,7 @@ class _BatchStep(_Step):
         super().__init__(
             pipeline,
             short_name,
-            arg_name=arg_name,
+            arg_suffix=arg_suffix,
             step_number=step_number,
             output_dir=output_dir,
             default_localization_strategy=default_localization_strategy,
@@ -521,7 +521,7 @@ class _BatchStep(_Step):
             input_spec.read_input_obj = self._job._batch.read_input(input_spec.source_path)
             if self._step_type == BatchStepType.BASH:
                 self._job.command(f"mkdir -p '{input_spec.local_dir}'")
-                self._job.command(f"mv {input_spec.read_input_obj} {input_spec.local_path}")
+                self._job.command(f"ln -s {input_spec.read_input_obj} {input_spec.local_path}")
         elif input_spec.localization_strategy in (
             LocalizationStrategy.HAIL_BATCH_GCSFUSE,
             LocalizationStrategy.HAIL_BATCH_GCSFUSE_VIA_TEMP_BUCKET):
@@ -548,7 +548,7 @@ class _BatchStep(_Step):
         localization_strategy = input_spec.localization_strategy
         if localization_strategy == LocalizationStrategy.HAIL_BATCH_GCSFUSE_VIA_TEMP_BUCKET:
             if not args.batch_temp_bucket:
-                raise ValueError("--temp-bucket not specified.")
+                raise ValueError("--batch-temp-bucket not specified.")
 
             temp_dir = os.path.join(
                 f"gs://{args.batch_temp_bucket}/batch_{self._unique_batch_id}/job_{self._unique_job_id}",
@@ -589,7 +589,7 @@ class _BatchStep(_Step):
             self._output_file_counter += 1
             output_file_obj = self._job[f"ofile{self._output_file_counter}"]
             self._job.command(f'cp {output_spec.local_path} {output_file_obj}')
-            self._job._batch.write_output(output_file_obj, output_spec.destination_dir)
+            self._job._batch.write_output(output_file_obj, output_spec.destination_dir.rstrip("/") + "/")
         elif output_spec.delocalization_strategy == DelocalizationStrategy.GSUTIL_COPY:
             pass  # GSUTIL_COPY was already handled in _preprocess_output(..)
         elif output_spec.delocalization_strategy not in super()._get_supported_delocalization_strategies():

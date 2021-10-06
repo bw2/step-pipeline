@@ -36,16 +36,20 @@ res = b.run()
 #%%
 
 from step_pipeline import batch_pipeline, LocalizationStrategy, BatchBackend
-
 bp = batch_pipeline("summarize fasta index", backend=BatchBackend.LOCAL)
+args = bp.parse_args()
 
 s1 = bp.new_step("step1")
 s1.storage(5)
 input_spec = s1.input("gs://gcp-public-data--broad-references/hg38/v0/Homo_sapiens_assembly38.fasta.fai", localization_strategy=LocalizationStrategy.COPY)  # LocalizationStrategy.HAIL_BATCH_GCSFUSE
 
 #s1.post_to_slack("start")
+output_filename = f"{input_spec.get_filename().replace('.fasta.fai', '')}.num_chroms"
 s1.command("pwd")
-s1.command(f"cat {input_spec.get_local_path()}")
+#s1.command(f"cat {input_spec.get_local_path()} | wc -l > {output_filename}")
+#s1.output_dir(f"{args.batch_temp_bucket}/tmp")
+#s1.output(output_filename)
+
 
 result = bp.run()
 

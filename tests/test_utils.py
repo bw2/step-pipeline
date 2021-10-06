@@ -25,6 +25,9 @@ class PipelineTest(pipeline._Pipeline):
     def new_step(self, short_name, step_number=None):
         pass
 
+    def _get_localization_root_dir(self, localization_strategy):
+        return "/"
+
 
 class StepWithSupportForCopy(pipeline._Step):
     def _get_supported_localization_strategies(self):
@@ -42,8 +45,8 @@ class StepWithSupportForCopy(pipeline._Step):
 class Test(unittest.TestCase):
 
     def setUp(self) -> None:
-        p = configargparse.getParser()
-        self._pipeline = PipelineTest(p, name="test_pipeline")
+        self.maxDiff = None
+        self._pipeline = PipelineTest(name="test_pipeline", config_arg_parser=configargparse.getParser())
 
     def test__generate_gs_path_to_file_stat_dict(self):
         self.assertRaisesRegex(
@@ -144,16 +147,16 @@ class Test(unittest.TestCase):
         test_step2 = StepWithSupportForCopy(self._pipeline, "test_step")
         test_step2.input("README.md", localization_strategy=LocalizationStrategy.COPY)
         input_spec = test_step2.input("LICENSE", localization_strategy=LocalizationStrategy.COPY)
-        self.assertDictEqual(input_spec,
+        self.assertDictEqual(input_spec.__dict__,
              {
                  'source_path': 'LICENSE',
-                 'destination_root_dir': '/',
                  'localization_strategy': LocalizationStrategy.COPY,
                  'source_path_without_protocol': 'LICENSE',
                  'filename': 'LICENSE',
+                 'source_bucket': None,
                  'source_dir': '',
-                 'local_dir': '/localized/',
-                 'local_path': '/localized/LICENSE',
+                 'local_dir': '/local_copy/',
+                 'local_path': '/local_copy/LICENSE',
                  'name': 'LICENSE',
              })
         self.assertFalse(utils.are_any_inputs_missing(test_step2))
@@ -162,20 +165,19 @@ class Test(unittest.TestCase):
         test_step3 = StepWithSupportForCopy(self._pipeline, "test_step")
         input_spec = test_step3.input(
             source_path,
-            destination_root_dir=".",
             name="test_input_name",
             localization_strategy=LocalizationStrategy.COPY,
         )
-        self.assertDictEqual(input_spec,
+        self.assertDictEqual(input_spec.__dict__,
              {
                  'source_path': source_path,
-                 'destination_root_dir': '.',
+                 'source_bucket': None,
                  'localization_strategy': LocalizationStrategy.COPY,
                  'source_path_without_protocol': source_path,
                  'filename': os.path.basename(source_path),
                  'source_dir': os.path.dirname(source_path),
-                 'local_dir': './localized' + os.path.dirname(source_path),
-                 'local_path': './localized' + source_path,
+                 'local_dir': '/local_copy' + os.path.dirname(source_path),
+                 'local_path': '/local_copy' + source_path,
                  'name': 'test_input_name',
              })
 
@@ -204,7 +206,7 @@ class Test(unittest.TestCase):
         # test missing output path
         test_step = StepWithSupportForCopy(self._pipeline, "test_step")
         test_step.input(HG38_PATH_WITH_STAR, localization_strategy=LocalizationStrategy.COPY)
-        test_step.output(HG38_PATH, "gs//missing-bucket") #, delocalization_strategy=DelocalizationStrategy.COPY)
+        test_step.output(HG38_PATH, "gs//missing-bucket", delocalization_strategy=DelocalizationStrategy.COPY)
         self.assertFalse(utils.are_outputs_up_to_date(test_step, verbose=True))
 
         # test regular paths which exist and are up-to-date

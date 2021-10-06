@@ -412,14 +412,14 @@ class _Step(ABC):
     (for example, step 1 creates a VCF and step 2 tabixes it).
     """
 
-    _USED_ARG_NAMES = set()
+    _USED_ARG_SUFFIXES = set()
     _USED_STEP_NUMBERS = set()
 
     def __init__(
             self,
             pipeline: _Pipeline,
             short_name: str,
-            arg_name: str = None,
+            arg_suffix: str = None,
             step_number: int = None,
             output_dir: str = None,
             default_localization_strategy: str = None,
@@ -429,7 +429,7 @@ class _Step(ABC):
 
         :param pipeline: _Pipeline object
         :param short_name: a short name for this step
-        :param arg_name: if specified, --skip-{arg_name} and --force-{arg_name} command-line args will be created.
+        :param arg_suffix: if specified, --skip-{arg_suffix} and --force-{arg_suffix} command-line args will be created.
         :param step_number: if specified, --skip-step{step_number} and --force-step{step_number} command-line args will be created.
         """
         self.short_name = short_name
@@ -457,20 +457,20 @@ class _Step(ABC):
         # define command line args for skipping or forcing execution of this step
         argument_parser = pipeline.get_config_arg_parser()
 
-        if arg_name and arg_name not in _Step._USED_ARG_NAMES:
+        if arg_suffix and arg_suffix not in _Step._USED_ARG_SUFFIXES:
             argument_parser.add_argument(
-                f"--force-{arg_name}",
+                f"--force-{arg_suffix}",
                 help=f"Force execution of the '{short_name}' step.",
                 action="store_true",
             )
-            self._force_this_step_arg_names.append(f"force_{arg_name}")
+            self._force_this_step_arg_names.append(f"force_{arg_suffix}")
             argument_parser.add_argument(
-                f"--skip-{arg_name}",
+                f"--skip-{arg_suffix}",
                 help=f"Skip the '{short_name}' step even if --force is used.",
                 action="store_true",
             )
-            self._skip_this_step_arg_names.append(f"skip_{arg_name}")
-            _Step._USED_ARG_NAMES.add(arg_name)
+            self._skip_this_step_arg_names.append(f"skip_{arg_suffix}")
+            _Step._USED_ARG_SUFFIXES.add(arg_suffix)
 
         if step_number is not None and step_number not in _Step._USED_STEP_NUMBERS:
             try:
@@ -491,6 +491,12 @@ class _Step(ABC):
             )
             self._skip_this_step_arg_names.append(f"skip_step{step_number}")
             _Step._USED_STEP_NUMBERS.add(step_number)
+
+    def short_name(self, short_name):
+        self.short_name = short_name
+
+    def output_dir(self, output_dir: str):
+        self._output_dir = output_dir
 
     def command(self, command):
         """Adds a command"""
@@ -585,12 +591,16 @@ class _Step(ABC):
         Returns:
             output spec
         """
+        delocalization_strategy = delocalization_strategy or self._default_delocalization_strategy
+        if delocalization_strategy is None:
+            raise ValueError("delocalization_strategy not specified")
+
         output_spec = _OutputSpec(
             local_path=local_path,
             destination_dir=destination_dir or self._output_dir,
             destination_path=destination_path,
             name=name,
-            delocalization_strategy=delocalization_strategy or self._default_delocalization_strategy,
+            delocalization_strategy=delocalization_strategy,
         )
 
         self._preprocess_output(output_spec)
