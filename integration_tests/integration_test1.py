@@ -26,8 +26,8 @@ result = bp.run()
 
 #%%
 
-s1.switch_gcloud_auth_to_user_account()
-s1.post_to_slack("start")
+#s1.switch_gcloud_auth_to_user_account()
+#s1.post_to_slack("start")
 
 # TODO test local + remote and bash + python
 
