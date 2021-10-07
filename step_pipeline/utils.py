@@ -4,6 +4,10 @@ import hail as hl
 import os
 import pytz
 import subprocess
+import tempfile
+
+os.environ["HAIL_LOG_DIR"] = tempfile.gettempdir()
+
 
 HADOOP_EXISTS_CACHE = {}
 HADOOP_STAT_CACHE = {}
@@ -140,7 +144,7 @@ def _file_stat__cached(path):
 
 def are_any_inputs_missing(step, verbose=False) -> bool:
     for input_spec in step._inputs:
-        input_path = input_spec.source_path
+        input_path = input_spec.get_source_path()
         if not _file_exists__cached(input_path):
             if verbose:
                 print(f"Input missing: {input_path}")
@@ -158,7 +162,7 @@ def are_outputs_up_to_date(step, verbose=False) -> bool:
     latest_input_path = None
     latest_input_modified_date = datetime(2, 1, 1, tzinfo=LOCAL_TIMEZONE)
     for input_spec in step._inputs:
-        input_path = input_spec.source_path
+        input_path = input_spec.get_source_path()
         if not _file_exists__cached(input_path):
             raise ValueError(f"Input path doesn't exist: {input_path}")
 
@@ -171,10 +175,10 @@ def are_outputs_up_to_date(step, verbose=False) -> bool:
     oldest_output_path = None
     oldest_output_modified_date = datetime.now(LOCAL_TIMEZONE)
     for output_spec in step._outputs:
-        if not _file_exists__cached(output_spec.destination_path):
+        if not _file_exists__cached(output_spec.get_output_path()):
             return False
 
-        stat_list = _file_stat__cached(output_spec.destination_path)
+        stat_list = _file_stat__cached(output_spec.get_output_path())
         for stat in stat_list:
             oldest_output_modified_date = min(oldest_output_modified_date, stat["modification_time"])
             oldest_output_path = stat["path"]

@@ -159,122 +159,121 @@ class _InputSpec:
         localization_strategy: str = None,
         localization_root_dir: str = None,
     ):
+        self._source_path = source_path
+        self._localization_strategy = localization_strategy
 
-        self.source_path = source_path
-        self.localization_strategy = localization_strategy
-
-        self.source_bucket = None
+        self._source_bucket = None
         if source_path.startswith("gs://"):
-            self.source_path_without_protocol = re.sub("^gs://", "", source_path)
-            self.source_bucket = self.source_path_without_protocol.split("/")[0]
+            self._source_path_without_protocol = re.sub("^gs://", "", source_path)
+            self._source_bucket = self._source_path_without_protocol.split("/")[0]
         elif source_path.startswith("http://") or source_path.startswith("https://"):
-            self.source_path_without_protocol = re.sub("^http[s]?://", "", source_path).split("?")[0]
+            self._source_path_without_protocol = re.sub("^http[s]?://", "", source_path).split("?")[0]
         else:
-            self.source_path_without_protocol = source_path
+            self._source_path_without_protocol = source_path
 
-        self.source_dir = os.path.dirname(self.source_path_without_protocol)
-        self.filename = os.path.basename(self.source_path_without_protocol).replace("*", "_._")
+        self._source_dir = os.path.dirname(self._source_path_without_protocol)
+        self._filename = os.path.basename(self._source_path_without_protocol).replace("*", "_._")
 
-        self.name = name or self.filename
+        self._name = name or self._filename
 
         subdir = localization_strategy.get_subdir_name()
-        destination_dir = os.path.join(localization_root_dir, subdir, self.source_dir.strip("/"))
-        destination_dir = destination_dir.replace("*", "___")
+        output_dir = os.path.join(localization_root_dir, subdir, self.get_source_dir().strip("/"))
+        output_dir = output_dir.replace("*", "___")
 
-        self.local_dir = destination_dir
-        self.local_path = os.path.join(destination_dir, self.filename)
+        self._local_dir = output_dir
+        self._local_path = os.path.join(output_dir, self.get_filename())
 
     def get_source_path(self):
-        return self.source_path
+        return self._source_path
 
     def get_source_bucket(self):
-        return self.source_bucket
+        return self._source_bucket
 
     def get_source_path_without_protocol(self):
-        return self.source_path_without_protocol
+        return self._source_path_without_protocol
 
     def get_source_dir(self):
-        return self.source_dir
+        return self._source_dir
 
     def get_filename(self):
-        return self.filename
+        return self._filename
 
     def get_input_name(self):
-        return self.name
+        return self._name
 
     def get_local_path(self):
-        return self.local_path
+        return self._local_path
 
     def get_local_dir(self):
-        return self.local_dir
+        return self._local_dir
 
     def get_localization_strategy(self):
-        return self.localization_strategy
+        return self._localization_strategy
 
 
 class _OutputSpec:
-    """An OutputSpec stores metadata about an output file from a Step"""
+    """An OutputSpec represents a description of an output file from a Step"""
 
     def __init__(self,
         local_path: str,
-        destination_dir: str = None,
-        destination_path: str = None,
+        output_dir: str = None,
+        output_path: str = None,
         name: str = None,
         delocalization_strategy: str = None):
 
-        self.local_path = local_path
-        self.local_dir = os.path.dirname(local_path)
-        self.name = name
-        self.delocalization_strategy = delocalization_strategy
+        self._local_path = local_path
+        self._local_dir = os.path.dirname(local_path)
+        self._name = name
+        self._delocalization_strategy = delocalization_strategy
 
-        if destination_path:
-            self.destination_filename = os.path.basename(destination_path)
+        if output_path:
+            self._output_filename = os.path.basename(output_path)
         elif "*" not in local_path:
-            self.destination_filename = os.path.basename(local_path)
+            self._output_filename = os.path.basename(local_path)
         else:
-            self.destination_filename = None
+            self._output_filename = None
 
-        if destination_dir:
-            self.destination_dir = destination_dir
-            if destination_path:
-                if os.path.isabs(destination_path) or destination_path.startswith("gs://"):
-                    raise ValueError(f"destination_dir ({destination_dir}) specified even though destination_path provided as "
-                                 f"an absolution path ({destination_path})")
-                self.destination_path = os.path.join(destination_dir, destination_path)
-            elif self.destination_filename:
-                self.destination_path = os.path.join(destination_dir, self.destination_filename)
+        if output_dir:
+            self._output_dir = output_dir
+            if output_path:
+                if os.path.isabs(output_path) or output_path.startswith("gs://"):
+                    raise ValueError(f"output_dir ({output_dir}) specified even though output_path provided as "
+                                 f"an absolution path ({output_path})")
+                self._output_path = os.path.join(output_dir, output_path)
+            elif self._output_filename:
+                self._output_path = os.path.join(output_dir, self._output_filename)
             else:
-                self.destination_path = destination_dir
+                self._output_path = output_dir
 
-        elif destination_path:
-            self.destination_path = destination_path
-            self.destination_dir = os.path.dirname(self.destination_path)
+        elif output_path:
+            self._output_path = output_path
+            self._output_dir = os.path.dirname(self.output_path)
         else:
-            raise ValueError("Neither destination_dir nor destination_path were specified.")
+            raise ValueError("Neither output_dir nor output_path were specified.")
 
-        if "*" in self.destination_path:
-            raise ValueError(f"destination path ({destination_path}) cannot contain wildcards (*)")
+        if "*" in self._output_path:
+            raise ValueError(f"output path ({output_path}) cannot contain wildcards (*)")
 
-    def get_destination_path(self):
-        return self.destination_path
+    def get_output_path(self):
+        return self._output_path
 
-    def get_destination_dir(self):
-        return self.destination_dir
+    def get_output_dir(self):
+        return self._output_dir
 
-    def get_destination_filename(self):
-        return self.destination_filename
+    def get_output_filename(self):
+        return self._output_filename
 
     def get_output_name(self):
-        return self.name
+        return self._name
 
     def get_local_path(self):
-        return self.local_path
+        return self._local_path
 
     def get_local_dir(self):
-        return self.local_dir
+        return self._local_dir
 
     def get_delocalization_strategy(self):
-        return self.delocalization_strategy
+        return self._delocalization_strategy
 
 
 
@@ -359,13 +358,9 @@ class _Pipeline(ABC):
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Runs at the completion of a 'with' block .. """
-        
-        # confirm that all required command-line args were specified
-        self._argument_parser.parse_args()
 
-        # execute pipeline
-        print(f"Starting {self.name or ''} pipeline:")
         self.run()
+
 
     def _transfer_all_steps(self):
         """Independent of a specific execution engine"""
@@ -544,9 +539,9 @@ class _Step(ABC):
         input_specs = []
         for other_step_input_spec in other_step._inputs:
             input_spec = self.input(
-                source_path=other_step_input_spec.source_path,
-                name=other_step_input_spec.name,
-                localization_strategy=localization_strategy or other_step_input_spec.localization_strategy,
+                source_path=other_step_input_spec.get_source_path(),
+                name=other_step_input_spec.get_name(),
+                localization_strategy=localization_strategy or other_step_input_spec.get_localization_strategy(),
             )
             input_specs.append(input_spec)
         return input_specs
@@ -559,8 +554,8 @@ class _Step(ABC):
         input_specs = []
         for output_spec in previous_step._outputs:
             input_spec = self.input(
-                source_path=output_spec.destination_path,
-                name=output_spec.name,
+                source_path=output_spec.get_output_path(),
+                name=output_spec.get_name(),
                 localization_strategy=localization_strategy,
             )
             input_specs.append(input_spec)
@@ -574,8 +569,8 @@ class _Step(ABC):
     def output(
             self,
             local_path,
-            destination_path: str = None,
-            destination_dir: str = None,
+            output_path: str = None,
+            output_dir: str = None,
             name: str = None,
             delocalization_strategy: str = None
     ):
@@ -583,8 +578,8 @@ class _Step(ABC):
 
         Args:
             local_path:
-            destination_path:
-            destination_dir:
+            output_path:
+            output_dir:
             name:
             delocalization_strategy:
 
@@ -597,8 +592,8 @@ class _Step(ABC):
 
         output_spec = _OutputSpec(
             local_path=local_path,
-            destination_dir=destination_dir or self._output_dir,
-            destination_path=destination_path,
+            output_dir=output_dir or self._output_dir,
+            output_path=output_path,
             name=name,
             delocalization_strategy=delocalization_strategy,
         )
@@ -734,15 +729,15 @@ EOF""")
             DelocalizationStrategy.HAIL_HADOOP_COPY,
         }
 
-    def _add_commands_for_hail_hadoop_copy(self, source_path, destination_dir):
+    def _add_commands_for_hail_hadoop_copy(self, source_path, output_dir):
         if not hasattr(self, "_already_installed_hail"):
             self.command("python3 -m pip install hail")
         self._already_installed_hail = True
 
-        self.command(f"mkdir -p {destination_dir}")
+        self.command(f"mkdir -p {output_dir}")
         self.command(f"""python3 <<EOF
 import hail as hl
-hl.hadoop_copy("{source_path}", "{destination_dir}")
+hl.hadoop_copy("{source_path}", "{output_dir}")
 EOF""")
 
     def _preprocess_input(self, input_spec):
@@ -750,30 +745,30 @@ EOF""")
         It's meant to perform validation and initialization steps that are fast and don't require a network connection.
         _Step subclasses can override this method to perform execution-engine-specific pre-processing of inputs.
         """
-        localization_strategy = input_spec.localization_strategy
+        localization_strategy = input_spec.get_localization_strategy()
         if localization_strategy not in self._get_supported_localization_strategies():
             raise ValueError(f"Unsupported localization strategy: {localization_strategy}")
 
         if localization_strategy == LocalizationStrategy.HAIL_HADOOP_COPY:
-            self._add_commands_for_hail_hadoop_copy(input_spec.source_path, input_spec.local_dir)
+            self._add_commands_for_hail_hadoop_copy(input_spec.get_source_path(), input_spec.get_local_dir())
 
     def _transfer_input(self, input_spec):
         """This method is called when the pipeline is being transferred to the execution engine, and only if the Step
         is not being skipped."""
-        localization_strategy = input_spec.localization_strategy
+        localization_strategy = input_spec.get_localization_strategy()
         if localization_strategy not in self._get_supported_localization_strategies():
             raise ValueError(f"Unsupported localization strategy: {localization_strategy}")
 
     def _preprocess_output(self, output_spec):
-        delocalization_strategy = output_spec.delocalization_strategy
+        delocalization_strategy = output_spec.get_delocalization_strategy()
         if delocalization_strategy not in self._get_supported_delocalization_strategies():
             raise ValueError(f"Unsupported delocalization strategy: {delocalization_strategy}")
 
         if delocalization_strategy == DelocalizationStrategy.HAIL_HADOOP_COPY:
-            self._add_commands_for_hail_hadoop_copy(output_spec.local_path, output_spec.destination_dir)
+            self._add_commands_for_hail_hadoop_copy(output_spec.get_local_path(), output_spec.get_output_dir())
 
     def _transfer_output(self, output_spec):
-        delocalization_strategy = output_spec.delocalization_strategy
+        delocalization_strategy = output_spec.get_delocalization_strategy()
         if delocalization_strategy not in self._get_supported_delocalization_strategies():
             raise ValueError(f"Unsupported delocalization strategy: {delocalization_strategy}")
 

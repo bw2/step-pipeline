@@ -43,9 +43,9 @@ class _BatchPipeline(_Pipeline):
         self._argument_parser = config_arg_parser
         batch_args = config_arg_parser.add_argument_group("hail batch")
 
-        #grp = batch_args.add_mutually_exclusive_group(required=True)
-        #grp.add_argument("--local", action="store_true", help="Run the pipeline locally using Batch LocalBackend")
-        #grp.add_argument("--cluster", action="store_true", help="Run the pipeline on the Batch cluster")
+        grp = batch_args.add_mutually_exclusive_group()
+        grp.add_argument("--local", action="store_true", help="Run the pipeline locally using Batch LocalBackend")
+        grp.add_argument("--cluster", action="store_true", help="Run the pipeline on the Batch cluster")
 
         batch_args.add_argument(
             "--batch-billing-project",
@@ -80,6 +80,14 @@ class _BatchPipeline(_Pipeline):
             default=("US", "US-CENTRAL1"),
             help="If specified, the pipeline will check that input buckets are in this region to avoid egress charges", 
         )
+
+        args = self.parse_args()
+
+        # if --local or --cluster were specified, override the service
+        if args.local:
+            backend = BatchBackend.LOCAL
+        elif args.cluster:
+            backend = BatchBackend.SERVICE
 
         self._backend_type = backend
         self._requester_pays_project = None
@@ -221,7 +229,12 @@ class _BatchPipeline(_Pipeline):
 
     def run(self):
         """Batch-specific code for submitting the pipeline to the Hail Batch backend"""
+        print(f"Starting {self.name or ''} pipeline:")
+        # confirm that all required command-line args were specified
+        self._argument_parser.parse_args()
+
         try:
+
             self._create_batch_obj()
 
             num_steps_transferred = self._transfer_all_steps()
@@ -452,7 +465,7 @@ class _BatchStep(_Step):
 
             script_input_spec = self.input(script_temp_gcloud_path)
             self._transfer_input(script_input_spec)
-            self._job.command(f"bash -c '{script_input_spec.local_path}'")
+            self._job.command(f"bash -c '{script_input_spec.get_local_path()}'")
         else:
             for command in self._commands:
                 print(f"Adding command: {command}")
@@ -489,20 +502,20 @@ class _BatchStep(_Step):
     def _preprocess_input(self, input_spec):
         super()._preprocess_input(input_spec)
 
-        if input_spec.localization_strategy == LocalizationStrategy.GSUTIL_COPY:
-            if not input_spec.source_path.startswith("gs://"):
-                raise ValueError(f"Expected gs:// path but instead found '{input_spec.local_dir}'")
-            self.command(f"mkdir -p '{input_spec.local_dir}'")
-            self.command(self._generate_gsutil_copy_command(input_spec.source_path, input_spec.local_dir))
-            self.command(f"ls -lh '{input_spec.local_path}'")   # check that file was copied successfully
+        if input_spec.get_localization_strategy() == LocalizationStrategy.GSUTIL_COPY:
+            if not input_spec.get_source_path().startswith("gs://"):
+                raise ValueError(f"Expected gs:// path but instead found '{input_spec.get_local_dir()}'")
+            self.command(f"mkdir -p '{input_spec.get_local_dir()}'")
+            self.command(self._generate_gsutil_copy_command(input_spec.get_source_path(), input_spec.get_local_dir()))
+            self.command(f"ls -lh '{input_spec.get_local_path()}'")   # check that file was copied successfully
 
-        elif input_spec.localization_strategy in (
+        elif input_spec.get_localization_strategy() in (
                 LocalizationStrategy.COPY,
                 LocalizationStrategy.HAIL_BATCH_GCSFUSE,
                 LocalizationStrategy.HAIL_BATCH_GCSFUSE_VIA_TEMP_BUCKET):
             pass  # these will be handled in _transfer_input(..)
-        elif input_spec.localization_strategy not in super()._get_supported_localization_strategies():
-            raise ValueError(f"Unsupported localization strategy: {input_spec.localization_strategy}")
+        elif input_spec.get_localization_strategy() not in super()._get_supported_localization_strategies():
+            raise ValueError(f"Unsupported localization strategy: {input_spec.get_localization_strategy()}")
 
     def _transfer_input(self, input_spec):
         super()._transfer_input(input_spec)
@@ -510,42 +523,41 @@ class _BatchStep(_Step):
         args = self.parse_args()
         if args.acceptable_storage_regions:
             check_gcloud_storage_region(
-                input_spec.source_path,
+                input_spec.get_source_path(),
                 expected_regions=args.acceptable_storage_regions,
                 gcloud_project=args.gcloud_project,
                 verbose=args.verbose)
 
-        if input_spec.localization_strategy == LocalizationStrategy.GSUTIL_COPY:
+        if input_spec.get_localization_strategy() == LocalizationStrategy.GSUTIL_COPY:
             pass
-        elif input_spec.localization_strategy == LocalizationStrategy.COPY:
-            input_spec.read_input_obj = self._job._batch.read_input(input_spec.source_path)
+        elif input_spec.get_localization_strategy() == LocalizationStrategy.COPY:
+            input_spec.read_input_obj = self._job._batch.read_input(input_spec.get_source_path())
             if self._step_type == BatchStepType.BASH:
-                self._job.command(f"mkdir -p '{input_spec.local_dir}'")
-                self._job.command(f"ln -s {input_spec.read_input_obj} {input_spec.local_path}")
-        elif input_spec.localization_strategy in (
+                self._job.command(f"mkdir -p '{input_spec.get_local_dir()}'")
+                self._job.command(f"ln -s {input_spec.read_input_obj} {input_spec.get_local_path()}")
+        elif input_spec.get_localization_strategy() in (
             LocalizationStrategy.HAIL_BATCH_GCSFUSE,
             LocalizationStrategy.HAIL_BATCH_GCSFUSE_VIA_TEMP_BUCKET):
             self._handle_input_transfer_using_gcsfuse(input_spec)
-        elif input_spec.localization_strategy in super()._get_supported_localization_strategies():
-            raise ValueError(f"Unsupported localization strategy: {input_spec.localization_strategy}")
+        elif input_spec.get_localization_strategy() in super()._get_supported_localization_strategies():
+            raise ValueError(f"Unsupported localization strategy: {input_spec.get_localization_strategy()}")
 
-    def _generate_gsutil_copy_command(self, source_path, destination_dir):
+    def _generate_gsutil_copy_command(self, source_path, output_dir):
         args = self.parse_args()
         gsutil_command = f"gsutil"
         if args.gcloud_project:
             gsutil_command += f" -u {args.gcloud_project}"
 
-        if destination_dir.startswith("gs://"):
-            destination_dir = destination_dir.strip("/") + "/"
-        return f"time {gsutil_command} -m cp -r '{source_path}' '{destination_dir}'"
+        output_dir = output_dir.rstrip("/") + "/"
+        return f"time {gsutil_command} -m cp -r '{source_path}' '{output_dir}'"
 
     def _handle_input_transfer_using_gcsfuse(self, input_spec):
         args = self.parse_args()
 
-        source_path = input_spec.source_path
-        source_path_without_protocol = input_spec.source_path_without_protocol
+        source_path = input_spec.get_source_path()
+        source_path_without_protocol = input_spec.get_source_path_without_protocol()
 
-        localization_strategy = input_spec.localization_strategy
+        localization_strategy = input_spec.get_localization_strategy()
         if localization_strategy == LocalizationStrategy.HAIL_BATCH_GCSFUSE_VIA_TEMP_BUCKET:
             if not args.batch_temp_bucket:
                 raise ValueError("--batch-temp-bucket not specified.")
@@ -553,7 +565,7 @@ class _BatchStep(_Step):
             temp_dir = os.path.join(
                 f"gs://{args.batch_temp_bucket}/batch_{self._unique_batch_id}/job_{self._unique_job_id}",
                 source_path_without_protocol.strip("/")+"/")
-            temp_file_path = os.path.join(temp_dir, input_spec.filename)
+            temp_file_path = os.path.join(temp_dir, input_spec.get_filename())
 
             if temp_file_path in self._paths_localized_via_temp_bucket:
                 raise ValueError(f"{source_path} has already been localized via temp bucket.")
@@ -563,7 +575,7 @@ class _BatchStep(_Step):
             self._job.command(self._generate_gsutil_copy_command(source_path, temp_dir))
         else:
             subdir = localization_strategy.get_subdir_name()
-            source_bucket = input_spec.source_bucket
+            source_bucket = input_spec.get_source_bucket()
 
         local_root_dir = self._pipeline._get_localization_root_dir(localization_strategy)
         local_mount_dir = os.path.join(local_root_dir, subdir, source_bucket)
@@ -575,25 +587,27 @@ class _BatchStep(_Step):
     def _preprocess_output(self, output_spec):
         super()._preprocess_output(output_spec)
 
-        if output_spec.delocalization_strategy == DelocalizationStrategy.COPY:
+        if not output_spec.get_output_dir().startswith("gs://"):
+            raise ValueError(f"{output_spec.get_output_dir()} Destination path must start with gs://")
+        if output_spec.get_delocalization_strategy() == DelocalizationStrategy.COPY:
             pass
-        elif output_spec.delocalization_strategy == DelocalizationStrategy.GSUTIL_COPY:
-            self.command(self._generate_gsutil_copy_command(output_spec.local_path, output_spec.destination_dir))
-        elif output_spec.delocalization_strategy not in super()._get_supported_delocalization_strategies():
-            raise ValueError(f"Unsupported delocalization strategy: {output_spec.delocalization_strategy}")
+        elif output_spec.get_delocalization_strategy() == DelocalizationStrategy.GSUTIL_COPY:
+            self.command(self._generate_gsutil_copy_command(output_spec.get_local_path(), output_spec.output_dir))
+        elif output_spec.get_delocalization_strategy() not in super()._get_supported_delocalization_strategies():
+            raise ValueError(f"Unsupported delocalization strategy: {output_spec.get_delocalization_strategy()}")
 
     def _transfer_output(self, output_spec):
         super()._transfer_output(output_spec)
 
-        if output_spec.delocalization_strategy == DelocalizationStrategy.COPY:
+        if output_spec.get_delocalization_strategy() == DelocalizationStrategy.COPY:
             self._output_file_counter += 1
             output_file_obj = self._job[f"ofile{self._output_file_counter}"]
-            self._job.command(f'cp {output_spec.local_path} {output_file_obj}')
-            self._job._batch.write_output(output_file_obj, output_spec.destination_dir.rstrip("/") + "/")
-        elif output_spec.delocalization_strategy == DelocalizationStrategy.GSUTIL_COPY:
+            self._job.command(f'cp {output_spec.get_local_path()} {output_file_obj}')
+            self._job._batch.write_output(output_file_obj, output_spec.get_output_dir().rstrip("/") + f"/{output_spec.get_output_filename()}")
+        elif output_spec.get_delocalization_strategy() == DelocalizationStrategy.GSUTIL_COPY:
             pass  # GSUTIL_COPY was already handled in _preprocess_output(..)
-        elif output_spec.delocalization_strategy not in super()._get_supported_delocalization_strategies():
-            raise ValueError(f"Unsupported delocalization strategy: {output_spec.delocalization_strategy}")
+        elif output_spec.get_delocalization_strategy() not in super()._get_supported_delocalization_strategies():
+            raise ValueError(f"Unsupported delocalization strategy: {output_spec.get_delocalization_strategy()}")
 
 
 def batch_pipeline(name=None, backend=BatchBackend.SERVICE, config_file="~/.step_pipeline"):
