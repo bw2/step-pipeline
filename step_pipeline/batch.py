@@ -100,6 +100,11 @@ class _BatchPipeline(_Pipeline):
         self._default_timeout = None
         self._backend = None
 
+    def get_backend_type(self):
+        """Returns either BatchBackend.SERVICE or BatchBackend.LOCAL"""
+        return self._backend_type
+
+
     def new_step(
         self,
         short_name: str = None,
@@ -586,13 +591,14 @@ class _BatchStep(_Step):
 
     def _preprocess_output(self, output_spec):
         super()._preprocess_output(output_spec)
-
         if not output_spec.get_output_dir().startswith("gs://"):
             raise ValueError(f"{output_spec.get_output_dir()} Destination path must start with gs://")
         if output_spec.get_delocalization_strategy() == DelocalizationStrategy.COPY:
-            pass
+            # validate path since Batch delocalization doesn't work for gs:// paths with a Local backend.
+            if output_spec.get_output_path().startswith("gs://") and self._pipeline.get_backend_type() == BatchBackend.LOCAL:
+                raise ValueError("The Batch Local backend doesn't support DelocalizationStrategy.COPY for gs:// paths")
         elif output_spec.get_delocalization_strategy() == DelocalizationStrategy.GSUTIL_COPY:
-            self.command(self._generate_gsutil_copy_command(output_spec.get_local_path(), output_spec.output_dir))
+            self.command(self._generate_gsutil_copy_command(output_spec.get_local_path(), output_spec.get_output_dir()))
         elif output_spec.get_delocalization_strategy() not in super()._get_supported_delocalization_strategies():
             raise ValueError(f"Unsupported delocalization strategy: {output_spec.get_delocalization_strategy()}")
 

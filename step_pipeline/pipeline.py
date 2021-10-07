@@ -247,7 +247,7 @@ class _OutputSpec:
 
         elif output_path:
             self._output_path = output_path
-            self._output_dir = os.path.dirname(self.output_path)
+            self._output_dir = os.path.dirname(self._output_path)
         else:
             raise ValueError("Neither output_dir nor output_path were specified.")
 
@@ -274,7 +274,6 @@ class _OutputSpec:
 
     def get_delocalization_strategy(self):
         return self._delocalization_strategy
-
 
 
 class _Pipeline(ABC):
@@ -361,16 +360,15 @@ class _Pipeline(ABC):
 
         self.run()
 
-
     def _transfer_all_steps(self):
         """Independent of a specific execution engine"""
 
         args = self.parse_args()
 
         steps_to_run_next = [s for s in self._all_steps if not s.has_upstream_steps()]
-        print("Next steps: ", steps_to_run_next)
         num_steps_transferred = 0
         while steps_to_run_next:
+            print("Next steps: ", steps_to_run_next)
             for step in steps_to_run_next:
                 if not step._commands:
                     print(f"Skipping {step}. No commands found.")
@@ -540,7 +538,7 @@ class _Step(ABC):
         for other_step_input_spec in other_step._inputs:
             input_spec = self.input(
                 source_path=other_step_input_spec.get_source_path(),
-                name=other_step_input_spec.get_name(),
+                name=other_step_input_spec.get_output_name(),
                 localization_strategy=localization_strategy or other_step_input_spec.get_localization_strategy(),
             )
             input_specs.append(input_spec)
@@ -555,7 +553,7 @@ class _Step(ABC):
         for output_spec in previous_step._outputs:
             input_spec = self.input(
                 source_path=output_spec.get_output_path(),
-                name=output_spec.get_name(),
+                name=output_spec.get_output_name(),
                 localization_strategy=localization_strategy,
             )
             input_specs.append(input_spec)
@@ -604,15 +602,18 @@ class _Step(ABC):
 
         return output_spec
 
-    def depends_on(self, step):
-        if isinstance(step, _Step):
-            self._upstream_steps.append(step)
-            self._downstream_steps.append(self)
+    def depends_on(self, upstream_step):
+        if isinstance(upstream_step, _Step):
+            self._upstream_steps.append(upstream_step)
+            upstream_step._downstream_steps.append(self)
 
-        elif isinstance(step, list):
-            self._upstream_steps.extend(step)
-            for upstream_step in self._upstream_steps:
-                upstream_step._downstream_steps.append(self)
+        elif isinstance(upstream_step, list):
+            self._upstream_steps.extend(upstream_step)
+            for _upstream_step in upstream_step:
+                _upstream_step._downstream_steps.append(self)
+
+        else:
+            raise ValueError(f"Unexpected step object type: {type(upstream_step)}")
 
     def has_upstream_steps(self) -> bool:
         return len(self._upstream_steps) > 0
@@ -730,11 +731,11 @@ EOF""")
         }
 
     def _add_commands_for_hail_hadoop_copy(self, source_path, output_dir):
-        if not hasattr(self, "_already_installed_hail"):
-            self.command("python3 -m pip install hail")
-        self._already_installed_hail = True
+        #if not hasattr(self, "_already_installed_hail"):
+        #    self.command("python3 -m pip install hail")
+        #self._already_installed_hail = True
 
-        self.command(f"mkdir -p {output_dir}")
+        #self.command(f"mkdir -p {output_dir}")
         self.command(f"""python3 <<EOF
 import hail as hl
 hl.hadoop_copy("{source_path}", "{output_dir}")

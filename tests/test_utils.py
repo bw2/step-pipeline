@@ -149,15 +149,15 @@ class Test(unittest.TestCase):
         input_spec = test_step2.input("LICENSE", localization_strategy=LocalizationStrategy.COPY)
         self.assertDictEqual(input_spec.__dict__,
              {
-                 'source_path': 'LICENSE',
-                 'localization_strategy': LocalizationStrategy.COPY,
-                 'source_path_without_protocol': 'LICENSE',
-                 'filename': 'LICENSE',
-                 'source_bucket': None,
-                 'source_dir': '',
-                 'local_dir': '/local_copy/',
-                 'local_path': '/local_copy/LICENSE',
-                 'name': 'LICENSE',
+                 '_source_path': 'LICENSE',
+                 '_localization_strategy': LocalizationStrategy.COPY,
+                 '_source_path_without_protocol': 'LICENSE',
+                 '_filename': 'LICENSE',
+                 '_source_bucket': None,
+                 '_source_dir': '',
+                 '_local_dir': '/local_copy/',
+                 '_local_path': '/local_copy/LICENSE',
+                 '_name': 'LICENSE',
              })
         self.assertFalse(utils.are_any_inputs_missing(test_step2))
 
@@ -170,15 +170,15 @@ class Test(unittest.TestCase):
         )
         self.assertDictEqual(input_spec.__dict__,
              {
-                 'source_path': source_path,
-                 'source_bucket': None,
-                 'localization_strategy': LocalizationStrategy.COPY,
-                 'source_path_without_protocol': source_path,
-                 'filename': os.path.basename(source_path),
-                 'source_dir': os.path.dirname(source_path),
-                 'local_dir': '/local_copy' + os.path.dirname(source_path),
-                 'local_path': '/local_copy' + source_path,
-                 'name': 'test_input_name',
+                 '_source_path': source_path,
+                 '_source_bucket': None,
+                 '_localization_strategy': LocalizationStrategy.COPY,
+                 '_source_path_without_protocol': source_path,
+                 '_filename': os.path.basename(source_path),
+                 '_source_dir': os.path.dirname(source_path),
+                 '_local_dir': '/local_copy' + os.path.dirname(source_path),
+                 '_local_path': '/local_copy' + source_path,
+                 '_name': 'test_input_name',
              })
 
     def test_are_outputs_up_to_date(self):
@@ -220,7 +220,7 @@ class Test(unittest.TestCase):
         self.assertTrue(utils.are_outputs_up_to_date(test_step, verbose=True))
 
         # add output which is newer than all inputs
-        test_step.output(HG38_DBSNP_PATH, destination_dir=os.path.dirname(HG38_DBSNP_PATH), delocalization_strategy=DelocalizationStrategy.COPY)
+        test_step.output(HG38_DBSNP_PATH, output_dir=os.path.dirname(HG38_DBSNP_PATH), delocalization_strategy=DelocalizationStrategy.COPY)
         self.assertTrue(utils.are_outputs_up_to_date(test_step))
 
         # add input which is newer than some outputs
@@ -228,7 +228,7 @@ class Test(unittest.TestCase):
         self.assertFalse(utils.are_outputs_up_to_date(test_step))
 
         # add output which is older
-        test_step.output(HG38_DBSNP_PATH, destination_dir=os.path.dirname(HG38_DBSNP_PATH), delocalization_strategy=DelocalizationStrategy.COPY)
+        test_step.output(HG38_DBSNP_PATH, output_dir=os.path.dirname(HG38_DBSNP_PATH), delocalization_strategy=DelocalizationStrategy.COPY)
         self.assertFalse(utils.are_outputs_up_to_date(test_step))
 
     def test_check_gcloud_storage_region(self):

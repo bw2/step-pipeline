@@ -154,7 +154,7 @@ def are_any_inputs_missing(step, verbose=False) -> bool:
 
 
 def are_outputs_up_to_date(step, verbose=False) -> bool:
-    """Returns True if all outputs already exist and are newer than all inputs"""
+    """Returns True if all output paths already exist and are newer than all inputs"""
 
     if len(step._outputs) == 0:
         return False
@@ -204,10 +204,15 @@ def check_gcloud_storage_region(
     """Checks whether the given google storage path(s) are stored in US-CENTRAL1 - the region where the hail Batch
     cluster is located. Localizing data from other regions will be slower and result in egress charges.
 
-    :param gs_paths: a gs:// path or glob.
-    :param gcloud_project: (optional) if specified, it will be added to the gsutil command with the -u arg.
-    :param ignore_access_denied_exception: if True, it will ignore
-    :raises StorageRegionException: If the given path(s) is not stored in the same region as the Batch cluster.
+    Args:
+        gs_path (str): a gs:// path or glob.
+        expected_regions (tuple): a set of acceptable storage regions. If gs_path is not in one of these regions not
+            this method will raise a StorageRegionException.
+        gcloud_project (str): (optional) if specified, it will be added to the gsutil command with the -u arg.
+        ignore_access_denied_exception (bool): if True, it will return silently if it encounters an AccessDenied error.
+        verbose (bool): print more logs
+    Raises:
+        StorageRegionException: If the given gs_path is not stored in one the expected_regions.
 
     """
     if "*" in gs_path:
