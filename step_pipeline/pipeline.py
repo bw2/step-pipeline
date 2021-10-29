@@ -375,10 +375,13 @@ class _Pipeline(ABC):
                     continue
 
                 # decide whether to skip this step
-                skip_requested = any(args.get(skip_arg_name) for skip_arg_name in step._skip_this_step_arg_names)
+                skip_requested = any(
+                    getattr(args, skip_arg_name.replace("-", "_")) for skip_arg_name in step._skip_this_step_arg_names
+                )
 
                 is_being_forced = args.force or any(
-                    args.get(force_arg_name) for force_arg_name in step._force_this_step_arg_names)
+                    getattr(args, force_arg_name.replace("-", "_")) for force_arg_name in step._force_this_step_arg_names
+                )
                 all_upstream_steps_skipped = all(s._is_being_skipped for s in step._upstream_steps)
                 no_need_to_run_step = not is_being_forced and are_outputs_up_to_date(step) and all_upstream_steps_skipped
                 step._is_being_skipped = skip_requested or no_need_to_run_step
@@ -406,14 +409,13 @@ class _Step(ABC):
     """
 
     _USED_ARG_SUFFIXES = set()
-    _USED_STEP_NUMBERS = set()
 
     def __init__(
             self,
             pipeline: _Pipeline,
             short_name: str,
-            arg_suffix: str = None,
             step_number: int = None,
+            arg_suffix: str = None,
             output_dir: str = None,
             default_localization_strategy: str = None,
             default_delocalization_strategy: str = None,
@@ -425,10 +427,12 @@ class _Step(ABC):
         :param arg_suffix: if specified, --skip-{arg_suffix} and --force-{arg_suffix} command-line args will be created.
         :param step_number: if specified, --skip-step{step_number} and --force-step{step_number} command-line args will be created.
         """
-        self.short_name = short_name
         self._pipeline = pipeline
-
+        self.short_name = short_name
+        self.step_number = step_number
+        self.arg_suffix = arg_suffix
         self._output_dir = output_dir
+
         self._default_localization_strategy = default_localization_strategy
         self._default_delocalization_strategy = default_delocalization_strategy
 
@@ -449,41 +453,20 @@ class _Step(ABC):
 
         # define command line args for skipping or forcing execution of this step
         argument_parser = pipeline.get_config_arg_parser()
-
         if arg_suffix and arg_suffix not in _Step._USED_ARG_SUFFIXES:
             argument_parser.add_argument(
                 f"--force-{arg_suffix}",
-                help=f"Force execution of the '{short_name}' step.",
+                help=f"Force execution of '{short_name}'.",
                 action="store_true",
             )
             self._force_this_step_arg_names.append(f"force_{arg_suffix}")
             argument_parser.add_argument(
                 f"--skip-{arg_suffix}",
-                help=f"Skip the '{short_name}' step even if --force is used.",
+                help=f"Skip '{short_name}' even if --force is used.",
                 action="store_true",
             )
             self._skip_this_step_arg_names.append(f"skip_{arg_suffix}")
             _Step._USED_ARG_SUFFIXES.add(arg_suffix)
-
-        if step_number is not None and step_number not in _Step._USED_STEP_NUMBERS:
-            try:
-                step_number = int(step_number)
-            except Exception as e:
-                raise ValueError(f"Invalid step_number arg: {step_number}. {e}")
-
-            argument_parser.add_argument(
-                f"--force-step{step_number}",
-                help=f"Force execution of the '{short_name}' step.",
-                action="store_true",
-            )
-            self._force_this_step_arg_names.append(f"force_step{step_number}")
-            argument_parser.add_argument(
-                f"--skip-step{step_number}",
-                help=f"Skip the '{short_name}' step even if --force is used.",
-                action="store_true",
-            )
-            self._skip_this_step_arg_names.append(f"skip_step{step_number}")
-            _Step._USED_STEP_NUMBERS.add(step_number)
 
     def short_name(self, short_name):
         self.short_name = short_name
@@ -622,10 +605,18 @@ class _Step(ABC):
         raise Exception("Not yet implemented")
 
     def __str__(self):
-        return self.short_name
+        s = ""
+        if self.step_number is not None:
+            s += f"step{self.step_number}"
+        if self.step_number is not None and self.short_name  is not None:
+            s += ": "
+        if self.short_name is not None:
+            s += self.short_name
+
+        return s
 
     def __repr__(self):
-        return self.short_name
+        return self.__str__()
 
     def post_to_slack(self, message, channel=None, slack_token=None):
         """

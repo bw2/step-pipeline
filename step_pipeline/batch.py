@@ -54,9 +54,9 @@ class _BatchPipeline(_Pipeline):
         batch_args.add_argument(
             "--batch-temp-bucket",
             env_var="BATCH_TEMP_BUCKET",
-            help="Batch requires a temp bucket it can use to store files. The Batch service account must have Admin access "
-                 "to this bucket. To get the name of your Batch service account, go to https://auth.hail.is/user. Then, to "
-                 "grant Admin permissions, run "
+            help="Batch requires a temp bucket it can use to store files. The Batch service account must have Admin "
+                 "access to this bucket. To get the name of your Batch service account, go to "
+                 "https://auth.hail.is/user. Then, to grant Admin permissions, run "
                  "gsutil iam ch serviceAccount:[SERVICE_ACCOUNT_NAME]:objectAdmin gs://[BUCKET_NAME]")
 
         gcloud_args = config_arg_parser.add_argument_group("google cloud")
@@ -68,7 +68,8 @@ class _BatchPipeline(_Pipeline):
 
         gcloud_args.add_argument(
             "--gcloud-credentials-path",
-            help="Google bucket path of gcloud credentials. This is required if you use switch_gcloud_auth_to_user_account(..)",
+            help="Google bucket path of gcloud credentials. This is required if you use "
+                 "switch_gcloud_auth_to_user_account(..)",
         )
         gcloud_args.add_argument(
             "--gcloud-user-account",
@@ -104,11 +105,11 @@ class _BatchPipeline(_Pipeline):
         """Returns either BatchBackend.SERVICE or BatchBackend.LOCAL"""
         return self._backend_type
 
-
     def new_step(
         self,
         short_name: str = None,
         step_number: int = None,
+        arg_suffix: str = None,
         depends_on: _Step = None,
         image: str = None,
         cpu: Union[str, float, int] = None,
@@ -124,6 +125,7 @@ class _BatchPipeline(_Pipeline):
         """
         :param short_name:
         :param step_number:
+        :param arg_suffix:
         :param depends_on:
         :param image:
         :param cpu:
@@ -139,10 +141,20 @@ class _BatchPipeline(_Pipeline):
         :return: new _Step
         """
 
+        if arg_suffix is None and not (short_name is None and step_number is None):
+            arg_suffix = ""
+            if step_number is not None:
+                arg_suffix += f"step{step_number}"
+            if step_number is not None and short_name is not None:
+                arg_suffix += "-"
+            if short_name is not None:
+                arg_suffix += short_name.replace(" ", "-").replace(":", "")
+
         batch_step = _BatchStep(
             self,
             short_name=short_name,
             step_number=step_number,
+            arg_suffix=arg_suffix,
             image=image,
             cpu=cpu,
             memory=memory,
@@ -313,31 +325,31 @@ class _BatchStep(_Step):
     """This class contains Hail Batch-specific extensions of the _Step class"""
 
     def __init__(
-            self,
-            pipeline,
-            short_name=None,
-            arg_suffix=None,
-            step_number=None,
-            image=None,
-            cpu=None,
-            memory=None,
-            storage=None,
-            always_run=False,
-            timeout=None,
-            output_dir=None,
-            step_type=BatchStepType.BASH,
-            profile_cpu_memory_and_disk_usage=False,
-            reuse_job_from_previous_step=None,
-            write_commands_to_script=False,
-            save_script_to_output_dir=False,
-            default_localization_strategy=LocalizationStrategy.COPY,
-            default_delocalization_strategy=DelocalizationStrategy.COPY,
+        self,
+        pipeline,
+        short_name=None,
+        step_number=None,
+        arg_suffix=None,
+        image=None,
+        cpu=None,
+        memory=None,
+        storage=None,
+        always_run=False,
+        timeout=None,
+        output_dir=None,
+        step_type=BatchStepType.BASH,
+        profile_cpu_memory_and_disk_usage=False,
+        reuse_job_from_previous_step=None,
+        write_commands_to_script=False,
+        save_script_to_output_dir=False,
+        default_localization_strategy=LocalizationStrategy.COPY,
+        default_delocalization_strategy=DelocalizationStrategy.COPY,
     ):
         super().__init__(
             pipeline,
             short_name,
-            arg_suffix=arg_suffix,
             step_number=step_number,
+            arg_suffix=arg_suffix,
             output_dir=output_dir,
             default_localization_strategy=default_localization_strategy,
             default_delocalization_strategy=default_delocalization_strategy,
