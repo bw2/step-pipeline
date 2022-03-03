@@ -1,4 +1,6 @@
 import os
+import unittest
+
 from setuptools import setup, find_packages
 from setuptools.command.build_py import build_py
 
@@ -10,6 +12,13 @@ install_requires = [
     "hail",
     "mock",
 ]
+
+
+def test_suite():
+    """Discover unittests"""
+    test_loader = unittest.TestLoader()
+    test_suite = test_loader.discover('tests', pattern='test_*.py')
+    return test_suite
 
 
 class CoverageCommand(build_py):
@@ -30,7 +39,7 @@ class PublishCommand(build_py):
 
 setup(
     name='step_pipeline',
-    version="0.1",
+    version="0.2",
     description="Pipeline library that simplifies creation of pipelines that run on top of hail Batch and other compute enviornments",
     install_requires=install_requires,
     cmdclass={
@@ -58,4 +67,5 @@ setup(
         'Programming Language :: Python :: Implementation :: CPython',
         'Programming Language :: Python :: Implementation :: PyPy',
     ],
+    test_suite="setup.test_suite",
 )

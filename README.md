@@ -20,4 +20,16 @@ The things it takes care of include:
   and memory at regular intervals while your commands are running
 - optionally, generates an image of the pipeline DAG
 
-NOTE: some features, such as profiling, only work if specific tools are installed inside your execution container or VM
+NOTE: some features only work if specific tools are installed inside the docker container or local environment that's
+executing your pipeline.
+
+---
+
+### Installation
+
+To install the `step-pipeline` library, run:
+```
+python3 -m pip install step-pipeline
+```
+
+
