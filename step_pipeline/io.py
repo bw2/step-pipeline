@@ -241,7 +241,7 @@ class _OutputSpec:
         return self._output_dir
 
     @property
-    def output_filename(self):
+    def filename(self):
         return self._output_filename
 
     @property

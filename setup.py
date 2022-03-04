@@ -7,11 +7,8 @@ from setuptools.command.build_py import build_py
 with open("README.md", "rt") as fh:
     long_description = fh.read()
 
-install_requires = [
-    "configargparse>=1.4.1",
-    "hail",
-    "mock",
-]
+with open("requirements.txt", "rt") as fh:
+    install_requires = fh.read().strip().split("\n")
 
 
 def test_suite():

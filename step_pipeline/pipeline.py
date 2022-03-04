@@ -93,6 +93,8 @@ from abc import ABC, abstractmethod
 
 import configargparse
 import os
+import re
+import sys
 
 from .utils import are_outputs_up_to_date
 from .io import Localize, Delocalize, _InputSpec, _OutputSpec
@@ -101,7 +103,7 @@ from .io import Localize, Delocalize, _InputSpec, _OutputSpec
 class _Pipeline(ABC):
     """_Pipeline represents the execution pipeline. This class contains only generalized code that is not specific to
     any particular execution backend. It is the parent class for subclasses such as _BatchPipeline that are specific to
-    a particualr execution backend.
+    a particular execution backend.
     This class contains public methods for creating Steps. It also has some private methods that implement the
     general aspects of traversing the execution graph (DAG) and transferring all steps to a specific execution backend.
     """
@@ -132,10 +134,18 @@ class _Pipeline(ABC):
         config_arg_parser.add_argument("-c", "--config-file", help="YAML config file path", is_config_file_arg=True)
         config_arg_parser.add_argument("--dry-run", action="store_true", help="Don't run commands, just print them.")
         config_arg_parser.add_argument("-f", "--force", action="store_true", help="Force execution of all steps.")
-
+        config_arg_parser.add_argument("-g", "--export-pipeline-graph", action="store_true",
+            help="Export an SVG image with the pipeline flow diagram")
         grp = config_arg_parser.add_argument_group("notifications")
+        grp.add_argument("--slack-when-done", action="store_true", help="Post to Slack when execution completes")
         grp.add_argument("--slack-token", env_var="SLACK_TOKEN", help="Slack token to use for notifications")
         grp.add_argument("--slack-channel", env_var="SLACK_CHANNEL", help="Slack channel to use for notifications")
+
+        # validate the command-line args defined so far
+        args = self.parse_args()
+        if args.slack_when_done and (not args.slack_token or not args.slack_channel):
+            config_arg_parser.error(
+                "Both --slack-token and --slack-channel must be specified when --slack-when-done is used")
 
     def get_config_arg_parser(self):
         """Returns the configargparse.ArgumentParser object used by the Pipeline to define command-line args.
@@ -174,6 +184,14 @@ class _Pipeline(ABC):
         They should use this method to perform initialization of the specific execution backend and then call
         self._transfer_all_steps(..).
         """
+        args = self.parse_args()
+
+        if args.export_pipeline_graph:
+            output_filename_prefix = re.sub("[:, ]", "_", self.name)
+            output_svg_path = f"{output_filename_prefix}.pipeline_diagram.svg"
+            self.export_pipeline_graph(output_svg_path=output_svg_path)
+            print(f"Generated {output_svg_path}. Exiting..")
+            sys.exit(0)
 
     @abstractmethod
     def _get_localization_root_dir(self, localize_by):
@@ -199,9 +217,9 @@ class _Pipeline(ABC):
         self.run()
 
     def _transfer_all_steps(self):
-        """This method performs the core task of executing a pipeline. It tranverses the execution graph (DAG) of
-        user-defined Steps and decides which steps can be skipped, and which should be executed (ie. transfered to
-        the execution backend.
+        """This method performs the core task of executing a pipeline. It traverses the execution graph (DAG) of
+        user-defined Steps and decides which steps can be skipped, and which should be executed (ie. transferred to
+        the execution backend).
 
         To decide whether a Step needs to run, this method takes into account any --skip-* command-line args,
         --force-* command-line args, whether the Step's output files already exist and are newer than all input files,
@@ -209,15 +227,18 @@ class _Pipeline(ABC):
 
         For Steps that need to run, this method calls step._transfer_step() to perform any backend-specific actions
         necessary to actually run the Step.
+
+        Return:
+            int: number of transferred steps
         """
 
         args = self.parse_args()
 
-        steps_to_run_next = [s for s in self._all_steps if not s.has_upstream_steps()]
+        current_steps = [s for s in self._all_steps if not s.has_upstream_steps()]
         num_steps_transferred = 0
-        while steps_to_run_next:
-            #print("Next steps: ", steps_to_run_next)
-            for step in steps_to_run_next:
+        while current_steps:
+            #print("Next steps: ", current_steps)
+            for step in current_steps:
                 if not step._commands:
                     print(f"WARNING: No commands specified for step [{step}]. Skipping...")
                     continue
@@ -262,9 +283,103 @@ class _Pipeline(ABC):
                     step._is_being_skipped = True
 
             # next, process all steps that depend on the previously-completed steps
-            steps_to_run_next = [downstream_step for step in steps_to_run_next for downstream_step in step._downstream_steps]
+            next_steps = []
+            for step in current_steps:
+                for downstream_step in step._downstream_steps:
+                    # if multiple current steps share the same downstream step, avoid adding it multiple times
+                    if downstream_step not in next_steps:
+                        next_steps.append(downstream_step)
+            current_steps = next_steps
 
         return num_steps_transferred
+
+    def _generate_post_to_slack_command(self, message, channel=None, slack_token=None):
+        """Generates the command which posts to Slack
+
+        Args:
+            message (str): The message to post.
+            channel (str): The Slack channel to post to.
+            slack_token (str): Slack auth token.
+
+        Return:
+            str: command that posts the given message to Slack
+        """
+
+        args = self.parse_args()
+        slack_token = slack_token or args.slack_token
+        if not slack_token:
+            raise ValueError("slack token not provided")
+        channel = channel or args.slack_channel
+        if not channel:
+            raise ValueError("slack channel not specified")
+
+        return f"""python3 <<EOF
+from slacker import Slacker
+slack = Slacker("{slack_token}")
+response = slack.chat.post_message("{channel}", "{message}", as_user=False, icon_emoji=":bell:", username="step-pipeline-bot")
+print(response.raw)
+EOF"""
+
+    def export_pipeline_graph(self, output_svg_path=None):
+        """Renders the pipeline execution graph diagram based on the Steps defined so far.
+
+        Args:
+            output_svg_path (str): Path where to write the SVG image with the execution graph diagram. If not specified,
+                it will be based on the pipeline name.
+        """
+        if not output_svg_path:
+            output_svg_path = re.sub("[ :]", "_", self.name) + ".pipeline_diagram.svg"
+
+        import pygraphviz as pgv
+        G = pgv.AGraph(strict=False, directed=True)
+        G.node_attr["shape"] = "none"
+        G.graph_attr["rankdir"] = "TB"
+
+        # start with steps that have no upstream steps
+        current_steps = [s for s in self._all_steps if not s.has_upstream_steps()]
+        while current_steps:
+            previously_seen_step_names = set()
+            for step in current_steps:
+                if step.short_name in previously_seen_step_names:
+                    continue
+                previously_seen_step_names.add(step.short_name)
+
+                step_label = step.short_name
+                if step.step_number is not None:
+                    step_label = f"#{step.step_number}: {step_label}"
+
+                step_label = f"""
+                <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">
+                <TR><TD ALIGN="LEFT"><B>{step_label}</B></TD></TR>"""
+
+                inputs_and_outputs = (
+                    [("Input", step._inputs)] if step._inputs else []
+                ) + (
+                    [("Output", step._outputs)] if step._outputs else []
+                )
+                for input_or_output, spec_list in inputs_and_outputs:
+                    for i, spec in enumerate(spec_list):
+                        prefix = input_or_output
+                        if len(spec_list) > 1:
+                            prefix += f" {i + 1}"
+                        prefix += ": "
+                        prefix = f"<B>{prefix}</B>"
+                        step_label += f"""<TR><TD ALIGN="LEFT"><FONT POINT-SIZE="11">{prefix}{spec.filename}</FONT></TD></TR>"""
+
+                step_label += "</TABLE>"
+
+                if step._inputs or step._outputs:
+                    step_label = f"<{step_label}>"
+
+                G.add_node(f"node_{step._step_id}", label=step_label, shape="none")
+
+                for upstream_step in step._upstream_steps:
+                    G.add_edge(f"node_{upstream_step._step_id}", f"node_{step._step_id}")
+
+            # next, process all steps that depend on the previously-completed steps
+            current_steps = [downstream_step for step in current_steps for downstream_step in step._downstream_steps]
+
+        G.draw(output_svg_path, prog="dot")
 
 
 class _Step(ABC):
@@ -275,7 +390,7 @@ class _Step(ABC):
     Using Hail Batch as an example, a Step typically corresponds to a single Hail Batch Job. Sometimes a Job can be
     reused to run multiple steps (for example, where step 1 creates a VCF and step 2 tabixes it).
     """
-
+    _STEP_ID_COUNTER = 0
     _USED_ARG_SUFFIXES = set()
 
     def __init__(self, pipeline, short_name, step_number=None, arg_suffix=None, output_dir=None,
@@ -317,6 +432,9 @@ class _Step(ABC):
 
         self._force_this_step_arg_names = []
         self._skip_this_step_arg_names = []
+
+        _Step._STEP_ID_COUNTER += 1
+        self._step_id = _Step._STEP_ID_COUNTER  # this id is unique to each Step object
 
         # define command line args for skipping or forcing execution of this step
         argument_parser = pipeline.get_config_arg_parser()
@@ -614,25 +732,11 @@ class _Step(ABC):
             channel (str): The Slack channel to post to.
             slack_token (str): Slack auth token.
         """
-
-        args = self._pipeline.parse_args()
-        slack_token = slack_token or args.slack_token
-        if not slack_token:
-            raise ValueError("slack token not provided")
-        channel = channel or args.slack_channel
-        if not channel:
-            raise ValueError("slack channel not specified")
-
         if not hasattr(self, "_already_installed_slacker"):
             self.command("python3 -m pip install slacker")
             self._already_installed_slacker = True
 
-        self.command(f"""python3 <<EOF
-from slacker import Slacker
-slack = Slacker("{slack_token}")
-response = slack.chat.post_message("{channel}", "{message}", as_user=False, icon_emoji=":bell:", username="step-pipeline-bot")
-print(response.raw)
-EOF""")
+        self.command(self._pipeline._generate_post_to_slack_command(message, channel=channel, slack_token=slack_token))
 
     def switch_gcloud_auth_to_user_account(self, gcloud_credentials_path=None, gcloud_user_account=None,
                                            gcloud_project=None, debug=False):

@@ -5,6 +5,7 @@ import configargparse
 from .constants import Backend
 from .batch import _BatchPipeline
 
+
 def pipeline(name=None, backend=Backend.HAIL_BATCH_SERVICE, config_file_path="~/.step_pipeline"):
     """Creates a pipeline object.
 
@@ -48,6 +49,6 @@ def pipeline(name=None, backend=Backend.HAIL_BATCH_SERVICE, config_file_path="~/
     if backend in (Backend.HAIL_BATCH_SERVICE, Backend.HAIL_BATCH_LOCAL):
         pipeline = _BatchPipeline(name=name, config_arg_parser=config_arg_parser, backend=backend)
     else:
-        raise ValueError(f"Unknown backend: {args.backend}")
+        raise ValueError(f"Unknown backend: {args.backend}. Valid options are {Backend.HAIL_BATCH_SERVICE} or {Backend.HAIL_BATCH_LOCAL}")
 
     return pipeline

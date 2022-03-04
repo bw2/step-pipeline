@@ -5,10 +5,7 @@ import stat
 import tempfile
 from enum import Enum
 
-try:
-    import hailtop.batch as hb
-except ValueError as e:
-    print(f"WARNING: unable to import hailtop.batch: {e}")
+import hailtop.batch as hb
 
 from .constants import Backend
 from .pipeline import _Pipeline, _Step, Localize, Delocalize
@@ -282,6 +279,7 @@ class _BatchPipeline(_Pipeline):
 
     def run(self):
         """Batch-specific code for submitting the pipeline to the Hail Batch backend"""
+        super().run()
 
         print(f"Starting {self.name or ''} pipeline:")
         # confirm that all required command-line args were specified
@@ -362,6 +360,29 @@ class _BatchPipeline(_Pipeline):
         # The Batch pipeline returns an undocumented result object which can be used to retrieve the Job's status code
         # and logs
         return result
+
+    def _transfer_all_steps(self):
+        """This method performs the core task of executing a pipeline. It traverses the execution graph (DAG) of
+        user-defined Steps and decides which steps can be skipped, and which should be executed (ie. transferred to
+        the execution backend).
+        """
+
+        num_steps_transferred = super()._transfer_all_steps()
+
+        # handle --slack-when-done by adding an always-run job
+        args = self.parse_args()
+        if args.slack_when_done and num_steps_transferred > 0:
+            post_to_slack_job = self._batch.new_job(name="post to slack when done")
+            for step in self._all_steps:
+                if step._job:
+                    post_to_slack_job.depends_on(step._job)
+            post_to_slack_job.always_run()
+            post_to_slack_job.cpu(0.25)
+            slack_message = f"{self.name} pipeline finished"
+            post_to_slack_job.command("python3 -m pip install slacker")
+            post_to_slack_job.command(self._generate_post_to_slack_command(slack_message))
+
+        return num_steps_transferred
 
 
 class _BatchStep(_Step):
@@ -796,7 +817,7 @@ EOF""")
             self._output_file_counter += 1
             output_file_obj = self._job[f"ofile{self._output_file_counter}"]
             self._job.command(f'cp {output_spec.local_path} {output_file_obj}')
-            self._job._batch.write_output(output_file_obj, output_spec.output_dir.rstrip("/") + f"/{output_spec.output_filename}")
+            self._job._batch.write_output(output_file_obj, output_spec.output_dir.rstrip("/") + f"/{output_spec.filename}")
         elif output_spec.delocalize_by == Delocalize.GSUTIL_COPY:
             pass  # GSUTIL_COPY was already handled in _preprocess_output(..)
         elif output_spec.delocalize_by == Delocalize.HAIL_HADOOP_COPY:

@@ -1,0 +1,4 @@
+configargparse>=1.4.1
+hail
+mock
+pygraphviz
