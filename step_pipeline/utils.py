@@ -10,7 +10,7 @@ import subprocess
 import tempfile
 
 os.environ["HAIL_LOG_DIR"] = tempfile.gettempdir()
-#hl.init(log="/dev/null", quiet=True)
+#hl.init(log="/dev/null", quiet=True, idempotent=True)
 
 
 HADOOP_EXISTS_CACHE = {}

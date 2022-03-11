@@ -9,7 +9,7 @@ from step_pipeline.utils import check_gcloud_storage_region, _GoogleStorageExcep
     _path_exists__cached, _file_stat__cached, _generate_gs_path_to_file_stat_dict, are_any_inputs_missing, \
     are_outputs_up_to_date
 
-hl.init(log="/dev/null", quiet=True)
+hl.init(log="/dev/null", quiet=True, idempotent=True)
 
 HG38_PATH = "gs://gcp-public-data--broad-references/hg38/v0/Homo_sapiens_assembly38.fasta"
 HG38_PATH_WITH_STAR = "gs://gcp-public-data--broad-references/hg38/v0/Homo_sapiens_*ssembly38.fasta"

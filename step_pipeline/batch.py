@@ -38,10 +38,6 @@ class _BatchPipeline(_Pipeline):
         self._argument_parser = config_arg_parser
         batch_args = config_arg_parser.add_argument_group("hail batch")
 
-        grp = batch_args.add_mutually_exclusive_group()
-        grp.add_argument("--local", action="store_true", help="Run the pipeline locally using Batch LocalBackend")
-        grp.add_argument("--cluster", action="store_true", help="Run the pipeline on the Batch cluster")
-
         batch_args.add_argument(
             "--batch-billing-project",
             env_var="BATCH_BILLING_PROJECT",
@@ -83,12 +79,6 @@ class _BatchPipeline(_Pipeline):
         )
 
         args = self.parse_args()
-
-        # if --local or --cluster were specified, override the service
-        if args.local:
-            backend = Backend.HAIL_BATCH_LOCAL
-        elif args.cluster:
-            backend = Backend.HAIL_BATCH_SERVICE
 
         self._backend_type = backend
         self._requester_pays_project = args.gcloud_project

@@ -134,7 +134,7 @@ class _Pipeline(ABC):
         config_arg_parser.add_argument("-c", "--config-file", help="YAML config file path", is_config_file_arg=True)
         config_arg_parser.add_argument("--dry-run", action="store_true", help="Don't run commands, just print them.")
         config_arg_parser.add_argument("-f", "--force", action="store_true", help="Force execution of all steps.")
-        config_arg_parser.add_argument("-g", "--export-pipeline-graph", action="store_true",
+        config_arg_parser.add_argument("--export-pipeline-graph", action="store_true",
             help="Export an SVG image with the pipeline flow diagram")
         grp = config_arg_parser.add_argument_group("notifications")
         grp.add_argument("--slack-when-done", action="store_true", help="Post to Slack when execution completes")
