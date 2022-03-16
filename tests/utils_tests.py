@@ -3,7 +3,7 @@ import hail as hl
 import os
 import unittest
 
-from step_pipeline.pipeline import _Pipeline, _Step
+from step_pipeline.pipeline import Pipeline, Step
 from step_pipeline.io import Localize, Delocalize
 from step_pipeline.utils import check_gcloud_storage_region, _GoogleStorageException, \
     _path_exists__cached, _file_stat__cached, _generate_gs_path_to_file_stat_dict, are_any_inputs_missing, \
@@ -18,36 +18,42 @@ HG38_DBSNP_PATH_WITH_STAR = f"{HG38_DBSNP_PATH}*"
 ACCESS_DENIED_PATH = "gs://test/access_denied"
 
 
-class PipelineTest(_Pipeline):
-    """Subclass _Pipeline to override the abstract methods so it can be instanciated."""
+class PipelineTest(Pipeline):
+    """Subclass Pipeline to override the abstract methods so it can be instanciated."""
 
     def run(self):
         pass
 
-    def new_step(self, short_name, step_number=None):
+    def new_step(self, name, step_number=None):
         pass
 
     def _get_localization_root_dir(self, localize_by):
         return "/"
 
 
-class StepWithSupportForCopy(_Step):
-    def _get_supported_localization_strategies(self):
+class StepWithSupportForCopy(Step):
+
+    def _get_supported_localize_by_choices(self):
         return {
             Localize.HAIL_HADOOP_COPY,
             Localize.COPY,
         }
-    def _get_supported_delocalization_strategies(self):
+
+    def _get_supported_delocalize_by_choices(self):
         return {
             Delocalize.COPY,
         }
-    def _preprocess_input(self, input_spec):
+
+    def _preprocess_input_spec(self, input_spec):
         pass
-    def _preprocess_output(self, output_spec):
+
+    def _preprocess_output_spec(self, output_spec):
         pass
-    def _transfer_input(self, input_spec):
+
+    def _transfer_input_spec(self, input_spec):
         pass
-    def _transfer_output(self, output_spec):
+
+    def _transfer_output_spec(self, output_spec):
         pass
 
 
@@ -157,8 +163,11 @@ class Test(unittest.TestCase):
         test_step2.input("README.md", localize_by=Localize.COPY)
         input_spec = test_step2.input("LICENSE", localize_by=Localize.COPY)
         self.assertFalse(are_any_inputs_missing(test_step2))
-        self.assertDictEqual(input_spec.__dict__,
-             {
+        self.assertDictEqual(
+            {
+                k: v for k, v in input_spec.__dict__.items() if k != "_uuid"
+            },
+            {
                  '_source_path': 'LICENSE',
                  '_localize_by': Localize.COPY,
                  '_source_path_without_protocol': 'LICENSE',
@@ -168,7 +177,7 @@ class Test(unittest.TestCase):
                  '_local_dir': '/local_copy/',
                  '_local_path': '/local_copy/LICENSE',
                  '_name': 'LICENSE',
-             })
+            })
 
         source_path = os.path.abspath("tests/__init__.py")
         test_step3 = StepWithSupportForCopy(self._pipeline, "test_step")
@@ -177,18 +186,21 @@ class Test(unittest.TestCase):
             name="test_input_name",
             localize_by=Localize.COPY,
         )
-        self.assertDictEqual(input_spec.__dict__,
-             {
-                 '_source_path': source_path,
-                 '_source_bucket': None,
-                 '_localize_by': Localize.COPY,
-                 '_source_path_without_protocol': source_path,
-                 '_filename': os.path.basename(source_path),
-                 '_source_dir': os.path.dirname(source_path),
-                 '_local_dir': '/local_copy' + os.path.dirname(source_path),
-                 '_local_path': '/local_copy' + source_path,
-                 '_name': 'test_input_name',
-             })
+        self.assertDictEqual(
+            {
+                k: v for k, v in input_spec.__dict__.items() if k != "_uuid"
+            },
+            {
+                '_source_path': source_path,
+                '_source_bucket': None,
+                '_localize_by': Localize.COPY,
+                '_source_path_without_protocol': source_path,
+                '_filename': os.path.basename(source_path),
+                '_source_dir': os.path.dirname(source_path),
+                '_local_dir': '/local_copy' + os.path.dirname(source_path),
+                '_local_path': '/local_copy' + source_path,
+                '_name': 'test_input_name',
+            })
 
     def test_are_outputs_up_to_date(self):
         test_step = StepWithSupportForCopy(self._pipeline, "test_step")
@@ -239,10 +251,11 @@ class Test(unittest.TestCase):
 
     def test_check_gcloud_storage_region(self):
         self.assertRaisesRegex(
-            _GoogleStorageException, "Access denied",
+            _GoogleStorageException,
+            "does not have .* access",
             check_gcloud_storage_region,
             "gs://test/access-denied",
-            expected_regions=("US"),
+            expected_regions=("US", ),
             ignore_access_denied_exception=False,
         )
 
@@ -261,7 +274,7 @@ class Test(unittest.TestCase):
             _GoogleStorageException, "is located in US-CENTRAL1",
             check_gcloud_storage_region,
             "gs://seqr-reference-data/GRCh38/1kg/1kg.wgs.phase3.20170504.GRCh38_sites.vcf.gz",
-            expected_regions=("US"),
+            expected_regions=("US", ),
         )
 
         self.assertIsNone(

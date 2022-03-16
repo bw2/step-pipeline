@@ -1,34 +1,37 @@
 """This module contains classes and methods related to data input & output."""
 
+from abc import ABC, abstractmethod
 from enum import Enum
 
 import os
 import re
+import uuid
 
 
 class Localize(Enum):
-    """This class lists the different ways to localize files into the running container.
+    """Constants that represent different options for how to localize files into the running container.
     Each 2-tuple consists of a name for the localization approach, and a subdirectory where to put files.
     """
 
-    """COPY uses the execution backend's default approach to localizing files"""
     COPY = ("copy", "local_copy")
+    """COPY uses the execution backend's default approach to localizing files"""
 
+    GSUTIL_COPY = ("gsutil_copy", "local_copy")
     """GSUTIL_COPY runs 'gsutil cp' to localize file(s) from a google bucket path. This requires gsutil to be available 
     inside the execution container.
     """
-    GSUTIL_COPY = ("gsutil_copy", "local_copy")
 
+    HAIL_HADOOP_COPY = ("hail_hadoop_copy", "local_copy")
     """HAIL_HADOOP_COPY uses the Hail hadoop API to copy file(s) from a google bucket path. This requires python3 and 
     Hail to be installed inside the execution container.
     """
-    HAIL_HADOOP_COPY = ("hail_hadoop_copy", "local_copy")
 
+    HAIL_BATCH_GCSFUSE = ("hail_batch_gcsfuse", "gcsfuse")
     """HAIL_BATCH_GCSFUSE use the Hail Batch gcsfuse function to mount a google bucket into the execution container 
     as a network drive, without copying the files. This Hail Batch service account must have read access to the bucket.
     """
-    HAIL_BATCH_GCSFUSE = ("hail_batch_gcsfuse", "gcsfuse")
 
+    HAIL_BATCH_GCSFUSE_VIA_TEMP_BUCKET = ("hail_batch_gcsfuse_via_temp_bucket", "gcsfuse")
     """HAIL_BATCH_GCSFUSE_VIA_TEMP_BUCKET is useful for situations where you'd like to use gcsfuse to localize files and 
     your personal gcloud account has read access to the source bucket, but the Hail Batch service account cannot be 
     granted read access to that bucket. Since it's possible to run 'gsutil cp' under your personal credentials within
@@ -46,7 +49,6 @@ class Localize(Enum):
     large file to be copied into the container. This approach requires gsutil to be available inside the execution 
     container.
     """
-    HAIL_BATCH_GCSFUSE_VIA_TEMP_BUCKET = ("hail_batch_gcsfuse_via_temp_bucket", "gcsfuse")
 
     def __init__(self, label, subdir="local_copy"):
         """Enum constructor.
@@ -66,24 +68,25 @@ class Localize(Enum):
         return self._label
 
     def get_subdir_name(self):
+        """Returns the subdirectory name passed to the constructor"""
         return self._subdir
 
 
 class Delocalize(Enum):
-    """This class lists the different ways to delocalize files from a running container."""
+    """Constants that represent different options for how to delocalize file(s) from a running container."""
 
-    """COPY uses the execution backend's default approach to delocalizing files"""
     COPY = "copy"
+    """COPY uses the execution backend's default approach to delocalizing files"""
 
+    GSUTIL_COPY = "gsutil_copy"
     """GSUTIL_COPY runs 'gsutil cp' to copy the path to a google bucket destination. This requires gsutil to be 
     available inside the execution container.
     """
-    GSUTIL_COPY = "gsutil_copy"
 
+    HAIL_HADOOP_COPY = "hail_hadoop_copy"
     """HAIL_HADOOP_COPY uses the hail hadoop API to copy file(s) to a google bucket path. This requires python3 and 
     hail to be installed inside the execution container.
     """
-    HAIL_HADOOP_COPY = "hail_hadoop_copy"
 
     def __str__(self):
         return self.value
@@ -92,15 +95,87 @@ class Delocalize(Enum):
         return self.value
 
 
-class _InputSpec:
-    """An _InputSpec stores metadata about an input file or directory to a Step"""
+class InputType(Enum):
+    """Constants that represent the type of a step.input_value(..) arg."""
 
-    def __init__(self,
-                 source_path,
-                 name = None,
-                 localize_by = None,
-                 localization_root_dir = None,
-                 ):
+    STRING = "string"
+    FLOAT = "float"
+    INT = "int"
+    BOOL = "boolean"
+
+
+class _InputSpecBase(ABC):
+    """This is the _InputSpec parent class, with subclasses implementing specific types of input specs which contain
+    metadata about inputs to a Pipeline Step.
+    """
+
+    def __init__(self, name=None):
+        """_InputSpec constructor
+
+        Args:
+            name (str): Optional name for this input.
+        """
+
+        self._uuid = str(uuid.uuid4())
+        self._name = name
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def uuid(self):
+        return self._uuid
+
+    @abstractmethod
+    def __str__(self):
+        return self._uuid
+
+
+class _InputValueSpec(_InputSpecBase):
+    """An _InputValueSpec stores metadata about an input that's not a file path"""
+
+    def __init__(
+            self,
+            value=None,
+            name=None,
+            input_type=InputType.STRING):
+        """_InputValueSpec constructor
+
+        Args:
+            value: The value.
+            name (str): Optional name for this input.
+            input_type (InputType): The input value's type.
+        """
+        super().__init__(name=name)
+
+        self._value = value
+        self._input_type = input_type
+
+    def __str__(self):
+        if self.value is not None:
+            return self.value
+        else:
+            return f"[input:{self._uuid}]"
+
+    @property
+    def value(self):
+        return self._value
+
+    @property
+    def input_type(self):
+        return self._input_type
+
+
+class _InputSpec(_InputSpecBase):
+    """An _InputSpec stores metadata about an input file or directory"""
+
+    def __init__(
+            self,
+            source_path=None,
+            name=None,
+            localize_by=None,
+            localization_root_dir=None):
         """_InputSpec constructor
 
         Args:
@@ -111,63 +186,86 @@ class _InputSpec:
             localization_root_dir (str): This input will be localized to this directory within the container filesystem.
         """
 
+        super().__init__(name=name)
+
         self._source_path = source_path
         self._localize_by = localize_by
 
+        # these fields are computed based on the source_path
         self._source_bucket = None
-        if source_path.startswith("gs://"):
-            self._source_path_without_protocol = re.sub("^gs://", "", source_path)
-            self._source_bucket = self._source_path_without_protocol.split("/")[0]
-        elif source_path.startswith("http://") or source_path.startswith("https://"):
-            self._source_path_without_protocol = re.sub("^http[s]?://", "", source_path).split("?")[0]
-        else:
-            self._source_path_without_protocol = source_path
+        self._source_path_without_protocol = None
+        self._source_dir = None
+        self._filename = None
+        self._local_dir = None
+        self._local_path = None
 
-        self._source_dir = os.path.dirname(self._source_path_without_protocol)
-        self._filename = os.path.basename(self._source_path_without_protocol).replace("*", "_._")
+        if source_path is not None:
+            if source_path.startswith("gs://"):
+                self._source_path_without_protocol = re.sub("^gs://", "", source_path)
+                self._source_bucket = self._source_path_without_protocol.split("/")[0]
+            elif source_path.startswith("http://") or source_path.startswith("https://"):
+                self._source_path_without_protocol = re.sub("^http[s]?://", "", source_path).split("?")[0]
+            else:
+                self._source_path_without_protocol = source_path
 
-        self._name = name or self._filename
+            self._source_dir = os.path.dirname(self._source_path_without_protocol)
+            self._filename = os.path.basename(self._source_path_without_protocol).replace("*", "_._")
 
-        subdir = localize_by.get_subdir_name()
-        output_dir = os.path.join(localization_root_dir, subdir, self.source_dir.strip("/"))
-        output_dir = output_dir.replace("*", "___")
+            self._name = self._name or self._filename
 
-        self._local_dir = output_dir
-        self._local_path = os.path.join(output_dir, self.filename)
+            subdir = localize_by.get_subdir_name()
+            output_dir = os.path.join(localization_root_dir, subdir, self.source_dir.strip("/"))
+            output_dir = output_dir.replace("*", "___")
+
+            self._local_dir = output_dir
+            self._local_path = os.path.join(output_dir, self.filename)
 
     def __str__(self):
-        return self.local_path
+        if self.local_path is not None:
+            return self.local_path
+        else:
+            return f"[input:{self._uuid}]"
 
     @property
     def source_path(self):
+        if self._source_path is None:
+            raise ValueError("source_path not available for this input")
         return self._source_path
 
     @property
     def source_bucket(self):
+        if self._source_bucket is None:
+            raise ValueError("source_path not available for this input")
         return self._source_bucket
 
     @property
     def source_path_without_protocol(self):
+        if self._source_path_without_protocol is None:
+            raise ValueError("source_path not available for this input")
         return self._source_path_without_protocol
 
     @property
     def source_dir(self):
+        if self._source_dir is None:
+            raise ValueError("source_path not available for this input")
         return self._source_dir
 
     @property
     def filename(self):
+        if self._filename is None:
+            raise ValueError("source_path not available for this input")
         return self._filename
 
     @property
-    def input_name(self):
-        return self._name
-
-    @property
     def local_path(self):
+        if self._local_path is None:
+            raise ValueError("source_path not available for this input")
         return self._local_path
 
     @property
     def local_dir(self):
+        if self._local_dir is None:
+            raise ValueError("source_path not available for this input")
         return self._local_dir
 
     @property
@@ -178,12 +276,13 @@ class _InputSpec:
 class _OutputSpec:
     """An _OutputSpec stores metadata about an output file or directory from a Step"""
 
-    def __init__(self,
-                 local_path: str,
-                 output_dir: str = None,
-                 output_path: str = None,
-                 name: str = None,
-                 delocalize_by: str = None):
+    def __init__(
+            self,
+            local_path=None,
+            output_dir=None,
+            output_path=None,
+            name=None,
+            delocalize_by=None):
         """_OutputSpec constructor
 
         Args:
@@ -192,7 +291,7 @@ class _OutputSpec:
             output_dir (str): Optional destination directory.
             output_path (str): Optional destination path - either absolute, or relative to output_dir.
             name (str): Optional name for this output.
-            delocalize_by (Deocalize): Approach to use to delocalize this path.
+            delocalize_by (Delocalize): Approach to use to delocalize this path.
         """
         self._local_path = local_path
         self._local_dir = os.path.dirname(local_path)
@@ -245,7 +344,7 @@ class _OutputSpec:
         return self._output_filename
 
     @property
-    def output_name(self):
+    def name(self):
         return self._name
 
     @property
@@ -259,4 +358,3 @@ class _OutputSpec:
     @property
     def delocalize_by(self):
         return self._delocalize_by
-

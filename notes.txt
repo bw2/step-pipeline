@@ -1,0 +1,16 @@
+The core object in this library is a "Step" which encapsulates a pipeline job or task.
+A single Step represents a set of commands which together produce output file(s), and which can be
+skipped if the output files already exist (and are newer than the input files).
+
+A Step object, besides checking input and output files to decide if it needs to run, is responsible for:
+- localizing/delocalizing the input/output files
+- defining argparse args for skipping or forcing execution
+- optionally, collecting timing and profiling info on cpu, memory & disk-use while the Step is running. It
+can do this by adding a background process to the container to record cpu, memory and disk usage every 10 seconds,
+and to localize/delocalize a .tsv file that accumulates these stats across all steps being profiled.
+
+For concreteness, the docs below are written with Hail Batch as the backend. However, this library is designed
+to eventually support other backends - such as "local", "cromwell", "SGE", "dsub", etc.
+
+By default, a Step corresponds on a single Batch Job, but in some cases the same Batch Job may be reused for
+multiple steps (for example, step 1 creates a VCF and step 2 tabixes it).

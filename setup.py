@@ -1,5 +1,4 @@
 import os
-import unittest
 
 from setuptools import setup, find_packages
 from setuptools.command.build_py import build_py
@@ -9,13 +8,6 @@ with open("README.md", "rt") as fh:
 
 with open("requirements.txt", "rt") as fh:
     install_requires = fh.read().strip().split("\n")
-
-
-def test_suite():
-    """Discover unittests"""
-    test_loader = unittest.TestLoader()
-    test_suite = test_loader.discover('tests', pattern='test_*.py')
-    return test_suite
 
 
 class CoverageCommand(build_py):
@@ -64,5 +56,5 @@ setup(
         'Programming Language :: Python :: Implementation :: CPython',
         'Programming Language :: Python :: Implementation :: PyPy',
     ],
-    test_suite="setup.test_suite",
+    test_suite="tests",
 )

@@ -9,16 +9,26 @@ import pytz
 import subprocess
 import tempfile
 
+
 os.environ["HAIL_LOG_DIR"] = tempfile.gettempdir()
 #hl.init(log="/dev/null", quiet=True, idempotent=True)
 
-
+GOOGLE_STORAGE_CLIENT = None
 HADOOP_EXISTS_CACHE = {}
 HADOOP_STAT_CACHE = {}
 GSUTIL_PATH_TO_FILE_STAT_CACHE = {}
 BUCKET_LOCATION_CACHE = {}
 
 LOCAL_TIMEZONE = pytz.timezone("US/Eastern") #datetime.now(timezone.utc).astimezone().tzinfo
+
+
+def _get_google_storage_client(gcloud_project):
+    global GOOGLE_STORAGE_CLIENT
+    if GOOGLE_STORAGE_CLIENT is None:
+        from google.cloud import storage
+        GOOGLE_STORAGE_CLIENT = storage.Client(project=gcloud_project)
+
+    return GOOGLE_STORAGE_CLIENT
 
 
 def _generate_gs_path_to_file_stat_dict(gs_path_with_wildcards):
@@ -176,7 +186,7 @@ def _file_stat__cached(path):
 def are_any_inputs_missing(step, verbose=False):
     """Returns True if any of the Step's inputs don't exist"""
 
-    for input_spec in step._inputs:
+    for input_spec in step._input_specs:
         input_path = input_spec.source_path
         if not _path_exists__cached(input_path):
             if verbose:
@@ -189,12 +199,12 @@ def are_any_inputs_missing(step, verbose=False):
 def are_outputs_up_to_date(step, verbose=False):
     """Returns True if all of the Step's outputs already exist and are newer than all inputs"""
 
-    if len(step._outputs) == 0:
+    if len(step._output_specs) == 0:
         return False
 
     latest_input_path = None
     latest_input_modified_date = datetime(2, 1, 1, tzinfo=LOCAL_TIMEZONE)
-    for input_spec in step._inputs:
+    for input_spec in step._input_specs:
         input_path = input_spec.source_path
         if not _path_exists__cached(input_path):
             raise ValueError(f"Input path doesn't exist: {input_path}")
@@ -207,7 +217,7 @@ def are_outputs_up_to_date(step, verbose=False):
     # check whether any outputs are missing
     oldest_output_path = None
     oldest_output_modified_date = datetime.now(LOCAL_TIMEZONE)
-    for output_spec in step._outputs:
+    for output_spec in step._output_specs:
         if not _path_exists__cached(output_spec.output_path):
             return False
 
@@ -250,37 +260,25 @@ def check_gcloud_storage_region(gs_path, expected_regions=("US", "US-CENTRAL1"),
     if not gs_path.startswith("gs://") or len(gs_path_tokens) < 3:
         raise ValueError(f"Invalid gs_path arg: {gs_path}")
 
-    bucket = gs_path_tokens[2]
+    bucket_name = gs_path_tokens[2]
 
-    if bucket in BUCKET_LOCATION_CACHE:
-        location = BUCKET_LOCATION_CACHE[bucket]
+    if bucket_name in BUCKET_LOCATION_CACHE:
+        location = BUCKET_LOCATION_CACHE[bucket_name]
     else:
-        gsutil_command = f"gsutil"
-        if gcloud_project:
-            gsutil_command += f" -u {gcloud_project}"
+        try:
+            client = _get_google_storage_client(gcloud_project=gcloud_project)
+            bucket = client.get_bucket(bucket_name)
+            location = bucket.location
+            BUCKET_LOCATION_CACHE[bucket_name] = location
+        except Exception as e:
+            if not ignore_access_denied_exception or "access" not in str(e).lower():
+                raise _GoogleStorageException(f"ERROR: Could not determine gs://{bucket_name} bucket region: {e}")
 
-        output = subprocess.check_output(
-            f"{gsutil_command} ls -L -b gs://{bucket}; exit 0", shell=True, encoding="UTF-8", stderr=subprocess.STDOUT)
-
-        for line in output.split("\n"):
-            if "AccessDeniedException" in line:
-                message = f"Unable to check google storage region for gs://{bucket}. Access denied."
-                if ignore_access_denied_exception:
-                    if verbose:
-                        print(message)
-                    return
-                else:
-                    raise _GoogleStorageException(f"ERROR: {message}")
-
-            if "Location constraint:" in line:
-                location = line.strip().split()[-1]
-                BUCKET_LOCATION_CACHE[bucket] = location
-                break
-        else:
-            raise _GoogleStorageException(f"ERROR: Couldn't determine gs://{bucket} bucket region.")
+            print(f"WARNING: Unable to check bucket region for gs://{bucket_name}: {e}")
+            return
 
     if location not in expected_regions:
-        raise _GoogleStorageException(f"ERROR: gs://{bucket} is located in {location} which is not one of the"
+        raise _GoogleStorageException(f"ERROR: gs://{bucket_name} is located in {location} which is not one of the"
                                       f" expected regions {expected_regions}")
     if verbose:
-        print(f"Confirmed gs://{bucket} is in {location}")
+        print(f"Confirmed gs://{bucket_name} is in {location}")

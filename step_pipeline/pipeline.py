@@ -1,94 +1,3 @@
-"""
-The core object in this library is a "Step" which encapsulates a pipeline job or task.
-A single Step represents a set of commands which together produce output file(s), and which can be
-skipped if the output files already exist (and are newer than the input files).
-
-A Step object, besides checking input and output files to decide if it needs to run, is responsible for:
-- localizing/delocalizing the input/output files
-- defining argparse args for skipping or forcing execution
-- optionally, collecting timing and profiling info on cpu, memory & disk-use while the Step is running. It
-does this by adding a background process to the container to record cpu, memory and disk usage every 10 seconds,
-and to localize/delocalize a .tsv file that accumulates these stats across all steps being profiled.
-
-For concreteness, the docs below are written with Hail Batch as the backend. However, this library is designed
-to eventually accommodate other backends - such as "local", "cromwell", "SGE", "dsub", etc.
-
-By default, a Step corresponds on a single Batch Job, but in some cases the same Batch Job may be reused for
-multiple steps (for example, step 1 creates a VCF and step 2 tabixes it).
-
-This library allows code that looks like:
-
-with pipeline.step_pipeline(desc="merge vcfs and compute per-chrom counts") as sp:
-     sp.add_argument("--my-flag", action="store_true", help="toggle something")
-     args = sp.parse_known_args() # if needed, parse command-line args that have been defined so far
-
-     # step 1 is automatically skipped if the output file gs://my-bucket/outputs/merged.vcf.gz already exists and is newer than all part*.vcf input files.
-     s1 = bp.new_step(label="merge vcfs", memory=16)  # internally, this creates a Batch Job object and also defines new argparse args like --skip-step1
-     s1.input_file_glob(input_files="gs://my-bucket/part*.vcf", localize_inputs_using_gcsfuse=False, label="input vcfs")  # internally, this will add a gsutil cp command to localize these files
-     s1.output_file(output_file="gs://my-bucket/outputs/merged.vcf.gz", label="merged vcf")  # this automatically appends a gsutil command at the end to delocalize merge.vcf.gz to gs://my-bucket/outputs/merged.vcf.gz
-
-     s1.command("python3 merge_vcfs.py part*.vcf -o temp.vcf")
-     s1.command("bgzip -c temp.vcf > merged.vcf.gz")
-
-     # step 2
-     s2 = s1.new_step(label="index vcf", create_new_job=False)   # s2 reuses the Batch Job object from s1
-     s2.input_file(s1.get_output_file("merged vcf"), label="merged vcf")
-     s2.output_file(f"{s1.get_output_file('merged vcf')}.tbi")
-     s2.command("tabix {s2.get_local_path('merged vcf')}")       # this commmand will be added to the DAG only if the output file doesn't exist yet or is older than the vcf.
-
-     # step 3 contains a scatter-gather which is skipped if counts.tsv already exists
-     s3 = s2.new_step(label="count variants per chrom")
-     s3.input_files_from(s1)
-     s3.input_files_from(s2)
-     s3.output_file("gs://my-bucket/outputs/counts.tsv")
-     counting_jobs = []
-     for chrom in range(1, 23):
-             s3_job = s3.new_job(cpu=0.5, label=f"counting job {chrom}")  # s3 contains multiple Jobs
-             s3_job.localize(s1.output_file, use_gcsfuse=False, label="merged vcf")
-             s3_job.command(f"cat {s3.get_local_path('merged vcf')} | grep '^{chrom}' | wc -l > counts_{chrom}.tsv")
-             s3_job.output("counts_{chrom}.tsv")  # copied to Batch temp bucket
-             counting_jobs.append(s3_job)
-     s3_gather_job = s3.new_job(cpu=0.5, depends_on=counting_jobs)
-     ...
-
-# here the wrapper will parse command-line args, decide which steps to skip, pass the DAG to Batch, and then call batch.run
-
-Ths is a summary of the main classes and utilities in the Step library:
-
-_Step:
-    - not specific to any execution backend
-    - data:
-        - list of inputs
-        - list of outputs
-        - list of commands and _Steps contained within this _Step
-        - output dir
-        - list of upstream steps
-        - list of downstream steps
-        - name
-    - methods:
-        - new_step(self, name, reuse_job=False, cpu=None, memory=None, disk=None)
-        - command(self, command)
-        - input(self, path, name=None, use_gcsfuse=False)
-        - input_glob(self, glob, name=None, use_gcsfuse=False)
-        - output(self, path, name=None)
-        - output_dir(self, path)
-        - depends_on(self, step, reuse_job=False)
-        - has_upstream_steps(self)
-
-
-_Pipeline
-    - parent class for backend-specific classes
-    - methods:
-        - _transfer_step(self, step: _Step, execution_context):        - not specific to any execution backend
-
-_BatchPipeline
-
-utils:
-    are_any_inputs_missing(step: _Step) -> bool
-    are_outputs_up_to_date(step: _Step) -> bool
-"""
-
-
 from abc import ABC, abstractmethod
 
 import configargparse
@@ -96,16 +5,17 @@ import os
 import re
 import sys
 
+from step_pipeline.utils import _file_stat__cached
+
 from .utils import are_outputs_up_to_date
-from .io import Localize, Delocalize, _InputSpec, _OutputSpec
+from .io import Localize, Delocalize, _InputSpec, _InputValueSpec, _OutputSpec
 
 
-class _Pipeline(ABC):
-    """_Pipeline represents the execution pipeline. This class contains only generalized code that is not specific to
-    any particular execution backend. It is the parent class for subclasses such as _BatchPipeline that are specific to
-    a particular execution backend.
-    This class contains public methods for creating Steps. It also has some private methods that implement the
-    general aspects of traversing the execution graph (DAG) and transferring all steps to a specific execution backend.
+class Pipeline(ABC):
+    """Pipeline represents the execution pipeline. This base class contains only generalized code that is not specific
+    to any particular execution backend. It has public methods for creating Steps, as well as some private methods that
+    implement the general aspects of traversing the execution graph (DAG) and transferring all steps to a specific
+    execution backend.
     """
 
     def __init__(self, name=None, config_arg_parser=None):
@@ -126,6 +36,8 @@ class _Pipeline(ABC):
                 config_file_parser_class=configargparse.YAMLConfigFileParser,
             )
 
+        self._argument_parser = config_arg_parser
+
         self.name = name
         self._config_arg_parser = config_arg_parser
         self._all_steps = []
@@ -136,10 +48,35 @@ class _Pipeline(ABC):
         config_arg_parser.add_argument("-f", "--force", action="store_true", help="Force execution of all steps.")
         config_arg_parser.add_argument("--export-pipeline-graph", action="store_true",
             help="Export an SVG image with the pipeline flow diagram")
+
         grp = config_arg_parser.add_argument_group("notifications")
         grp.add_argument("--slack-when-done", action="store_true", help="Post to Slack when execution completes")
         grp.add_argument("--slack-token", env_var="SLACK_TOKEN", help="Slack token to use for notifications")
         grp.add_argument("--slack-channel", env_var="SLACK_CHANNEL", help="Slack channel to use for notifications")
+
+        gcloud_args = config_arg_parser.add_argument_group("google cloud")
+        gcloud_args.add_argument(
+            "--gcloud-project",
+            env_var="GCLOUD_PROJECT",
+            help="The Google Cloud project to use for accessing requester-pays buckets, etc."
+        )
+        gcloud_args.add_argument(
+            "--gcloud-credentials-path",
+            help="Google bucket path of gcloud credentials to use in step.switch_gcloud_auth_to_user_account(..)."
+                 "See the docs of that method for details.",
+        )
+        gcloud_args.add_argument(
+            "--gcloud-user-account",
+            help="Google user account to use in step.switch_gcloud_auth_to_user_account(..). See the docs of that "
+                 "method for details.",
+        )
+        gcloud_args.add_argument(
+            "--acceptable-storage-regions",
+            nargs="*",
+            default=("US", "US-CENTRAL1"),
+            help="If specified, the pipeline will confirm that input buckets are in one of these regions "
+                 "to avoid egress charges",
+        )
 
         # validate the command-line args defined so far
         args = self.parse_args()
@@ -170,11 +107,11 @@ class _Pipeline(ABC):
         return args
 
     @abstractmethod
-    def new_step(self, short_name, step_number=None):
+    def new_step(self, name, step_number=None):
         """Creates a new pipeline Step. Subclasses must implement this method.
 
         Args:
-            short_name (str): A short name for the step.
+            name (str): A short name for the step.
             step_number (int): Optional step number.
         """
 
@@ -184,8 +121,13 @@ class _Pipeline(ABC):
         They should use this method to perform initialization of the specific execution backend and then call
         self._transfer_all_steps(..).
         """
-        args = self.parse_args()
+        print(f"Starting {self.name or ''} pipeline:")
 
+        # run parse_args(..) instead of self.parse_args() for the 1st time to confirm that all required command-line
+        # args were provided
+        self._argument_parser.parse_args()
+
+        args = self.parse_args()
         if args.export_pipeline_graph:
             output_filename_prefix = re.sub("[:, ]", "_", self.name)
             output_svg_path = f"{output_filename_prefix}.pipeline_diagram.svg"
@@ -250,7 +192,9 @@ class _Pipeline(ABC):
                     getattr(args, skip_arg_name.replace("-", "_")) for skip_arg_name in step._skip_this_step_arg_names
                 )
 
-                if not skip_requested:
+                if skip_requested:
+                    print(f"Skipping {step} as requested")
+                else:
                     is_being_forced = args.force or any(
                         getattr(args, force_arg_name.replace("-", "_")) for force_arg_name in step._force_this_step_arg_names
                     )
@@ -268,9 +212,10 @@ class _Pipeline(ABC):
                         if not outputs_are_up_to_date:
                             decided_this_step_needs_to_run = True
                         else:
+                            print(f"Skipping {step}. The {len(step._output_specs)} output(s) already exist and are up-to-date.")
                             if args.verbose > 0:
-                                print(f"Outputs are up-to-date:")
-                                for o in step._outputs:
+                                print(f"Outputs:")
+                                for o in step._output_specs:
                                     print(f"       {o}")
 
                 if decided_this_step_needs_to_run:
@@ -279,7 +224,6 @@ class _Pipeline(ABC):
                     step._transfer_step()
                     num_steps_transferred += 1
                 else:
-                    print(f"Skipping {step}")
                     step._is_being_skipped = True
 
             # next, process all steps that depend on the previously-completed steps
@@ -320,6 +264,27 @@ response = slack.chat.post_message("{channel}", "{message}", as_user=False, icon
 print(response.raw)
 EOF"""
 
+    def check_input_glob(self, glob_path):
+        """This method  input file(s) to this Step using glob syntax (ie. using wildcards as in `gs://bucket/**/sample*.cram`)
+
+        Args:
+            path (str): local file path or gs:// Google Storage path. The path can contain wildcards (*).
+
+        Return:
+            list: List of metadata dicts like::
+
+            [
+                {
+                    'path': 'gs://bucket/dir/file.bam.bai',
+                    'size_bytes': 2784,
+                    'modification_time': 'Wed May 20 12:52:01 EDT 2020',
+                },
+            ]
+
+        """
+
+        return _file_stat__cached(glob_path)
+
     def export_pipeline_graph(self, output_svg_path=None):
         """Renders the pipeline execution graph diagram based on the Steps defined so far.
 
@@ -340,11 +305,11 @@ EOF"""
         while current_steps:
             previously_seen_step_names = set()
             for step in current_steps:
-                if step.short_name in previously_seen_step_names:
+                if step.name in previously_seen_step_names:
                     continue
-                previously_seen_step_names.add(step.short_name)
+                previously_seen_step_names.add(step.name)
 
-                step_label = step.short_name
+                step_label = step.name
                 if step.step_number is not None:
                     step_label = f"#{step.step_number}: {step_label}"
 
@@ -353,9 +318,9 @@ EOF"""
                 <TR><TD ALIGN="LEFT"><B>{step_label}</B></TD></TR>"""
 
                 inputs_and_outputs = (
-                    [("Input", step._inputs)] if step._inputs else []
+                    [("Input", step._input_specs)] if step._input_specs else []
                 ) + (
-                    [("Output", step._outputs)] if step._outputs else []
+                    [("Output", step._output_specs)] if step._output_specs else []
                 )
                 for input_or_output, spec_list in inputs_and_outputs:
                     for i, spec in enumerate(spec_list):
@@ -363,12 +328,11 @@ EOF"""
                         if len(spec_list) > 1:
                             prefix += f" {i + 1}"
                         prefix += ": "
-                        prefix = f"<B>{prefix}</B>"
-                        step_label += f"""<TR><TD ALIGN="LEFT"><FONT POINT-SIZE="11">{prefix}{spec.filename}</FONT></TD></TR>"""
+                        step_label += f"""<TR><TD ALIGN="LEFT"><FONT POINT-SIZE="11">{prefix}<B>{spec.name or spec.filename}</B></FONT></TD></TR>"""
 
                 step_label += "</TABLE>"
 
-                if step._inputs or step._outputs:
+                if step._input_specs or step._output_specs:
                     step_label = f"<{step_label}>"
 
                 G.add_node(f"node_{step._step_id}", label=step_label, shape="none")
@@ -382,7 +346,7 @@ EOF"""
         G.draw(output_svg_path, prog="dot")
 
 
-class _Step(ABC):
+class Step(ABC):
     """Represents a set of commands or sub-steps which together produce some output file(s), and which can be
     skipped if the output files already exist (and are newer than any input files unless a --force arg is used).
     A Step's input and output files must be stored in some persistant location, like a local disk or GCS.
@@ -393,13 +357,21 @@ class _Step(ABC):
     _STEP_ID_COUNTER = 0
     _USED_ARG_SUFFIXES = set()
 
-    def __init__(self, pipeline, short_name, step_number=None, arg_suffix=None, output_dir=None,
-                 localize_by=None, delocalize_by=None):
-        """_Step constructor
+    def __init__(self,
+                 pipeline,
+                 name,
+                 step_number=None,
+                 arg_suffix=None,
+                 output_dir=None,
+                 localize_by=None,
+                 delocalize_by=None,
+                 add_force_command_line_args=True,
+                 add_skip_command_line_args=True):
+        """Step constructor
 
         Args:
-            pipeline (_Pipeline): The _Pipeline object representing the current pipeline.
-            short_name (str): A short name for this step
+            pipeline (Pipeline): The Pipeline object representing the current pipeline.
+            name (str): A short name for this step
             step_number (int): If specified, --skip-step{step_number} and --force-step{step_number} command-line args
                 will be created.
             arg_suffix (str): If specified, --skip-{arg_suffix} and --force-{arg_suffix} command-line args will be
@@ -407,9 +379,11 @@ class _Step(ABC):
             output_dir (str): If specified, this will be the default output directory used by Step outputs.
             localize_by (Localize): If specified, this will be the default Localize approach used by Step inputs.
             delocalize_by (Delocalize): If specified, this will be the default Delocalize approach used by Step outputs.
+            add_force_command_line_args (bool): Whether to add command line args for forcing execution of this Step.
+            add_skip_command_line_args (bool): Whether to add command line args for skipping execution of this Step.
         """
         self._pipeline = pipeline
-        self.short_name = short_name
+        self.name = name
         self.step_number = step_number
         self.arg_suffix = arg_suffix
         self._output_dir = output_dir
@@ -417,8 +391,9 @@ class _Step(ABC):
         self._localize_by = localize_by
         self._delocalize_by = delocalize_by
 
-        self._inputs = []
-        self._outputs = []
+        self._input_specs = []
+        self._input_value_specs = []
+        self._output_specs = []
 
         self._commands = []   # used for BashJobs
 
@@ -433,8 +408,8 @@ class _Step(ABC):
         self._force_this_step_arg_names = []
         self._skip_this_step_arg_names = []
 
-        _Step._STEP_ID_COUNTER += 1
-        self._step_id = _Step._STEP_ID_COUNTER  # this id is unique to each Step object
+        Step._STEP_ID_COUNTER += 1
+        self._step_id = Step._STEP_ID_COUNTER  # this id is unique to each Step object
 
         # define command line args for skipping or forcing execution of this step
         argument_parser = pipeline.get_config_arg_parser()
@@ -442,8 +417,8 @@ class _Step(ABC):
         command_line_arg_suffixes = []
         if arg_suffix:
             command_line_arg_suffixes.append(arg_suffix)
-        else:
-            command_line_arg_suffixes.append(short_name.replace(" ", "-").replace(":", ""))
+        elif name:
+            command_line_arg_suffixes.append(name.replace(" ", "-").replace(":", ""))
 
         if step_number is not None:
             if not isinstance(step_number, (int, float)):
@@ -451,30 +426,32 @@ class _Step(ABC):
             command_line_arg_suffixes.append(f"step{step_number}")
 
         for suffix in command_line_arg_suffixes:
-            if suffix in _Step._USED_ARG_SUFFIXES:
+            if suffix in Step._USED_ARG_SUFFIXES:
                 continue
 
-            argument_parser.add_argument(
-                f"--force-{suffix}",
-                help=f"Force execution of '{short_name}'.",
-                action="store_true",
-            )
-            self._force_this_step_arg_names.append(f"force_{suffix}")
-            argument_parser.add_argument(
-                f"--skip-{suffix}",
-                help=f"Skip '{short_name}' even if --force is used.",
-                action="store_true",
-            )
-            self._skip_this_step_arg_names.append(f"skip_{suffix}")
-            _Step._USED_ARG_SUFFIXES.add(suffix)
+            if add_force_command_line_args:
+                argument_parser.add_argument(
+                    f"--force-{suffix}",
+                    help=f"Force execution of '{name}'.",
+                    action="store_true",
+                )
+                self._force_this_step_arg_names.append(f"force_{suffix}")
+            if add_skip_command_line_args:
+                argument_parser.add_argument(
+                    f"--skip-{suffix}",
+                    help=f"Skip '{name}' even if --force is used.",
+                    action="store_true",
+                )
+                self._skip_this_step_arg_names.append(f"skip_{suffix}")
+            Step._USED_ARG_SUFFIXES.add(suffix)
 
-    def short_name(self, short_name):
+    def name(self, name):
         """Set the short name for this Step.
 
         Args:
-            short_name (str): Namee
+            name (str): Name
         """
-        self.short_name = short_name
+        self.name = name
 
     def output_dir(self, output_dir):
         """Set the default output directory for Step outputs.
@@ -493,20 +470,41 @@ class _Step(ABC):
 
         self._commands.append(command)
 
-    def input_glob(self, glob, name=None, localize_by=None):
-        """Specify input file(s) to this Step using glob syntax (ie. using wildcards as in gs://bucket/dir/sample*.cram)
+    def input_glob(self, glob_path, name=None, localize_by=None):
+        """Specify input file(s) to this Step using glob syntax (ie. using wildcards as in `gs://bucket/**/sample*.cram`)
 
         Args:
-            glob (str): The path of the input file(s) or directory to localize, optionally including wildcards.
+            glob_path (str): The path of the input file(s) or directory to localize, optionally including wildcards.
             name (str): Optional name for this input.
             localize_by (Localize): How this path should be localized.
 
         Return:
             _InputSpec: An object that describes the specified input file or directory.
         """
-        return self.input(glob, name=name, localize_by=localize_by)
+        return self.input(glob_path, name=name, localize_by=localize_by)
 
-    def input(self, source_path, name=None, localize_by=None):
+    def input_value(self, value=None, name=None, input_type=None):
+        """Specify a Step input that is something other than a file path.
+
+        Args:
+            value: The input's value.
+            name (str): Optional name for this input.
+            input_type (InputType): The value's type.
+
+        Return:
+            _InputValueSpec: An object that contains the input value, name, and type.
+        """
+        input_value_spec = _InputValueSpec(
+            value=value,
+            name=name,
+            input_type=input_type,
+        )
+
+        self._input_value_specs.append(input_value_spec)
+
+        return input_value_spec
+
+    def input(self, source_path=None, name=None, localize_by=None):
         """Specifies an input file or directory.
 
         Args:
@@ -533,8 +531,8 @@ class _Step(ABC):
             localization_root_dir=self._pipeline._get_localization_root_dir(localize_by),
         )
 
-        self._preprocess_input(input_spec)
-        self._inputs.append(input_spec)
+        self._preprocess_input_spec(input_spec)
+        self._input_specs.append(input_spec)
 
         return input_spec
 
@@ -566,7 +564,7 @@ class _Step(ABC):
         to make it easier to specify inputs for a Step that is very similar to a previously-defined step.
 
         Args:
-            other_step (_Step): The Step object to copy inputs from.
+            other_step (Step): The Step object to copy inputs from.
             localize_by (Localize): Optionally specify how these inputs should be localized. If not specified, the value
                 from other_step will be reused.
 
@@ -577,13 +575,15 @@ class _Step(ABC):
         localize_by = localize_by or self._localize_by
 
         input_specs = []
-        for other_step_input_spec in other_step._inputs:
+        for other_step_input_spec in other_step._input_specs:
             input_spec = self.input(
                 source_path=other_step_input_spec.source_path,
-                name=other_step_input_spec.output_name,
+                name=other_step_input_spec.name,
                 localize_by=localize_by or other_step_input_spec.localize_by,
             )
+
             input_specs.append(input_spec)
+
         return input_specs
 
     def use_previous_step_outputs_as_inputs(self, previous_step, localize_by=None):
@@ -603,12 +603,13 @@ class _Step(ABC):
         localize_by = localize_by or self._localize_by
 
         input_specs = []
-        for output_spec in previous_step._outputs:
+        for output_spec in previous_step._output_specs:
             input_spec = self.input(
                 source_path=output_spec.output_path,
-                name=output_spec.output_name,
+                name=output_spec.name,
                 localize_by=localize_by,
             )
+
             input_specs.append(input_spec)
 
         return input_specs
@@ -651,9 +652,9 @@ class _Step(ABC):
             delocalize_by=delocalize_by,
         )
 
-        self._preprocess_output(output_spec)
+        self._preprocess_output_spec(output_spec)
 
-        self._outputs.append(output_spec)
+        self._output_specs.append(output_spec)
 
         return output_spec
 
@@ -667,8 +668,7 @@ class _Step(ABC):
             delocalize_by (Delocalize): How the path(s) should be delocalized.
 
         Returns:
-            list: A list of _OutputSpec objects that describe these outputs. The list will contain one entry for each
-                passed-in path.
+            list: A list of _OutputSpec objects that describe these outputs. The list will contain one entry for each passed-in path.
         """
         local_paths = [local_path, *local_paths]
         output_specs = []
@@ -693,7 +693,7 @@ class _Step(ABC):
         Args:
             upstream_step (Step): The upstream Step this Step depends on.
         """
-        if isinstance(upstream_step, _Step):
+        if isinstance(upstream_step, Step):
             self._upstream_steps.append(upstream_step)
             upstream_step._downstream_steps.append(self)
 
@@ -714,10 +714,10 @@ class _Step(ABC):
         s = ""
         if self.step_number is not None:
             s += f"step{self.step_number}"
-        if self.step_number is not None and self.short_name  is not None:
+        if self.step_number is not None and self.name  is not None:
             s += ": "
-        if self.short_name is not None:
-            s += self.short_name
+        if self.name is not None:
+            s += self.name
 
         return s
 
@@ -746,12 +746,17 @@ class _Step(ABC):
         This is useful if subsequent commands need to access google buckets that to which the user's personal account
         has access but to which the Batch service account cannot be granted access for whatever reason.
 
-        For this to work, you must first
+        For this to work, you must first::
+
         1) create a google bucket that only you have access to - for example: gs://weisburd-gcloud-secrets/
-        2) on your local machine, make sure you're logged in to gcloud by running
-               gcloud auth login
-        3) copy your local ~/.config directory (which caches your gcloud auth credentials) to the secrets bucket from step 1
-               gsutil -m cp -r ~/.config/  gs://weisburd-gcloud-secrets/
+        2) on your local machine, make sure you're logged in to gcloud by running::
+
+           gcloud auth login
+
+        3) copy your local ~/.config directory (which caches your gcloud auth credentials) to the secrets bucket from step 1::
+
+           gsutil -m cp -r ~/.config/  gs://weisburd-gcloud-secrets/
+
         4) grant your default Batch service-account read access to your secrets bucket so it can download these credentials
            into each docker container.
         5) make sure gcloud & gsutil are installed inside the docker images you use for your Batch jobs
@@ -808,11 +813,11 @@ class _Step(ABC):
         return set()
 
     @abstractmethod
-    def _preprocess_input(self, input_spec):
+    def _preprocess_input_spec(self, input_spec):
         """This method is called by step.input(..) immediately when the input is first specified, regardless of whether
         the Step runs or not. It should perform simple checks of the input_spec that are fast and don't require a
         network connection, but that catch simple errors such as incorrect source path syntax.
-        _Step subclasses must implement this method.
+        Step subclasses must implement this method.
 
         Args:
             input_spec (_InputSpec): The input to preprocess.
@@ -821,7 +826,7 @@ class _Step(ABC):
             raise ValueError(f"Unexpected input_spec.localize_by value: {input_spec.localize_by}")
 
     @abstractmethod
-    def _transfer_input(self, input_spec):
+    def _transfer_input_spec(self, input_spec):
         """When a Step isn't skipped and is being transferred to the execution backend, this method is called for
         each input to the Step. It should localize the input into the Step's execution container using the approach
         requested by the user via the localize_by parameter.
@@ -833,11 +838,11 @@ class _Step(ABC):
             raise ValueError(f"Unexpected input_spec.localize_by value: {input_spec.localize_by}")
 
     @abstractmethod
-    def _preprocess_output(self, output_spec):
+    def _preprocess_output_spec(self, output_spec):
         """This method is called by step.output(..) immediately when the output is first specified, regardless of
         whether the Step runs or not. It should perform simple checks of the output_spec that are fast and don't
         require a network connection, but that catch simple errors such as incorrect output path syntax.
-        _Step subclasses must implement this method.
+        Step subclasses must implement this method.
 
         Args:
             output_spec (_OutputSpec): The output to preprocess.
@@ -846,7 +851,7 @@ class _Step(ABC):
             raise ValueError(f"Unexpected output_spec.delocalize_by value: {output_spec.delocalize_by}")
 
     @abstractmethod
-    def _transfer_output(self, output_spec):
+    def _transfer_output_spec(self, output_spec):
         """When a Step isn't skipped and is being transferred to the execution backend, this method will be called for
         each output of the Step. It should delocalize the output from the Step's execution container to the requested
         destination path using the approach requested by the user via the delocalize_by parameter.

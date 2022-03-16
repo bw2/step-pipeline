@@ -1,4 +1,9 @@
 configargparse>=1.4.1
 hail
-mock
 pygraphviz
+google-cloud-storage
+
+mock
+tox
+tox-venv   # work around tox virtualenv issues
+sphinxcontrib-napoleon
