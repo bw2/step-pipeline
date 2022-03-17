@@ -24,11 +24,11 @@ class PublishCommand(build_py):
         os.system("rm -rf dist")
         os.system("python3 setup.py sdist"
                   "&& python3 setup.py bdist_wheel"
-                  "&& twine upload dist/*whl dist/*gz")
+                  "&& python3 -m twine upload dist/*whl dist/*gz")
 
 setup(
     name='step_pipeline',
-    version="0.2",
+    version="0.2.1",
     description="Pipeline library that simplifies creation of pipelines that run on top of hail Batch and other compute enviornments",
     install_requires=install_requires,
     cmdclass={

@@ -40,6 +40,7 @@ class Pipeline(ABC):
 
         self.name = name
         self._config_arg_parser = config_arg_parser
+        self._default_output_dir = None
         self._all_steps = []
 
         config_arg_parser.add_argument("-v", "--verbose", action='count', default=0, help="Print more info")
@@ -115,14 +116,45 @@ class Pipeline(ABC):
             step_number (int): Optional step number.
         """
 
+    def gcloud_project(self, gcloud_project):
+        print(f"WARNING: gcloud_project ignored by {type(self).__name__}")
+
+    def cancel_after_n_failures(self, cancel_after_n_failures):
+        print(f"WARNING: cancel_after_n_failures ignored by {type(self).__name__}")
+
+    def default_image(self, default_image):
+        print(f"WARNING: default_image ignored by {type(self).__name__}")
+
+    def default_python_image(self, default_python_image):
+        print(f"WARNING: default_image ignored by {type(self).__name__}")
+
+    def default_memory(self, default_memory):
+        print(f"WARNING: default_memory ignored by {type(self).__name__}")
+
+    def default_cpu(self, default_cpu):
+        print(f"WARNING: default_cpu ignored by {type(self).__name__}")
+
+    def default_storage(self, default_storage):
+        print(f"WARNING: default_storage ignored by {type(self).__name__}")
+
+    def default_timeout(self, default_timeout):
+        print(f"WARNING: default_timeout ignored by {type(self).__name__}")
+
+    def default_output_dir(self, default_output_dir):
+        """Set the default output_dir for pipeline Steps.
+
+        Args:
+            default_output_dir (str): Output directory
+        """
+        self._default_output_dir = default_output_dir
+        return self
+
     @abstractmethod
     def run(self):
         """Submits a pipeline to an execution engine such as Hail Batch. Subclasses must implement this method.
         They should use this method to perform initialization of the specific execution backend and then call
         self._transfer_all_steps(..).
         """
-        print(f"Starting {self.name or ''} pipeline:")
-
         # run parse_args(..) instead of self.parse_args() for the 1st time to confirm that all required command-line
         # args were provided
         self._argument_parser.parse_args()

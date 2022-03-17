@@ -11,7 +11,7 @@ import tempfile
 
 
 os.environ["HAIL_LOG_DIR"] = tempfile.gettempdir()
-#hl.init(log="/dev/null", quiet=True, idempotent=True)
+hl.init(log="/dev/null", quiet=True, idempotent=True)
 
 GOOGLE_STORAGE_CLIENT = None
 HADOOP_EXISTS_CACHE = {}
@@ -20,6 +20,18 @@ GSUTIL_PATH_TO_FILE_STAT_CACHE = {}
 BUCKET_LOCATION_CACHE = {}
 
 LOCAL_TIMEZONE = pytz.timezone("US/Eastern") #datetime.now(timezone.utc).astimezone().tzinfo
+
+
+def _get_bucket_name(gs_path):
+    """Get the Google bucket name from the given gs_path."""
+
+    gs_path_tokens = gs_path.split("/")
+    if not gs_path.startswith("gs://") or len(gs_path_tokens) < 3:
+        raise ValueError(f"Invalid gs_path arg: {gs_path}")
+
+    bucket_name = gs_path_tokens[2]
+
+    return bucket_name
 
 
 def _get_google_storage_client(gcloud_project):
@@ -139,6 +151,7 @@ def _file_stat__cached(path):
                     "modification_time": modification_time,
                 })
         else:
+
             try:
                 stat_results = hl.hadoop_stat(path)
             except Exception as e:
@@ -256,11 +269,7 @@ def check_gcloud_storage_region(gs_path, expected_regions=("US", "US-CENTRAL1"),
     Raises:
         StorageRegionException: If the given gs_path is not stored in one the expected_regions.
     """
-    gs_path_tokens = gs_path.split("/")
-    if not gs_path.startswith("gs://") or len(gs_path_tokens) < 3:
-        raise ValueError(f"Invalid gs_path arg: {gs_path}")
-
-    bucket_name = gs_path_tokens[2]
+    bucket_name = _get_bucket_name(gs_path)
 
     if bucket_name in BUCKET_LOCATION_CACHE:
         location = BUCKET_LOCATION_CACHE[bucket_name]
@@ -278,7 +287,9 @@ def check_gcloud_storage_region(gs_path, expected_regions=("US", "US-CENTRAL1"),
             return
 
     if location not in expected_regions:
-        raise _GoogleStorageException(f"ERROR: gs://{bucket_name} is located in {location} which is not one of the"
-                                      f" expected regions {expected_regions}")
+        #raise _GoogleStorageException(
+        print(
+            f"ERROR: gs://{bucket_name} is located in {location} which is not one of the "
+            f"expected regions {expected_regions}")
     if verbose:
         print(f"Confirmed gs://{bucket_name} is in {location}")

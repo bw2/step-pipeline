@@ -5,14 +5,18 @@ from .pipeline import Pipeline, Step, Localize, Delocalize
 
 
 def _remove_special_chars(name):
-    return re.sub("[^a-zA-Z0-9]", name, " ")
+    return re.sub("[\W]", name, " ").replace(".", " ").replace("-", " ").replace(":", " ").replace("_", " ")
 
 
 def _to_pascal_case(s):
+    if s is None:
+        raise ValueError("_to_pascal_case input is None")
     return _remove_special_chars(s).title().replace(" ", "")
 
 
 def _to_camel_case(s):
+    if s is None:
+        raise ValueError("_to_camel_case input is None")
     s = _to_pascal_case(s)
     return s[0].lower() + s[1:]
 
@@ -37,7 +41,7 @@ class WdlPipeline(Pipeline):
 
         wdl_args = config_arg_parser.add_argument_group("wdl")
         default_output_path = f"{_to_pascal_case(name)}.wdl" if name else "pipeline.wdl"
-        wdl_args.add_argument("--wdl-output-path", "Output path of .wdl file", default=default_output_path)
+        wdl_args.add_argument("--wdl-output-path", help="Output path of .wdl file", default=default_output_path)
 
     @property
     def backend(self):
@@ -90,6 +94,7 @@ class WdlPipeline(Pipeline):
             cpu=cpu,
             memory=memory,
             storage=storage,
+            output_dir=self._default_output_dir,
             localize_by=localize_by,
             delocalize_by=delocalize_by,
         )
@@ -116,7 +121,7 @@ class WdlPipeline(Pipeline):
             return
 
         if len({step.name for step in self._all_steps}) > 1:
-            raise ValueError("Conversion of pipelines with more than 1 Step to WDL is not yet implemented")
+            raise ValueError("Conversion of WDL is not yet implemented for pipelines with more than 1 Step")
 
         step = self._all_steps[0]
 
@@ -133,27 +138,37 @@ class WdlPipeline(Pipeline):
 
         outputs = []
         for output_spec in step._output_specs:
-            outputs.append(f"File {_to_camel_case(output_spec.name)} = \"{output_spec.local_path}\"")
+            output_spec_name = _to_camel_case(output_spec.name or output_spec.filename)
+            outputs.append(f"File {output_spec_name} = \"{output_spec.local_path}\"")
 
         commands = list(step._commands)
 
-        runtime = []
+        runtime_attributes = []
         if step._memory:
-            runtime.append(f"memory: {step._memory}")
+            runtime_attributes.append(f"memory: {step._memory}")
         if step._cpu:
-            runtime.append(f"cpu: {step._cpu}")
+            runtime_attributes.append(f"cpu: {step._cpu}")
         if step._storage:
-            runtime.append(f"disks: local-disk {step._storage} SSD")
+            runtime_attributes.append(f"disks: local-disk {step._storage} SSD")
 
         if step._image:
-            runtime.append(f"docker: {step._image}")
+            runtime_attributes.append(f"docker: {step._image}")
 
-        separator = "\n\t\t"
+        if step.name:
+            task_name = _to_pascal_case(step.name)
+        elif step.step_number:
+            task_name = f"step{step.step_number}"
+        else:
+            task_name = "MainTask"
+
+        separator = "\n\t"
         wdl_template_params = {
             "input_section": separator.join(inputs),
             "output_section": separator.join(outputs),
             "commands": separator.join(commands),
-            "task_name": _to_pascal_case(step.name),
+            "runtime_section": separator.join(runtime_attributes),
+            "task_name": task_name,
+            "workflow_name": f"{task_name}Workflow",
         }
 
         wdl_contents = """
@@ -194,8 +209,10 @@ workflow %(workflow_name)s {
 """ % wdl_template_params
 
         args = self.parse_args()
+
+        print(f"Writing wdl to {args.wdl_output_path}")
         with open(args.wdl_output_path, "wt") as f:
-            f.write(wdl_contents)
+            f.write(wdl_contents.lstrip())
 
     def _get_localization_root_dir(self, localize_by):
         """Return the top-level root directory where localized files will be copied"""
@@ -221,6 +238,7 @@ class WdlStep(Step):
         cpu=None,
         memory=None,
         storage=None,
+        output_dir=None,
         localize_by=Localize.COPY,
         delocalize_by=Delocalize.COPY,
     ):
@@ -243,6 +261,7 @@ class WdlStep(Step):
             storage (str, int): Disk size. The storage expression must be of the form {number}{suffix} where valid
                 optional suffixes are K, Ki, M, Mi, G, Gi, T, Ti, P, and Pi. Omitting a suffix means the value is in
                 bytes.
+            output_dir (str): Optional destination directory to which the local path(s) should be delocalized.
             localize_by (Localize): If specified, this will be the default Localize approach used by Step inputs.
             delocalize_by (Delocalize): If specified, this will be the default Delocalize approach used by Step outputs.
         """
@@ -250,6 +269,7 @@ class WdlStep(Step):
             pipeline,
             name,
             step_number=step_number,
+            output_dir=output_dir,
             localize_by=localize_by,
             delocalize_by=delocalize_by,
             add_force_command_line_args=False,

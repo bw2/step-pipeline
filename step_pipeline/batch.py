@@ -65,7 +65,6 @@ class BatchPipeline(Pipeline):
         self._default_cpu = None
         self._default_storage = None
         self._default_timeout = None
-        self._default_output_dir = None
         self._backend_obj = None
 
     @property
@@ -236,17 +235,10 @@ class BatchPipeline(Pipeline):
         self._default_timeout = default_timeout
         return self
 
-    def default_output_dir(self, default_output_dir):
-        """Set the default output_dir for pipeline Steps.
-
-        Args:
-            output_dir (str): Output directory
-        """
-        self._default_output_dir = default_output_dir
-        return self
-
     def run(self):
         """Batch-specific code for submitting the pipeline to the Hail Batch backend"""
+        print(f"Starting {self.name or ''} pipeline:")
+
         super().run()
 
         try:
