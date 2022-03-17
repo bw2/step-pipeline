@@ -1,0 +1,1206 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>step_pipeline package &#8212; step-pipeline 0.2 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/classic.css" />
+    
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="step_pipeline" href="modules.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="modules.html" title="step_pipeline"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">step-pipeline 0.2 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="modules.html" accesskey="U">step_pipeline</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">step_pipeline package</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="step-pipeline-package">
+<h1>step_pipeline package<a class="headerlink" href="#step-pipeline-package" title="Permalink to this headline">¶</a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="module-step_pipeline.batch">
+<span id="step-pipeline-batch-module"></span><h2>step_pipeline.batch module<a class="headerlink" href="#module-step_pipeline.batch" title="Permalink to this headline">¶</a></h2>
+<p>This module contains Hail Batch-specific extensions of the Pipeline and Step classes</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="step_pipeline.batch.BatchStepType">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">step_pipeline.batch.</span></span><span class="sig-name descname"><span class="pre">BatchStepType</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.batch.BatchStepType" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">enum.Enum</span></code></p>
+<p>Constants that represent different Batch Step types.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="step_pipeline.batch.BatchStepType.PYTHON">
+<span class="sig-name descname"><span class="pre">PYTHON</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'python'</span></em><a class="headerlink" href="#step_pipeline.batch.BatchStepType.PYTHON" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="step_pipeline.batch.BatchStepType.BASH">
+<span class="sig-name descname"><span class="pre">BASH</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'bash'</span></em><a class="headerlink" href="#step_pipeline.batch.BatchStepType.BASH" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="step_pipeline.batch.BatchPipeline">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">step_pipeline.batch.</span></span><span class="sig-name descname"><span class="pre">BatchPipeline</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config_arg_parser</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backend</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">Backend.HAIL_BATCH_SERVICE</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.batch.BatchPipeline" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#step_pipeline.pipeline.Pipeline" title="step_pipeline.pipeline.Pipeline"><code class="xref py py-class docutils literal notranslate"><span class="pre">step_pipeline.pipeline.Pipeline</span></code></a></p>
+<p>This class contains Hail Batch-specific extensions of the Pipeline class</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="step_pipeline.batch.BatchPipeline.backend">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">backend</span></span><a class="headerlink" href="#step_pipeline.batch.BatchPipeline.backend" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns either Backend.HAIL_BATCH_SERVICE or Backend.HAIL_BATCH_LOCAL</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="step_pipeline.batch.BatchPipeline.new_step">
+<span class="sig-name descname"><span class="pre">new_step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">step_number</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">arg_suffix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">depends_on</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">image</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cpu</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">memory</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">storage</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">always_run</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reuse_job_from_previous_step</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">localize_by</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">Localize.COPY</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delocalize_by</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">Delocalize.COPY</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.batch.BatchPipeline.new_step" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a new pipeline Step.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>str</em>) – A short name for this Step.</p></li>
+<li><p><strong>step_number</strong> (<em>int</em>) – Optional Step number which serves as another alias for this step in addition to name.</p></li>
+<li><p><strong>arg_suffix</strong> (<em>str</em>) – Optional suffix for the command-line args that will be created for forcing or skipping
+execution of this Step.</p></li>
+<li><p><strong>depends_on</strong> (<a class="reference internal" href="#step_pipeline.pipeline.Step" title="step_pipeline.pipeline.Step"><em>Step</em></a>) – Optional upstream Step that this Step depends on.</p></li>
+<li><p><strong>image</strong> (<em>str</em>) – Docker image to use for this Step.</p></li>
+<li><p><strong>cpu</strong> (<em>str</em><em>, </em><em>float</em><em>, </em><em>int</em>) – CPU requirements. Units are in cpu if cores is numeric.</p></li>
+<li><p><strong>memory</strong> (<em>str</em><em>, </em><em>float int</em>) – Memory requirements. The memory expression must be of the form {number}{suffix}
+where valid optional suffixes are K, Ki, M, Mi, G, Gi, T, Ti, P, and Pi. Omitting a suffix means
+the value is in bytes. For the ServiceBackend, the values ‘lowmem’, ‘standard’, and ‘highmem’ are also
+valid arguments. ‘lowmem’ corresponds to approximately 1 Gi/core, ‘standard’ corresponds to
+approximately 4 Gi/core, and ‘highmem’ corresponds to approximately 7 Gi/core. The default value
+is ‘standard’.</p></li>
+<li><p><strong>storage</strong> (<em>str</em><em>, </em><em>int</em>) – Disk size. The storage expression must be of the form {number}{suffix} where valid
+optional suffixes are K, Ki, M, Mi, G, Gi, T, Ti, P, and Pi. Omitting a suffix means the value is in
+bytes. For the ServiceBackend, jobs requesting one or more cores receive 5 GiB of storage for the root
+file system /. Jobs requesting a fraction of a core receive the same fraction of 5 GiB of storage.
+If you need additional storage, you can explicitly request more storage using this method and the extra
+storage space will be mounted at /io. Batch automatically writes all ResourceFile to /io.
+The default storage size is 0 Gi. The minimum storage size is 0 Gi and the maximum storage size is
+64 Ti. If storage is set to a value between 0 Gi and 10 Gi, the storage request is rounded up to 10 Gi.
+All values are rounded up to the nearest Gi.</p></li>
+<li><p><strong>always_run</strong> (<em>bool</em>) – Set the Step to always run, even if dependencies fail.</p></li>
+<li><p><strong>timeout</strong> (<em>float</em><em>, </em><em>int</em>) – Set the maximum amount of time this job can run for before being killed.</p></li>
+<li><p><strong>output_dir</strong> (<em>str</em>) – Optional default output directory for Step outputs.</p></li>
+<li><p><strong>reuse_job_from_previous_step</strong> (<a class="reference internal" href="#step_pipeline.pipeline.Step" title="step_pipeline.pipeline.Step"><em>Step</em></a>) – Optionally, reuse the batch.Job object from this other upstream Step.</p></li>
+<li><p><strong>localize_by</strong> (<a class="reference internal" href="#step_pipeline.io.Localize" title="step_pipeline.io.Localize"><em>Localize</em></a>) – If specified, this will be the default Localize approach used by Step inputs.</p></li>
+<li><p><strong>delocalize_by</strong> (<a class="reference internal" href="#step_pipeline.io.Delocalize" title="step_pipeline.io.Delocalize"><em>Delocalize</em></a>) – If specified, this will be the default Delocalize approach used by Step outputs.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The new BatchStep object.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#step_pipeline.batch.BatchStep" title="step_pipeline.batch.BatchStep">BatchStep</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="step_pipeline.batch.BatchPipeline.gcloud_project">
+<span class="sig-name descname"><span class="pre">gcloud_project</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gcloud_project</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.batch.BatchPipeline.gcloud_project" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the requester-pays project.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>gcloud_project</strong> (<em>str</em>) – The name of the Google Cloud project to be billed when accessing requester-pays
+buckets.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="step_pipeline.batch.BatchPipeline.cancel_after_n_failures">
+<span class="sig-name descname"><span class="pre">cancel_after_n_failures</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cancel_after_n_failures</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.batch.BatchPipeline.cancel_after_n_failures" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the cancel_after_n_failures value.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>cancel_after_n_failures</strong> – (int): Automatically cancel the batch after N failures have occurred.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="step_pipeline.batch.BatchPipeline.default_image">
+<span class="sig-name descname"><span class="pre">default_image</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">default_image</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.batch.BatchPipeline.default_image" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the default Docker image to use for Steps in this pipeline.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>default_image</strong> (<em>str</em>) – Default docker image to use for Bash jobs. This must be the full name</p></li>
+<li><p><strong>desired</strong> (<em>of the image including any repository prefix and tags if</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="step_pipeline.batch.BatchPipeline.default_python_image">
+<span class="sig-name descname"><span class="pre">default_python_image</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">default_python_image</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.batch.BatchPipeline.default_python_image" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the default image for Python Jobs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>default_python_image</strong> (<em>str</em>) – The Docker image to use for Python jobs. The image specified must have the dill
+package installed. If default_python_image is not specified, then a Docker image will automatically be
+created for you with the base image hailgenetics/python-dill:[major_version].[minor_version]-slim and
+the Python packages specified by python_requirements will be installed. The default name of the image
+is batch-python with a random string for the tag unless python_build_image_name is specified. If the
+ServiceBackend is the backend, the locally built image will be pushed to the repository specified by
+image_repository.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="step_pipeline.batch.BatchPipeline.default_memory">
+<span class="sig-name descname"><span class="pre">default_memory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">default_memory</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.batch.BatchPipeline.default_memory" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the default memory usage.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>default_memory</strong> (<em>int</em><em>, </em><em>str</em>) – Memory setting to use by default if not specified by a Step.
+Only applicable if a docker image is specified for the LocalBackend or the ServiceBackend.
+See Job.memory().</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="step_pipeline.batch.BatchPipeline.default_cpu">
+<span class="sig-name descname"><span class="pre">default_cpu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">default_cpu</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.batch.BatchPipeline.default_cpu" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the default cpu requirement.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>default_cpu</strong> (<em>float</em><em>, </em><em>int</em><em>, </em><em>str</em>) – CPU setting to use by default if not specified by a job.
+Only applicable if a docker image is specified for the LocalBackend or the ServiceBackend.
+See Job.cpu().</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="step_pipeline.batch.BatchPipeline.default_storage">
+<span class="sig-name descname"><span class="pre">default_storage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">default_storage</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.batch.BatchPipeline.default_storage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the default storage disk size.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>default_storage</strong> (<em>str</em><em>, </em><em>int</em>) – Storage setting to use by default if not specified by a job. Only applicable
+for the ServiceBackend. See Job.storage().</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="step_pipeline.batch.BatchPipeline.default_timeout">
+<span class="sig-name descname"><span class="pre">default_timeout</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">default_timeout</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.batch.BatchPipeline.default_timeout" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the default job timeout duration.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>default_timeout</strong> – Maximum time in seconds for a job to run before being killed. Only applicable for the
+ServiceBackend. If None, there is no timeout.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="step_pipeline.batch.BatchPipeline.run">
+<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.batch.BatchPipeline.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Batch-specific code for submitting the pipeline to the Hail Batch backend</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="step_pipeline.batch.BatchStep">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">step_pipeline.batch.</span></span><span class="sig-name descname"><span class="pre">BatchStep</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pipeline</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">step_number</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">arg_suffix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">image</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cpu</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">memory</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">storage</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">always_run</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reuse_job_from_previous_step</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">localize_by</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">Localize.COPY</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delocalize_by</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">Delocalize.COPY</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.batch.BatchStep" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#step_pipeline.pipeline.Step" title="step_pipeline.pipeline.Step"><code class="xref py py-class docutils literal notranslate"><span class="pre">step_pipeline.pipeline.Step</span></code></a></p>
+<p>This class contains Hail Batch-specific extensions of the Step class</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="step_pipeline.batch.BatchStep.cpu">
+<span class="sig-name descname"><span class="pre">cpu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cpu</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.batch.BatchStep.cpu" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the CPU requirement for this Step.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>cpu</strong> (<em>str</em><em>, </em><em>float</em><em>, </em><em>int</em>) – CPU requirements. Units are in cpu if cores is numeric.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="step_pipeline.batch.BatchStep.memory">
+<span class="sig-name descname"><span class="pre">memory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">memory</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.batch.BatchStep.memory" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the memory requirement for this Step.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>memory</strong> (<em>str</em><em>, </em><em>float int</em>) – Memory requirements. The memory expression must be of the form {number}{suffix}
+where valid optional suffixes are K, Ki, M, Mi, G, Gi, T, Ti, P, and Pi. Omitting a suffix means
+the value is in bytes. For the ServiceBackend, the values ‘lowmem’, ‘standard’, and ‘highmem’ are also
+valid arguments. ‘lowmem’ corresponds to approximately 1 Gi/core, ‘standard’ corresponds to
+approximately 4 Gi/core, and ‘highmem’ corresponds to approximately 7 Gi/core. The default value
+is ‘standard’.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="step_pipeline.batch.BatchStep.storage">
+<span class="sig-name descname"><span class="pre">storage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">storage</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.batch.BatchStep.storage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the disk size for this Step.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>storage</strong> (<em>str</em><em>, </em><em>int</em>) – Disk size. The storage expression must be of the form {number}{suffix} where valid
+optional suffixes are K, Ki, M, Mi, G, Gi, T, Ti, P, and Pi. Omitting a suffix means the value is in
+bytes. For the ServiceBackend, jobs requesting one or more cores receive 5 GiB of storage for the root
+file system /. Jobs requesting a fraction of a core receive the same fraction of 5 GiB of storage.
+If you need additional storage, you can explicitly request more storage using this method and the extra
+storage space will be mounted at /io. Batch automatically writes all ResourceFile to /io.
+The default storage size is 0 Gi. The minimum storage size is 0 Gi and the maximum storage size is
+64 Ti. If storage is set to a value between 0 Gi and 10 Gi, the storage request is rounded up to 10 Gi.
+All values are rounded up to the nearest Gi.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="step_pipeline.batch.BatchStep.always_run">
+<span class="sig-name descname"><span class="pre">always_run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">always_run</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.batch.BatchStep.always_run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the always_run parameter for this Step.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>always_run</strong> (<em>bool</em>) – Set the Step to always run, even if dependencies fail.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="step_pipeline.batch.BatchStep.timeout">
+<span class="sig-name descname"><span class="pre">timeout</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timeout</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.batch.BatchStep.timeout" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the timeout for this Step.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>timeout</strong> (<em>float</em><em>, </em><em>int</em>) – Set the maximum amount of time this job can run for before being killed.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-step_pipeline.constants">
+<span id="step-pipeline-constants-module"></span><h2>step_pipeline.constants module<a class="headerlink" href="#module-step_pipeline.constants" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="step_pipeline.constants.Backend">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">step_pipeline.constants.</span></span><span class="sig-name descname"><span class="pre">Backend</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.constants.Backend" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">enum.Enum</span></code></p>
+<p>Constants that represent possible pipeline execution backends</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="step_pipeline.constants.Backend.HAIL_BATCH_LOCAL">
+<span class="sig-name descname"><span class="pre">HAIL_BATCH_LOCAL</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'hbl'</span></em><a class="headerlink" href="#step_pipeline.constants.Backend.HAIL_BATCH_LOCAL" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="step_pipeline.constants.Backend.HAIL_BATCH_SERVICE">
+<span class="sig-name descname"><span class="pre">HAIL_BATCH_SERVICE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'hbs'</span></em><a class="headerlink" href="#step_pipeline.constants.Backend.HAIL_BATCH_SERVICE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="step_pipeline.constants.Backend.TERRA">
+<span class="sig-name descname"><span class="pre">TERRA</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'terra'</span></em><a class="headerlink" href="#step_pipeline.constants.Backend.TERRA" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="step_pipeline.constants.Backend.CROMWELL">
+<span class="sig-name descname"><span class="pre">CROMWELL</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'cromwell'</span></em><a class="headerlink" href="#step_pipeline.constants.Backend.CROMWELL" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-step_pipeline.io">
+<span id="step-pipeline-io-module"></span><h2>step_pipeline.io module<a class="headerlink" href="#module-step_pipeline.io" title="Permalink to this headline">¶</a></h2>
+<p>This module contains classes and methods related to data input &amp; output.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="step_pipeline.io.Localize">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">step_pipeline.io.</span></span><span class="sig-name descname"><span class="pre">Localize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.io.Localize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">enum.Enum</span></code></p>
+<p>Constants that represent different options for how to localize files into the running container.
+Each 2-tuple consists of a name for the localization approach, and a subdirectory where to put files.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="step_pipeline.io.Localize.COPY">
+<span class="sig-name descname"><span class="pre">COPY</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('copy',</span> <span class="pre">'local_copy')</span></em><a class="headerlink" href="#step_pipeline.io.Localize.COPY" title="Permalink to this definition">¶</a></dt>
+<dd><p>COPY uses the execution backend’s default approach to localizing files</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="step_pipeline.io.Localize.GSUTIL_COPY">
+<span class="sig-name descname"><span class="pre">GSUTIL_COPY</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('gsutil_copy',</span> <span class="pre">'local_copy')</span></em><a class="headerlink" href="#step_pipeline.io.Localize.GSUTIL_COPY" title="Permalink to this definition">¶</a></dt>
+<dd><p>GSUTIL_COPY runs ‘gsutil cp’ to localize file(s) from a google bucket path. This requires gsutil to be available
+inside the execution container.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="step_pipeline.io.Localize.HAIL_HADOOP_COPY">
+<span class="sig-name descname"><span class="pre">HAIL_HADOOP_COPY</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('hail_hadoop_copy',</span> <span class="pre">'local_copy')</span></em><a class="headerlink" href="#step_pipeline.io.Localize.HAIL_HADOOP_COPY" title="Permalink to this definition">¶</a></dt>
+<dd><p>HAIL_HADOOP_COPY uses the Hail hadoop API to copy file(s) from a google bucket path. This requires python3 and
+Hail to be installed inside the execution container.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="step_pipeline.io.Localize.HAIL_BATCH_GCSFUSE">
+<span class="sig-name descname"><span class="pre">HAIL_BATCH_GCSFUSE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('hail_batch_gcsfuse',</span> <span class="pre">'gcsfuse')</span></em><a class="headerlink" href="#step_pipeline.io.Localize.HAIL_BATCH_GCSFUSE" title="Permalink to this definition">¶</a></dt>
+<dd><p>HAIL_BATCH_GCSFUSE use the Hail Batch gcsfuse function to mount a google bucket into the execution container
+as a network drive, without copying the files. This Hail Batch service account must have read access to the bucket.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="step_pipeline.io.Localize.HAIL_BATCH_GCSFUSE_VIA_TEMP_BUCKET">
+<span class="sig-name descname"><span class="pre">HAIL_BATCH_GCSFUSE_VIA_TEMP_BUCKET</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('hail_batch_gcsfuse_via_temp_bucket',</span> <span class="pre">'gcsfuse')</span></em><a class="headerlink" href="#step_pipeline.io.Localize.HAIL_BATCH_GCSFUSE_VIA_TEMP_BUCKET" title="Permalink to this definition">¶</a></dt>
+<dd><p>HAIL_BATCH_GCSFUSE_VIA_TEMP_BUCKET is useful for situations where you’d like to use gcsfuse to localize files and
+your personal gcloud account has read access to the source bucket, but the Hail Batch service account cannot be
+granted read access to that bucket. Since it’s possible to run ‘gsutil cp’ under your personal credentials within
+the execution container, but Hail Batch gcsfuse always runs under the Hail Batch service account credentials, this
+workaround 1) runs ‘gsutil cp’ under your personal credentials to copy the source files to a temporary bucket that
+you control, and where you have granted read access to the Hail Batch service account 2) uses gcsfuse to mount the
+temporary bucket 3) performs computational steps on the mounted data 4) deletes the source files from the temporary
+bucket when the Batch job completes.</p>
+<p>This localization approach may be useful for situations where you need a large number of jobs and each job processes
+a very small piece of a large data file (eg. a few loci in a cram file).</p>
+<p>Copying the large file(s) from the source bucket to a temp bucket in the same region is fast and inexpensive, and
+only needs to happen once before the jobs run. Each job can then avoid allocating a large disk, and waiting for the
+large file to be copied into the container. This approach requires gsutil to be available inside the execution
+container.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="step_pipeline.io.Localize.get_subdir_name">
+<span class="sig-name descname"><span class="pre">get_subdir_name</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.io.Localize.get_subdir_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the subdirectory name passed to the constructor</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="step_pipeline.io.Delocalize">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">step_pipeline.io.</span></span><span class="sig-name descname"><span class="pre">Delocalize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.io.Delocalize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">enum.Enum</span></code></p>
+<p>Constants that represent different options for how to delocalize file(s) from a running container.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="step_pipeline.io.Delocalize.COPY">
+<span class="sig-name descname"><span class="pre">COPY</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'copy'</span></em><a class="headerlink" href="#step_pipeline.io.Delocalize.COPY" title="Permalink to this definition">¶</a></dt>
+<dd><p>COPY uses the execution backend’s default approach to delocalizing files</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="step_pipeline.io.Delocalize.GSUTIL_COPY">
+<span class="sig-name descname"><span class="pre">GSUTIL_COPY</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'gsutil_copy'</span></em><a class="headerlink" href="#step_pipeline.io.Delocalize.GSUTIL_COPY" title="Permalink to this definition">¶</a></dt>
+<dd><p>GSUTIL_COPY runs ‘gsutil cp’ to copy the path to a google bucket destination. This requires gsutil to be
+available inside the execution container.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="step_pipeline.io.Delocalize.HAIL_HADOOP_COPY">
+<span class="sig-name descname"><span class="pre">HAIL_HADOOP_COPY</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'hail_hadoop_copy'</span></em><a class="headerlink" href="#step_pipeline.io.Delocalize.HAIL_HADOOP_COPY" title="Permalink to this definition">¶</a></dt>
+<dd><p>HAIL_HADOOP_COPY uses the hail hadoop API to copy file(s) to a google bucket path. This requires python3 and
+hail to be installed inside the execution container.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="step_pipeline.io.InputType">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">step_pipeline.io.</span></span><span class="sig-name descname"><span class="pre">InputType</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.io.InputType" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">enum.Enum</span></code></p>
+<p>Constants that represent the type of a step.input_value(..) arg.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="step_pipeline.io.InputType.STRING">
+<span class="sig-name descname"><span class="pre">STRING</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'string'</span></em><a class="headerlink" href="#step_pipeline.io.InputType.STRING" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="step_pipeline.io.InputType.FLOAT">
+<span class="sig-name descname"><span class="pre">FLOAT</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'float'</span></em><a class="headerlink" href="#step_pipeline.io.InputType.FLOAT" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="step_pipeline.io.InputType.INT">
+<span class="sig-name descname"><span class="pre">INT</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'int'</span></em><a class="headerlink" href="#step_pipeline.io.InputType.INT" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="step_pipeline.io.InputType.BOOL">
+<span class="sig-name descname"><span class="pre">BOOL</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'boolean'</span></em><a class="headerlink" href="#step_pipeline.io.InputType.BOOL" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-step_pipeline.main">
+<span id="step-pipeline-main-module"></span><h2>step_pipeline.main module<a class="headerlink" href="#module-step_pipeline.main" title="Permalink to this headline">¶</a></h2>
+<p>This module contains the pipeline(..) function which is the main gateway for users to access the functionality in the
+step_pipeline library</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="step_pipeline.main.pipeline">
+<span class="sig-prename descclassname"><span class="pre">step_pipeline.main.</span></span><span class="sig-name descname"><span class="pre">pipeline</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backend</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">Backend.HAIL_BATCH_SERVICE</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config_file_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'~/.step_pipeline'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.main.pipeline" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a pipeline object.</p>
+<p>Usage:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">step_pipeline</span><span class="p">(</span><span class="s2">&quot;my pipeline&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">sp</span><span class="p">:</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">new_step</span><span class="p">(</span><span class="o">..</span><span class="p">)</span>
+    <span class="o">...</span> <span class="n">step</span> <span class="n">definitions</span> <span class="o">...</span>
+
+<span class="c1"># or alternatively:</span>
+
+<span class="n">sp</span> <span class="o">=</span> <span class="n">step_pipeline</span><span class="p">(</span><span class="s2">&quot;my pipeline&quot;</span><span class="p">)</span>
+<span class="n">s</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">new_step</span><span class="p">(</span><span class="o">..</span><span class="p">)</span>
+<span class="o">...</span> <span class="n">step</span> <span class="n">definitions</span> <span class="o">...</span>
+<span class="n">sp</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>str</em>) – Pipeline name.</p></li>
+<li><p><strong>backend</strong> (<a class="reference internal" href="#step_pipeline.constants.Backend" title="step_pipeline.constants.Backend"><em>Backend</em></a>) – The backend to use for executing the pipeline.</p></li>
+<li><p><strong>config_file_path</strong> (<em>str</em>) – path of a configargparse config file.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>An object that you can use to create Steps by calling <cite>.new_step(..)</cite> and then execute the pipeline by</dt><dd><p>calling <cite>.run()</cite></p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#step_pipeline.pipeline.Pipeline" title="step_pipeline.pipeline.Pipeline">Pipeline</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-step_pipeline.pipeline">
+<span id="step-pipeline-pipeline-module"></span><h2>step_pipeline.pipeline module<a class="headerlink" href="#module-step_pipeline.pipeline" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="step_pipeline.pipeline.Pipeline">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">step_pipeline.pipeline.</span></span><span class="sig-name descname"><span class="pre">Pipeline</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config_arg_parser</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.pipeline.Pipeline" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">abc.ABC</span></code></p>
+<p>Pipeline represents the execution pipeline. This base class contains only generalized code that is not specific
+to any particular execution backend. It has public methods for creating Steps, as well as some private methods that
+implement the general aspects of traversing the execution graph (DAG) and transferring all steps to a specific
+execution backend.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="step_pipeline.pipeline.Pipeline.get_config_arg_parser">
+<span class="sig-name descname"><span class="pre">get_config_arg_parser</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.pipeline.Pipeline.get_config_arg_parser" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the configargparse.ArgumentParser object used by the Pipeline to define command-line args.
+This is a drop-in replacement for argparse.ArgumentParser with some extra features such as support for
+config files and environment variables. See <a class="reference external" href="https://github.com/bw2/ConfigArgParse">https://github.com/bw2/ConfigArgParse</a> for more details.
+You can use this to add and parse your own command-line arguments the same way you would using argparse. For
+example:</p>
+<p>p = pipeline.get_config_arg_parser()
+p.add_argument(”–my-arg”)
+args = pipeline.parse_args()</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="step_pipeline.pipeline.Pipeline.parse_args">
+<span class="sig-name descname"><span class="pre">parse_args</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.pipeline.Pipeline.parse_args" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parse command line args defined up to this point. This method can be called more than once.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>argparse args object.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="step_pipeline.pipeline.Pipeline.new_step">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">new_step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">step_number</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.pipeline.Pipeline.new_step" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a new pipeline Step. Subclasses must implement this method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>str</em>) – A short name for the step.</p></li>
+<li><p><strong>step_number</strong> (<em>int</em>) – Optional step number.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="step_pipeline.pipeline.Pipeline.gcloud_project">
+<span class="sig-name descname"><span class="pre">gcloud_project</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gcloud_project</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.pipeline.Pipeline.gcloud_project" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="step_pipeline.pipeline.Pipeline.cancel_after_n_failures">
+<span class="sig-name descname"><span class="pre">cancel_after_n_failures</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cancel_after_n_failures</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.pipeline.Pipeline.cancel_after_n_failures" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="step_pipeline.pipeline.Pipeline.default_image">
+<span class="sig-name descname"><span class="pre">default_image</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">default_image</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.pipeline.Pipeline.default_image" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="step_pipeline.pipeline.Pipeline.default_python_image">
+<span class="sig-name descname"><span class="pre">default_python_image</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">default_python_image</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.pipeline.Pipeline.default_python_image" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="step_pipeline.pipeline.Pipeline.default_memory">
+<span class="sig-name descname"><span class="pre">default_memory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">default_memory</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.pipeline.Pipeline.default_memory" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="step_pipeline.pipeline.Pipeline.default_cpu">
+<span class="sig-name descname"><span class="pre">default_cpu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">default_cpu</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.pipeline.Pipeline.default_cpu" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="step_pipeline.pipeline.Pipeline.default_storage">
+<span class="sig-name descname"><span class="pre">default_storage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">default_storage</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.pipeline.Pipeline.default_storage" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="step_pipeline.pipeline.Pipeline.default_timeout">
+<span class="sig-name descname"><span class="pre">default_timeout</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">default_timeout</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.pipeline.Pipeline.default_timeout" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="step_pipeline.pipeline.Pipeline.default_output_dir">
+<span class="sig-name descname"><span class="pre">default_output_dir</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">default_output_dir</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.pipeline.Pipeline.default_output_dir" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the default output_dir for pipeline Steps.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>default_output_dir</strong> (<em>str</em>) – Output directory</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="step_pipeline.pipeline.Pipeline.run">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.pipeline.Pipeline.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Submits a pipeline to an execution engine such as Hail Batch. Subclasses must implement this method.
+They should use this method to perform initialization of the specific execution backend and then call
+self._transfer_all_steps(..).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="step_pipeline.pipeline.Pipeline.check_input_glob">
+<span class="sig-name descname"><span class="pre">check_input_glob</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">glob_path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.pipeline.Pipeline.check_input_glob" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method  input file(s) to this Step using glob syntax (ie. using wildcards as in <cite>gs://bucket/**/sample*.cram</cite>)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>path</strong> (<em>str</em>) – local file path or gs:// Google Storage path. The path can contain wildcards (*).</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><p>List of metadata dicts like:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span>
+    <span class="p">{</span>
+        <span class="s1">&#39;path&#39;</span><span class="p">:</span> <span class="s1">&#39;gs://bucket/dir/file.bam.bai&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;size_bytes&#39;</span><span class="p">:</span> <span class="mi">2784</span><span class="p">,</span>
+        <span class="s1">&#39;modification_time&#39;</span><span class="p">:</span> <span class="s1">&#39;Wed May 20 12:52:01 EDT 2020&#39;</span><span class="p">,</span>
+    <span class="p">},</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="step_pipeline.pipeline.Pipeline.export_pipeline_graph">
+<span class="sig-name descname"><span class="pre">export_pipeline_graph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_svg_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.pipeline.Pipeline.export_pipeline_graph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Renders the pipeline execution graph diagram based on the Steps defined so far.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>output_svg_path</strong> (<em>str</em>) – Path where to write the SVG image with the execution graph diagram. If not specified,
+it will be based on the pipeline name.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="step_pipeline.pipeline.Step">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">step_pipeline.pipeline.</span></span><span class="sig-name descname"><span class="pre">Step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pipeline</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">step_number</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">arg_suffix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">localize_by</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delocalize_by</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">add_force_command_line_args</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">add_skip_command_line_args</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.pipeline.Step" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">abc.ABC</span></code></p>
+<p>Represents a set of commands or sub-steps which together produce some output file(s), and which can be
+skipped if the output files already exist (and are newer than any input files unless a –force arg is used).
+A Step’s input and output files must be stored in some persistant location, like a local disk or GCS.</p>
+<p>Using Hail Batch as an example, a Step typically corresponds to a single Hail Batch Job. Sometimes a Job can be
+reused to run multiple steps (for example, where step 1 creates a VCF and step 2 tabixes it).</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="step_pipeline.pipeline.Step.name">
+<span class="sig-name descname"><span class="pre">name</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.pipeline.Step.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the short name for this Step.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>name</strong> (<em>str</em>) – Name</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="step_pipeline.pipeline.Step.command">
+<span class="sig-name descname"><span class="pre">command</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">command</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.pipeline.Step.command" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a shell command to this Step.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>command</strong> (<em>str</em>) – A shell command to execute as part of this Step</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="step_pipeline.pipeline.Step.input_glob">
+<span class="sig-name descname"><span class="pre">input_glob</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">glob_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">localize_by</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.pipeline.Step.input_glob" title="Permalink to this definition">¶</a></dt>
+<dd><p>Specify input file(s) to this Step using glob syntax (ie. using wildcards as in <cite>gs://bucket/**/sample*.cram</cite>)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>glob_path</strong> (<em>str</em>) – The path of the input file(s) or directory to localize, optionally including wildcards.</p></li>
+<li><p><strong>name</strong> (<em>str</em>) – Optional name for this input.</p></li>
+<li><p><strong>localize_by</strong> (<a class="reference internal" href="#step_pipeline.io.Localize" title="step_pipeline.io.Localize"><em>Localize</em></a>) – How this path should be localized.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>An object that describes the specified input file or directory.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>_InputSpec</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="step_pipeline.pipeline.Step.input_value">
+<span class="sig-name descname"><span class="pre">input_value</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.pipeline.Step.input_value" title="Permalink to this definition">¶</a></dt>
+<dd><p>Specify a Step input that is something other than a file path.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>value</strong> – The input’s value.</p></li>
+<li><p><strong>name</strong> (<em>str</em>) – Optional name for this input.</p></li>
+<li><p><strong>input_type</strong> (<a class="reference internal" href="#step_pipeline.io.InputType" title="step_pipeline.io.InputType"><em>InputType</em></a>) – The value’s type.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>An object that contains the input value, name, and type.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>_InputValueSpec</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="step_pipeline.pipeline.Step.input">
+<span class="sig-name descname"><span class="pre">input</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">localize_by</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.pipeline.Step.input" title="Permalink to this definition">¶</a></dt>
+<dd><p>Specifies an input file or directory.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>source_path</strong> (<em>str</em>) – Path of input file or directory to localize.</p></li>
+<li><p><strong>name</strong> (<em>str</em>) – Optional name for this input.</p></li>
+<li><p><strong>localize_by</strong> (<a class="reference internal" href="#step_pipeline.io.Localize" title="step_pipeline.io.Localize"><em>Localize</em></a>) – How this path should be localized.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>An object that describes the specified input file or directory.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>_InputSpec</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="step_pipeline.pipeline.Step.inputs">
+<span class="sig-name descname"><span class="pre">inputs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source_path</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">source_paths</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">localize_by</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.pipeline.Step.inputs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Specifies one or more input file or directory paths.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>source_path</strong> (<em>str</em>) – Path of input file or directory to localize.</p></li>
+<li><p><strong>name</strong> (<em>str</em>) – Optional name to apply to all these inputs.</p></li>
+<li><p><strong>localize_by</strong> (<a class="reference internal" href="#step_pipeline.io.Localize" title="step_pipeline.io.Localize"><em>Localize</em></a>) – How these paths should be localized.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>A list of _InputSpec objects that describe these input files or directories. The list will contain</dt><dd><p>one entry for each passed-in source path.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="step_pipeline.pipeline.Step.use_the_same_inputs_as">
+<span class="sig-name descname"><span class="pre">use_the_same_inputs_as</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other_step</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">localize_by</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.pipeline.Step.use_the_same_inputs_as" title="Permalink to this definition">¶</a></dt>
+<dd><p>Copy the inputs of another step, while optionally changing the localize_by approach. This is a utility method
+to make it easier to specify inputs for a Step that is very similar to a previously-defined step.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>other_step</strong> (<a class="reference internal" href="#step_pipeline.pipeline.Step" title="step_pipeline.pipeline.Step"><em>Step</em></a>) – The Step object to copy inputs from.</p></li>
+<li><p><strong>localize_by</strong> (<a class="reference internal" href="#step_pipeline.io.Localize" title="step_pipeline.io.Localize"><em>Localize</em></a>) – Optionally specify how these inputs should be localized. If not specified, the value
+from other_step will be reused.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>A list of new _InputSpec objects that describe the inputs copied from other_step. The returned list</dt><dd><p>will contain one entry for each input of other_step.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="step_pipeline.pipeline.Step.use_previous_step_outputs_as_inputs">
+<span class="sig-name descname"><span class="pre">use_previous_step_outputs_as_inputs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">previous_step</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">localize_by</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.pipeline.Step.use_previous_step_outputs_as_inputs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Define Step inputs to be the output paths of an upstream Step and explicitly mark this Step as downstream of
+previous_step by calling self.depends_on(previous_step).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>previous_step</strong> (<a class="reference internal" href="#step_pipeline.pipeline.Step" title="step_pipeline.pipeline.Step"><em>Step</em></a>) – A Step that’s upstream of this Step in the pipeline.</p></li>
+<li><p><strong>localize_by</strong> (<a class="reference internal" href="#step_pipeline.io.Localize" title="step_pipeline.io.Localize"><em>Localize</em></a>) – Specify how these inputs should be localized. If not specified, the default
+localize_by value for the pipeline will be used.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A list of new _InputSpec objects that describe the inputs defined based on the outputs of
+previous_step. The returned list will contain one entry for each output of previous_step.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="step_pipeline.pipeline.Step.output_dir">
+<span class="sig-name descname"><span class="pre">output_dir</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.pipeline.Step.output_dir" title="Permalink to this definition">¶</a></dt>
+<dd><p>If an output path is specified as a relative path, it will be relative to this dir.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>path</strong> (<em>str</em>) – Directory path.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="step_pipeline.pipeline.Step.output">
+<span class="sig-name descname"><span class="pre">output</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">local_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delocalize_by</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.pipeline.Step.output" title="Permalink to this definition">¶</a></dt>
+<dd><p>Specify a Step output file or directory.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>local_path</strong> (<em>str</em>) – The file or directory path within the execution container’s file system.</p></li>
+<li><p><strong>output_path</strong> (<em>str</em>) – Optional destination path to which the local_path should be delocalized.</p></li>
+<li><p><strong>output_dir</strong> (<em>str</em>) – Optional destination directory to which the local_path should be delocalized.
+It is expected that either output_path will be specified, or an output_dir value will be provided as an
+argument to this method or previously (such as by calling the step.output_dir(..) setter method).
+If both output_path and output_dir are specified and output_path is a relative path, it is interpretted
+as being relative to output_dir.</p></li>
+<li><p><strong>name</strong> (<em>str</em>) – Optional name for this output.</p></li>
+<li><p><strong>delocalize_by</strong> (<a class="reference internal" href="#step_pipeline.io.Delocalize" title="step_pipeline.io.Delocalize"><em>Delocalize</em></a>) – How this path should be delocalized.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>An object describing this output.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>_OutputSpec</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="step_pipeline.pipeline.Step.outputs">
+<span class="sig-name descname"><span class="pre">outputs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">local_path</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">local_paths</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delocalize_by</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.pipeline.Step.outputs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Define one or more outputs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>local_path</strong> (<em>str</em>) – The file or directory path within the execution container’s file system.</p></li>
+<li><p><strong>output_dir</strong> (<em>str</em>) – Optional destination directory to which the given local_path(s) should be delocalized.</p></li>
+<li><p><strong>name</strong> (<em>str</em>) – Optional name for the output(s).</p></li>
+<li><p><strong>delocalize_by</strong> (<a class="reference internal" href="#step_pipeline.io.Delocalize" title="step_pipeline.io.Delocalize"><em>Delocalize</em></a>) – How the path(s) should be delocalized.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A list of _OutputSpec objects that describe these outputs. The list will contain one entry for each passed-in path.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="step_pipeline.pipeline.Step.depends_on">
+<span class="sig-name descname"><span class="pre">depends_on</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">upstream_step</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.pipeline.Step.depends_on" title="Permalink to this definition">¶</a></dt>
+<dd><p>Marks this Step as being downstream of another Step in the pipeline, meaning that this Step can only run
+after the upstream_step has completed successfully.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>upstream_step</strong> (<a class="reference internal" href="#step_pipeline.pipeline.Step" title="step_pipeline.pipeline.Step"><em>Step</em></a>) – The upstream Step this Step depends on.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="step_pipeline.pipeline.Step.has_upstream_steps">
+<span class="sig-name descname"><span class="pre">has_upstream_steps</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.pipeline.Step.has_upstream_steps" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns True if this Step has upstream Steps that must run before it runs (ie. that it depends on)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="step_pipeline.pipeline.Step.post_to_slack">
+<span class="sig-name descname"><span class="pre">post_to_slack</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">message</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">channel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">slack_token</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.pipeline.Step.post_to_slack" title="Permalink to this definition">¶</a></dt>
+<dd><p>Posts the given message to slack. Requires python3 and pip to be installed in the execution environment.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>message</strong> (<em>str</em>) – The message to post.</p></li>
+<li><p><strong>channel</strong> (<em>str</em>) – The Slack channel to post to.</p></li>
+<li><p><strong>slack_token</strong> (<em>str</em>) – Slack auth token.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="step_pipeline.pipeline.Step.switch_gcloud_auth_to_user_account">
+<span class="sig-name descname"><span class="pre">switch_gcloud_auth_to_user_account</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gcloud_credentials_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gcloud_user_account</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gcloud_project</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">debug</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.pipeline.Step.switch_gcloud_auth_to_user_account" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method adds commands to this Step to switch gcloud auth from the Batch-provided service
+account to the user’s personal account.</p>
+<p>This is useful if subsequent commands need to access google buckets that to which the user’s personal account
+has access but to which the Batch service account cannot be granted access for whatever reason.</p>
+<p>For this to work, you must first:</p>
+<ol class="arabic">
+<li><p>create a google bucket that only you have access to - for example: gs://weisburd-gcloud-secrets/</p></li>
+<li><p>on your local machine, make sure you’re logged in to gcloud by running:</p>
+<p>gcloud auth login</p>
+</li>
+<li><p>copy your local ~/.config directory (which caches your gcloud auth credentials) to the secrets bucket from step 1:</p>
+<p>gsutil -m cp -r ~/.config/  gs://weisburd-gcloud-secrets/</p>
+</li>
+<li><p>grant your default Batch service-account read access to your secrets bucket so it can download these credentials
+into each docker container.</p></li>
+<li><p>make sure gcloud &amp; gsutil are installed inside the docker images you use for your Batch jobs</p></li>
+<li><p>call this method at the beginning of your batch job:</p></li>
+</ol>
+<p class="rubric">Example</p>
+<dl class="simple">
+<dt>step.switch_gcloud_auth_to_user_account(</dt><dd><p>“gs://weisburd-gcloud-secrets”, “weisburd&#64;broadinstitute.org”, “seqr-project”)</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>gcloud_credentials_path</strong> (<em>str</em>) – Google bucket path that contains your gcloud auth .config folder.</p></li>
+<li><p><strong>gcloud_user_account</strong> (<em>str</em>) – The user account to activate (ie. “<a class="reference external" href="mailto:weisburd&#37;&#52;&#48;broadinstitute&#46;org">weisburd<span>&#64;</span>broadinstitute<span>&#46;</span>org</a>”).</p></li>
+<li><p><strong>gcloud_project</strong> (<em>str</em>) – This will be set as the default gcloud project within the container.</p></li>
+<li><p><strong>debug</strong> (<em>bool</em>) – Whether to add extra “gcloud auth list” commands that are helpful for troubleshooting issues
+with the auth steps.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="step_pipeline.pipeline.Step.record_memory_cpu_and_disk_usage">
+<span class="sig-name descname"><span class="pre">record_memory_cpu_and_disk_usage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_interval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">export_json</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">export_graphs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">install_glances</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.pipeline.Step.record_memory_cpu_and_disk_usage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add commands that run the ‘glances’ python tool to record memory, cpu, disk usage and other profiling stats
+in the background at regular intervals.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>output_dir</strong> (<em>str</em>) – Profiling data will be written to this directory.</p></li>
+<li><p><strong>time_interval</strong> (<em>int</em>) – How frequently to update the profiling data files.</p></li>
+<li><p><strong>export_json</strong> (<em>bool</em>) – Whether to export a glances.json file to output_dir.</p></li>
+<li><p><strong>export_graphs</strong> (<em>bool</em>) – Whether to export .svg graphs.</p></li>
+<li><p><strong>install_glances</strong> (<em>bool</em>) – If True, a command will be added to first install the ‘glances’ python library
+inside the execution container.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-step_pipeline.utils">
+<span id="step-pipeline-utils-module"></span><h2>step_pipeline.utils module<a class="headerlink" href="#module-step_pipeline.utils" title="Permalink to this headline">¶</a></h2>
+<p>This module contains misc. utility functions used by other modules.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="step_pipeline.utils.are_any_inputs_missing">
+<span class="sig-prename descclassname"><span class="pre">step_pipeline.utils.</span></span><span class="sig-name descname"><span class="pre">are_any_inputs_missing</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">step</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.utils.are_any_inputs_missing" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns True if any of the Step’s inputs don’t exist</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="step_pipeline.utils.are_outputs_up_to_date">
+<span class="sig-prename descclassname"><span class="pre">step_pipeline.utils.</span></span><span class="sig-name descname"><span class="pre">are_outputs_up_to_date</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">step</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.utils.are_outputs_up_to_date" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns True if all of the Step’s outputs already exist and are newer than all inputs</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="step_pipeline.utils.check_gcloud_storage_region">
+<span class="sig-prename descclassname"><span class="pre">step_pipeline.utils.</span></span><span class="sig-name descname"><span class="pre">check_gcloud_storage_region</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gs_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">expected_regions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">('US',</span> <span class="pre">'US-CENTRAL1')</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gcloud_project</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_access_denied_exception</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.utils.check_gcloud_storage_region" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks whether the given Google Storage path is located in one of the expected_regions. This is set to
+“US-CENTRAL1” by default since that’s the region where the hail Batch cluster is located. Localizing data from
+other regions will be slower and result in egress charges.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>gs_path</strong> (<em>str</em>) – The google storage gs:// path to check. Only the bucket portion of the path matters, so other
+parts of the path can contain wildcards (*), etc.</p></li>
+<li><p><strong>expected_regions</strong> (<em>tuple</em>) – a set of acceptable storage regions. If gs_path is not in one of these regions, this
+method will raise a StorageRegionException.</p></li>
+<li><p><strong>gcloud_project</strong> (<em>str</em>) – (optional) if specified, it will be added to the gsutil command with the -u arg.</p></li>
+<li><p><strong>ignore_access_denied_exception</strong> (<em>bool</em>) – if True, this method return silently if it encounters an AccessDenied
+error.</p></li>
+<li><p><strong>verbose</strong> (<em>bool</em>) – print more logs</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><strong>StorageRegionException</strong> – If the given gs_path is not stored in one the expected_regions.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-step_pipeline.wdl">
+<span id="step-pipeline-wdl-module"></span><h2>step_pipeline.wdl module<a class="headerlink" href="#module-step_pipeline.wdl" title="Permalink to this headline">¶</a></h2>
+<p>This module contains Cromwell/Terra-specific extensions of the Pipeline and Step classes</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="step_pipeline.wdl.WdlPipeline">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">step_pipeline.wdl.</span></span><span class="sig-name descname"><span class="pre">WdlPipeline</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config_arg_parser</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backend</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">Backend.TERRA</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.wdl.WdlPipeline" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#step_pipeline.pipeline.Pipeline" title="step_pipeline.pipeline.Pipeline"><code class="xref py py-class docutils literal notranslate"><span class="pre">step_pipeline.pipeline.Pipeline</span></code></a></p>
+<p>This class extends the Pipeline class to add support for generating a WDL and will later add support for
+running it using Cromwell or Terra.</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="step_pipeline.wdl.WdlPipeline.backend">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">backend</span></span><a class="headerlink" href="#step_pipeline.wdl.WdlPipeline.backend" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns either Backend.CROMWELL or Backend.TERRA</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="step_pipeline.wdl.WdlPipeline.new_step">
+<span class="sig-name descname"><span class="pre">new_step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">step_number</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">depends_on</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">image</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cpu</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">memory</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">storage</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">localize_by</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">Localize.COPY</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delocalize_by</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">Delocalize.COPY</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.wdl.WdlPipeline.new_step" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a new pipeline Step.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>str</em>) – A short name for this Step.</p></li>
+<li><p><strong>step_number</strong> (<em>int</em>) – Optional Step number which serves as another alias for this step in addition to name.</p></li>
+<li><p><strong>depends_on</strong> (<a class="reference internal" href="#step_pipeline.pipeline.Step" title="step_pipeline.pipeline.Step"><em>Step</em></a>) – Optional upstream Step that this Step depends on.</p></li>
+<li><p><strong>image</strong> (<em>str</em>) – Docker image to use for this Step.</p></li>
+<li><p><strong>cpu</strong> (<em>str</em><em>, </em><em>float</em><em>, </em><em>int</em>) – CPU requirements. Units are in cpu if cores is numeric.</p></li>
+<li><p><strong>memory</strong> (<em>str</em><em>, </em><em>float int</em>) – Memory requirements. The memory expression must be of the form {number}{suffix}
+where valid optional suffixes are K, Ki, M, Mi, G, Gi, T, Ti, P, and Pi. Omitting a suffix means
+the value is in bytes. For the ServiceBackend, the values ‘lowmem’, ‘standard’, and ‘highmem’ are also
+valid arguments. ‘lowmem’ corresponds to approximately 1 Gi/core, ‘standard’ corresponds to
+approximately 4 Gi/core, and ‘highmem’ corresponds to approximately 7 Gi/core. The default value
+is ‘standard’.</p></li>
+<li><p><strong>storage</strong> (<em>str</em><em>, </em><em>int</em>) – Disk size. The storage expression must be of the form {number}{suffix} where valid
+optional suffixes are K, Ki, M, Mi, G, Gi, T, Ti, P, and Pi. Omitting a suffix means the value is in
+bytes.</p></li>
+<li><p><strong>localize_by</strong> (<a class="reference internal" href="#step_pipeline.io.Localize" title="step_pipeline.io.Localize"><em>Localize</em></a>) – If specified, this will be the default Localize approach used by Step inputs.</p></li>
+<li><p><strong>delocalize_by</strong> (<a class="reference internal" href="#step_pipeline.io.Delocalize" title="step_pipeline.io.Delocalize"><em>Delocalize</em></a>) – If specified, this will be the default Delocalize approach used by Step outputs.</p></li>
+<li><p><strong>**kwargs</strong> – other keyword args can be provided, but are ignored.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The new WdlStep object.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#step_pipeline.wdl.WdlStep" title="step_pipeline.wdl.WdlStep">WdlStep</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="step_pipeline.wdl.WdlPipeline.run_for_each_row">
+<span class="sig-name descname"><span class="pre">run_for_each_row</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">table</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.wdl.WdlPipeline.run_for_each_row" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run the pipeline in parallel for each row of the given table</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="step_pipeline.wdl.WdlPipeline.run">
+<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.wdl.WdlPipeline.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate WDL</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="step_pipeline.wdl.WdlStep">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">step_pipeline.wdl.</span></span><span class="sig-name descname"><span class="pre">WdlStep</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pipeline</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">step_number</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">image</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cpu</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">memory</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">storage</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">localize_by</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">Localize.COPY</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delocalize_by</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">Delocalize.COPY</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.wdl.WdlStep" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#step_pipeline.pipeline.Step" title="step_pipeline.pipeline.Step"><code class="xref py py-class docutils literal notranslate"><span class="pre">step_pipeline.pipeline.Step</span></code></a></p>
+<p>This class contains Hail Batch-specific extensions of the Step class</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="step_pipeline.wdl.WdlStep.cpu">
+<span class="sig-name descname"><span class="pre">cpu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cpu</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.wdl.WdlStep.cpu" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the CPU requirement for this Step.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>cpu</strong> (<em>str</em><em>, </em><em>float</em><em>, </em><em>int</em>) – CPU requirements. Units are in cpu if cores is numeric.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="step_pipeline.wdl.WdlStep.memory">
+<span class="sig-name descname"><span class="pre">memory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">memory</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.wdl.WdlStep.memory" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the memory requirement for this Step.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>memory</strong> (<em>str</em><em>, </em><em>float int</em>) – Memory requirements. The memory expression must be of the form {number}{suffix}
+where valid optional suffixes are K, Ki, M, Mi, G, Gi, T, Ti, P, and Pi. Omitting a suffix means
+the value is in bytes. For the ServiceBackend, the values ‘lowmem’, ‘standard’, and ‘highmem’ are also
+valid arguments. ‘lowmem’ corresponds to approximately 1 Gi/core, ‘standard’ corresponds to
+approximately 4 Gi/core, and ‘highmem’ corresponds to approximately 7 Gi/core. The default value
+is ‘standard’.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="step_pipeline.wdl.WdlStep.storage">
+<span class="sig-name descname"><span class="pre">storage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">storage</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.wdl.WdlStep.storage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the disk size for this Step.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>storage</strong> (<em>str</em><em>, </em><em>int</em>) – Disk size. The storage expression must be of the form {number}{suffix} where valid
+optional suffixes are K, Ki, M, Mi, G, Gi, T, Ti, P, and Pi.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-step_pipeline">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-step_pipeline" title="Permalink to this headline">¶</a></h2>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="../index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">step_pipeline package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-step_pipeline.batch">step_pipeline.batch module</a></li>
+<li><a class="reference internal" href="#module-step_pipeline.constants">step_pipeline.constants module</a></li>
+<li><a class="reference internal" href="#module-step_pipeline.io">step_pipeline.io module</a></li>
+<li><a class="reference internal" href="#module-step_pipeline.main">step_pipeline.main module</a></li>
+<li><a class="reference internal" href="#module-step_pipeline.pipeline">step_pipeline.pipeline module</a></li>
+<li><a class="reference internal" href="#module-step_pipeline.utils">step_pipeline.utils module</a></li>
+<li><a class="reference internal" href="#module-step_pipeline.wdl">step_pipeline.wdl module</a></li>
+<li><a class="reference internal" href="#module-step_pipeline">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="modules.html"
+                          title="previous chapter">step_pipeline</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/source/step_pipeline.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="modules.html" title="step_pipeline"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">step-pipeline 0.2 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="modules.html" >step_pipeline</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">step_pipeline package</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2022, Ben.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 4.4.0.
+    </div>
+  </body>
+</html>
