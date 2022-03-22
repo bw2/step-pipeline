@@ -361,6 +361,9 @@ class WdlStep(Step):
         Args:
             output_spec (_OutputSpec): The output to preprocess.
         """
+        if not output_spec.name and not output_spec.filename:
+            raise ValueError(f"{output_spec} both name and filename are unspecified")
+
         super()._preprocess_output_spec(output_spec)
 
     def _transfer_output_spec(self, output_spec):

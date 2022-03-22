@@ -763,6 +763,8 @@ EOF""")
             # validate path since Batch delocalization doesn't work for gs:// paths with a Local backend.
             if output_spec.output_path.startswith("gs://") and self._pipeline.backend == Backend.HAIL_BATCH_LOCAL:
                 raise ValueError("The hail Batch Local backend doesn't support Delocalize.COPY for gs:// paths")
+            if not output_spec.filename:
+                raise ValueError(f"{output_spec} filename isn't specified. It is required for Delocalize.COPY")
         elif output_spec.delocalize_by == Delocalize.GSUTIL_COPY:
             self.command(self._generate_gsutil_copy_command(output_spec.local_path, output_spec.output_dir))
 
@@ -780,7 +782,16 @@ EOF""")
             self._output_file_counter += 1
             output_file_obj = self._job[f"ofile{self._output_file_counter}"]
             self._job.command(f'cp {output_spec.local_path} {output_file_obj}')
-            self._job._batch.write_output(output_file_obj, output_spec.output_dir.rstrip("/") + f"/{output_spec.filename}")
+
+            if not output_spec.output_dir:
+                raise ValueError(f"{output_spec} output directory is required for Delocalize.COPY")
+            if not output_spec.filename:
+                raise ValueError(f"{output_spec} output filename is required for Delocalize.COPY")
+
+            destination_path = os.path.join(output_spec.output_dir, output_spec.filename)
+            self._job.command(f'echo Copying {output_spec.local_path} to {destination_path}')
+            self._job._batch.write_output(output_file_obj, destination_path)
+
         elif output_spec.delocalize_by == Delocalize.GSUTIL_COPY:
             pass  # GSUTIL_COPY was already handled in _preprocess_output_spec(..)
         elif output_spec.delocalize_by == Delocalize.HAIL_HADOOP_COPY:
