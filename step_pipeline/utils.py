@@ -72,7 +72,6 @@ def _generate_gs_path_to_file_stat_dict(gs_path_with_wildcards):
             return {}
         else:
             raise _GoogleStorageException(e.output)
-
     # map path to file size in bytes and its last-modified date (eg. "2020-05-20T16:52:01Z")
     def parse_gsutil_date_string(date_string):
         #utc_date = datetime.strptime(date_string, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
@@ -83,6 +82,8 @@ def _generate_gs_path_to_file_stat_dict(gs_path_with_wildcards):
     path_to_file_stat_dict = {
         r[2]: (int(r[0]), parse_gsutil_date_string(r[1])) for r in records
     }
+
+    print(f"Found {len(path_to_file_stat_dict)} matching paths")
 
     GSUTIL_PATH_TO_FILE_STAT_CACHE[gs_path_with_wildcards] = path_to_file_stat_dict
 

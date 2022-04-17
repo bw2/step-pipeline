@@ -481,7 +481,6 @@ class BatchStep(Step):
 
     def _transfer_step(self):
         """Submit this Step to the Batch backend. This method is only called if the Step isn't skipped."""
-
         # create Batch Job object
         batch = self._pipeline._batch
         if self._reuse_job_from_previous_step:
@@ -573,7 +572,11 @@ class BatchStep(Step):
             self._job.command(f"bash -c '{script_input_spec.local_path}'")
         else:
             for command in self._commands:
-                print(" "*4 + f"Adding command: {command}")
+                command_summary = command
+                command_summary_line_count = len(command_summary.split("\n"))
+                if command_summary_line_count > 5:
+                    command_summary = "\n".join(command_summary.split("\n")[:5]) + f"\n...  {command_summary_line_count-5} more line(s)"
+                print(" "*4 + f"Adding command: {command_summary}")
                 self._job.command(command)
 
         # transfer outputs

@@ -297,7 +297,8 @@ print(response.raw)
 EOF"""
 
     def check_input_glob(self, glob_path):
-        """This method  input file(s) to this Step using glob syntax (ie. using wildcards as in `gs://bucket/**/sample*.cram`)
+        """This method is useful for checking the existence of multiple input files and caching the results.
+        Input file(s) to this Step using glob syntax (ie. using wildcards as in `gs://bucket/**/sample*.cram`)
 
         Args:
             path (str): local file path or gs:// Google Storage path. The path can contain wildcards (*).
