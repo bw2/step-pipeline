@@ -458,23 +458,22 @@ class Step(ABC):
             command_line_arg_suffixes.append(f"step{step_number}")
 
         for suffix in command_line_arg_suffixes:
-            if suffix in Step._USED_ARG_SUFFIXES:
-                continue
-
             if add_force_command_line_args:
-                argument_parser.add_argument(
-                    f"--force-{suffix}",
-                    help=f"Force execution of '{name}'.",
-                    action="store_true",
-                )
                 self._force_this_step_arg_names.append(f"force_{suffix}")
+                if suffix not in Step._USED_ARG_SUFFIXES:
+                    argument_parser.add_argument(
+                        f"--force-{suffix}",
+                        help=f"Force execution of '{name}'.",
+                        action="store_true",
+                    )
             if add_skip_command_line_args:
-                argument_parser.add_argument(
-                    f"--skip-{suffix}",
-                    help=f"Skip '{name}' even if --force is used.",
-                    action="store_true",
-                )
                 self._skip_this_step_arg_names.append(f"skip_{suffix}")
+                if suffix not in Step._USED_ARG_SUFFIXES:
+                    argument_parser.add_argument(
+                        f"--skip-{suffix}",
+                        help=f"Skip '{name}' even if --force is used.",
+                        action="store_true",
+                    )
             Step._USED_ARG_SUFFIXES.add(suffix)
 
     def name(self, name):
