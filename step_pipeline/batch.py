@@ -714,11 +714,12 @@ class BatchStep(Step):
             self._paths_localized_via_temp_bucket.add(temp_file_path)
 
             # copy file to temp bucket
-            self._job.command(self._generate_gsutil_copy_command(source_path, temp_dir))
-        else:
-            subdir = localize_by.get_subdir_name()
-            source_bucket = input_spec.source_bucket
+            gsutil_command = self._generate_gsutil_copy_command(source_path, temp_dir)
+            print("Running: ", gsutil_command)
+            self._job.command(gsutil_command)
 
+        subdir = localize_by.get_subdir_name()
+        source_bucket = input_spec.source_bucket
         local_root_dir = self._pipeline._get_localization_root_dir(localize_by)
         local_mount_dir = os.path.join(local_root_dir, subdir, source_bucket)
         if source_bucket not in self._buckets_mounted_via_gcsfuse:
