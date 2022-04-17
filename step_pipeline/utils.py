@@ -173,9 +173,21 @@ def _file_stat__cached(path):
             """
             #stat_results["modification_time"] = datetime.strptime(
             #    stat_results["modification_time"], '%a %b %d %H:%M:%S %Z %Y').replace(tzinfo=LOCAL_TIMEZONE)
-            stat_results["modification_time"] = LOCAL_TIMEZONE.localize(
-                parser.parse(stat_results["modification_time"], ignoretz=True))
+
+            if isinstance(stat_results["modification_time"], float):
+                stat_results["modification_time"] = datetime.fromtimestamp(
+                    stat_results["modification_time"]).replace(tzinfo=LOCAL_TIMEZONE)
+            elif isinstance(stat_results["modification_time"], str):
+                try:
+                    stat_results["modification_time"] = LOCAL_TIMEZONE.localize(
+                        parser.parse(stat_results["modification_time"], ignoretz=True))
+                except Exception as e:
+                    raise Exception(f"Unable to parse 'modification_time' from {stat_results}: {e}")
+            else:
+                raise Exception(f"Unexpected stat_results type: {type(stat_results)}: {stat_results}")
+
             HADOOP_STAT_CACHE[path] = [stat_results]
+
     else:
         if "*" in path:
             local_paths = glob.glob(path)
