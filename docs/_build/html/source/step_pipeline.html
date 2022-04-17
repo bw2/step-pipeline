@@ -613,7 +613,8 @@ self._transfer_all_steps(..).</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="step_pipeline.pipeline.Pipeline.check_input_glob">
 <span class="sig-name descname"><span class="pre">check_input_glob</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">glob_path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.pipeline.Pipeline.check_input_glob" title="Permalink to this definition">¶</a></dt>
-<dd><p>This method  input file(s) to this Step using glob syntax (ie. using wildcards as in <cite>gs://bucket/**/sample*.cram</cite>)</p>
+<dd><p>This method is useful for checking the existence of multiple input files and caching the results.
+Input file(s) to this Step using glob syntax (ie. using wildcards as in <cite>gs://bucket/**/sample*.cram</cite>)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>path</strong> (<em>str</em>) – local file path or gs:// Google Storage path. The path can contain wildcards (*).</p>
