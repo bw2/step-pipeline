@@ -6,8 +6,7 @@ import re
 import sys
 
 from step_pipeline.utils import _file_stat__cached
-
-from .utils import are_outputs_up_to_date
+from .utils import are_any_inputs_missing, are_outputs_up_to_date
 from .io import Localize, Delocalize, _InputSpec, _InputValueSpec, _OutputSpec
 
 
@@ -47,6 +46,13 @@ class Pipeline(ABC):
         config_arg_parser.add_argument("-c", "--config-file", help="YAML config file path", is_config_file_arg=True)
         config_arg_parser.add_argument("--dry-run", action="store_true", help="Don't run commands, just print them.")
         config_arg_parser.add_argument("-f", "--force", action="store_true", help="Force execution of all steps.")
+
+        config_arg_parser.add_argument(
+            "--skip-steps-with-missing-inputs",
+            action="store_true",
+            help="When a Step is ready to run but has missing input file(s), the default behavior is to print an error "
+                 "and exit. This arg instead causes the Step to be skipped with a warning.")
+
         config_arg_parser.add_argument("--export-pipeline-graph", action="store_true",
             help="Export an SVG image with the pipeline flow diagram")
 
@@ -240,7 +246,10 @@ class Pipeline(ABC):
 
                     if not decided_this_step_needs_to_run:
                         # only do this check if upstream steps are being skipped. Otherwise, input files may not exist yet.
-                        outputs_are_up_to_date = are_outputs_up_to_date(step)
+                        if args.skip_steps_with_missing_inputs and are_any_inputs_missing(step, verbose=args.verbose):
+                            continue  # skip this step
+
+                        outputs_are_up_to_date = are_outputs_up_to_date(step, verbose=args.verbose)
                         if not outputs_are_up_to_date:
                             decided_this_step_needs_to_run = True
                         else:
@@ -580,13 +589,19 @@ class Step(ABC):
             list: A list of _InputSpec objects that describe these input files or directories. The list will contain
                 one entry for each passed-in source path.
         """
-        source_paths = [source_path, *source_paths]
+        source_paths_flat_list = []
+        for source_path in [source_path, *source_paths]:
+            if isinstance(source_path, str):
+                source_paths_flat_list.append(source_path)
+            else:
+                source_paths_flat_list += list(source_path)
+
         input_specs = []
-        for source_path in source_paths:
+        for source_path in source_paths_flat_list:
             input_spec = self.input(source_path, name=name, localize_by=localize_by)
             input_specs.append(input_spec)
 
-        if len(source_paths) == 1:
+        if len(source_paths_flat_list) == 1:
             return input_specs[0]
         else:
             return input_specs
