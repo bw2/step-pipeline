@@ -14,8 +14,8 @@ os.environ["HAIL_LOG_DIR"] = tempfile.gettempdir()
 hl.init(log="/dev/null", quiet=True, idempotent=True)
 
 GOOGLE_STORAGE_CLIENT = None
-HADOOP_EXISTS_CACHE = {}
-HADOOP_STAT_CACHE = {}
+PATH_EXISTS_CACHE = {}
+PATH_STAT_CACHE = {}
 GSUTIL_PATH_TO_FILE_STAT_CACHE = {}
 BUCKET_LOCATION_CACHE = {}
 
@@ -79,9 +79,12 @@ def _generate_gs_path_to_file_stat_dict(gs_path_with_wildcards):
         return utc_date.astimezone(LOCAL_TIMEZONE)
 
     records = [r.strip().split("  ") for r in gsutil_output.strip().split("\n") if not r.startswith("TOTAL: ")]
-    path_to_file_stat_dict = {
-        r[2]: (int(r[0]), parse_gsutil_date_string(r[1])) for r in records
-    }
+    try:
+        path_to_file_stat_dict = {
+            r[2]: (int(r[0]), parse_gsutil_date_string(r[1])) for r in records
+        }
+    except Exception as e:
+        raise Exception(f"Unable to parse gsutil output for {gs_path_with_wildcards}: {e}\n{gsutil_output}")
 
     print(f"Found {len(path_to_file_stat_dict)} matching paths")
 
@@ -90,43 +93,47 @@ def _generate_gs_path_to_file_stat_dict(gs_path_with_wildcards):
     return path_to_file_stat_dict
 
 
-def _path_exists__cached(path):
+def _path_exists__cached(path, verbose=False):
     """Takes a local path or a gs:// Google Storage path and returns True if the path exists.
     The path can contain wildcards (*) in which case this method returns True if at least one matching file or directory
     exists.
 
     Args:
-        path: local path or gs:// Google Storage path. The path can contain wildcards (*).
-
+        path (str): local path or gs:// Google Storage path. The path can contain wildcards (*).
+        verbose (bool):
     Return:
         bool: True if the path exists.
     """
     if not isinstance(path, str):
         raise ValueError(f"Unexpected path type {type(path)}: {path}")
 
-    if path in HADOOP_EXISTS_CACHE:
-        return HADOOP_EXISTS_CACHE[path]
+    if path in PATH_EXISTS_CACHE:
+        return PATH_EXISTS_CACHE[path]
 
     if path.startswith("gs://"):
         if "*" in path:
-            HADOOP_EXISTS_CACHE[path] = bool(_generate_gs_path_to_file_stat_dict(path))
+            PATH_EXISTS_CACHE[path] = bool(_generate_gs_path_to_file_stat_dict(path))
         else:
-            HADOOP_EXISTS_CACHE[path] = hl.hadoop_exists(path)
+            PATH_EXISTS_CACHE[path] = hl.hadoop_exists(path)
     else:
         if "*" in path:
-            HADOOP_EXISTS_CACHE[path] = len(glob.glob(path)) > 0
+            PATH_EXISTS_CACHE[path] = len(glob.glob(path)) > 0
         else:
-            HADOOP_EXISTS_CACHE[path] = os.path.exists(path)
+            PATH_EXISTS_CACHE[path] = os.path.exists(path)
 
-    return HADOOP_EXISTS_CACHE[path]
+    if verbose:
+        print(f"Checked if exists: {path}   Result: ", PATH_EXISTS_CACHE[path])
+
+    return PATH_EXISTS_CACHE[path]
 
 
-def _file_stat__cached(path):
+def _file_stat__cached(path, verbose=False):
     """Takes a local file path or gs:// Google Storage path and returns a list of file stats including the size in bytes
     and the modification time.
 
     Args:
         path (str): local file path or gs:// Google Storage path. The path can contain wildcards (*).
+        verbose (bool): print more detailed log output
 
     Return:
         list: List of metadata dicts like: [
@@ -138,21 +145,23 @@ def _file_stat__cached(path):
         ...
     ]
     """
-    if path in HADOOP_STAT_CACHE:
-        return HADOOP_STAT_CACHE[path]
+    if path in PATH_STAT_CACHE:
+        return PATH_STAT_CACHE[path]
 
     if path.startswith("gs://"):
         if "*" in path:
             path_to_file_stat_dict = _generate_gs_path_to_file_stat_dict(path)
-            HADOOP_STAT_CACHE[path] = []
+            PATH_STAT_CACHE[path] = []
             for path_without_star, (size_bytes, modification_time) in path_to_file_stat_dict.items():
-                HADOOP_STAT_CACHE[path].append({
+                stat_results = {
                     "path": path_without_star,
                     "size_bytes": size_bytes,
                     "modification_time": modification_time,
-                })
+                }
+                PATH_STAT_CACHE[path].append(stat_results)
+                PATH_STAT_CACHE[path_without_star] = [stat_results]
+                PATH_EXISTS_CACHE[path_without_star] = True
         else:
-
             try:
                 stat_results = hl.hadoop_stat(path)
             except Exception as e:
@@ -187,7 +196,8 @@ def _file_stat__cached(path):
             else:
                 raise Exception(f"Unexpected stat_results type: {type(stat_results)}: {stat_results}")
 
-            HADOOP_STAT_CACHE[path] = [stat_results]
+            PATH_STAT_CACHE[path] = [stat_results]
+            PATH_EXISTS_CACHE[path] = True
 
     else:
         if "*" in path:
@@ -198,25 +208,37 @@ def _file_stat__cached(path):
         print(f"Running stat on {local_paths}")
         for local_path in local_paths:
             stat = os.stat(local_path)
-            if path not in HADOOP_STAT_CACHE:
-                HADOOP_STAT_CACHE[path] = []
-            HADOOP_STAT_CACHE[path].append({
+            if path not in PATH_STAT_CACHE:
+                PATH_STAT_CACHE[path] = []
+            stat_results = {
                 "path": local_path,
                 "size_bytes": stat.st_size,
                 "modification_time": datetime.fromtimestamp(stat.st_ctime).replace(tzinfo=LOCAL_TIMEZONE),
-            })
+            }
+            PATH_STAT_CACHE[path].append(stat_results)
+            PATH_STAT_CACHE[local_path] = [stat_results]
+            PATH_EXISTS_CACHE[local_path] = True
 
-    return HADOOP_STAT_CACHE[path]
+    if verbose:
+        for stat_results in PATH_STAT_CACHE[path]:
+            try:
+                file_size_str = "%0.1f Gb" % (int(stat_results["size_bytes"])/10**9)
+            except Exception as e:
+                file_size_str = "%s bytes  (%s)" % (stat_results["size_bytes"], str(e))
+
+            print(f"Checked path stats: {path}   Result:",
+                  f"last-modified =", stat_results["modification_time"],
+                  " size =", file_size_str)
+
+    return PATH_STAT_CACHE[path]
 
 
 def are_any_inputs_missing(step, verbose=False):
     """Returns True if any of the Step's inputs don't exist"""
-
     for input_spec in step._input_specs:
         input_path = input_spec.source_path
-        if not _path_exists__cached(input_path):
-            if verbose:
-                print(f"Input missing: {input_path}")
+        if not _path_exists__cached(input_path, verbose=verbose):
+            print(f"WARNING: Input missing: {input_path}")
             return True
 
     return False
@@ -232,10 +254,10 @@ def are_outputs_up_to_date(step, verbose=False):
     latest_input_modified_date = datetime(2, 1, 1, tzinfo=LOCAL_TIMEZONE)
     for input_spec in step._input_specs:
         input_path = input_spec.source_path
-        if not _path_exists__cached(input_path):
+        if not _path_exists__cached(input_path, verbose=verbose):
             raise ValueError(f"Input path doesn't exist: {input_path}")
 
-        stat_list = _file_stat__cached(input_path)
+        stat_list = _file_stat__cached(input_path, verbose=verbose)
         for stat in stat_list:
             latest_input_modified_date = max(latest_input_modified_date, stat["modification_time"])
             latest_input_path = stat["path"]
@@ -244,10 +266,10 @@ def are_outputs_up_to_date(step, verbose=False):
     oldest_output_path = None
     oldest_output_modified_date = datetime.now(LOCAL_TIMEZONE)
     for output_spec in step._output_specs:
-        if not _path_exists__cached(output_spec.output_path):
+        if not _path_exists__cached(output_spec.output_path, verbose=verbose):
             return False
 
-        stat_list = _file_stat__cached(output_spec.output_path)
+        stat_list = _file_stat__cached(output_spec.output_path, verbose=verbose)
         for stat in stat_list:
             oldest_output_modified_date = min(oldest_output_modified_date, stat["modification_time"])
             oldest_output_path = stat["path"]
@@ -277,7 +299,7 @@ def check_gcloud_storage_region(gs_path, expected_regions=("US", "US-CENTRAL1"),
         gcloud_project (str): (optional) if specified, it will be added to the gsutil command with the -u arg.
         ignore_access_denied_exception (bool): if True, this method return silently if it encounters an AccessDenied
             error.
-        verbose (bool): print more logs
+        verbose (bool): print more detailed log output
 
     Raises:
         StorageRegionException: If the given gs_path is not stored in one the expected_regions.
