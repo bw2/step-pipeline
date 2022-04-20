@@ -104,13 +104,13 @@ class InputType(Enum):
     BOOL = "boolean"
 
 
-class _InputSpecBase(ABC):
-    """This is the _InputSpec parent class, with subclasses implementing specific types of input specs which contain
+class InputSpecBase(ABC):
+    """This is the InputSpec parent class, with subclasses implementing specific types of input specs which contain
     metadata about inputs to a Pipeline Step.
     """
 
     def __init__(self, name=None):
-        """_InputSpec constructor
+        """InputSpec constructor
 
         Args:
             name (str): Optional name for this input.
@@ -132,15 +132,15 @@ class _InputSpecBase(ABC):
         return self._uuid
 
 
-class _InputValueSpec(_InputSpecBase):
-    """An _InputValueSpec stores metadata about an input that's not a file path"""
+class InputValueSpec(InputSpecBase):
+    """An InputValueSpec stores metadata about an input that's not a file path"""
 
     def __init__(
             self,
             value=None,
             name=None,
             input_type=InputType.STRING):
-        """_InputValueSpec constructor
+        """InputValueSpec constructor
 
         Args:
             value: The value.
@@ -167,8 +167,8 @@ class _InputValueSpec(_InputSpecBase):
         return self._input_type
 
 
-class _InputSpec(_InputSpecBase):
-    """An _InputSpec stores metadata about an input file or directory"""
+class InputSpec(InputSpecBase):
+    """An InputSpec stores metadata about an input file or directory"""
 
     def __init__(
             self,
@@ -176,7 +176,7 @@ class _InputSpec(_InputSpecBase):
             name=None,
             localize_by=None,
             localization_root_dir=None):
-        """_InputSpec constructor
+        """InputSpec constructor
 
         Args:
             source_path (str): Source file or directory to localize. It can be a gs://, http(s)://, or a filesystem path.
@@ -273,8 +273,8 @@ class _InputSpec(_InputSpecBase):
         return self._localize_by
 
 
-class _OutputSpec:
-    """An _OutputSpec stores metadata about an output file or directory from a Step"""
+class OutputSpec:
+    """An OutputSpec stores metadata about an output file or directory from a Step"""
 
     def __init__(
             self,
@@ -283,7 +283,7 @@ class _OutputSpec:
             output_path=None,
             name=None,
             delocalize_by=None):
-        """_OutputSpec constructor
+        """OutputSpec constructor
 
         Args:
             local_path (str): Local (within container) path of file or directory to delocalize. The path can include *

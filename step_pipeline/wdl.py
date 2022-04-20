@@ -340,7 +340,7 @@ class WdlStep(Step):
         Step necessary for performing this localization.
 
         Args:
-            input_spec (_InputSpec): The input to localize.
+            input_spec (InputSpec): The input to localize.
         """
 
         super()._preprocess_input_spec(input_spec)
@@ -350,7 +350,7 @@ class WdlStep(Step):
         each input to the Step. It performs the Steps necessary for localizing this input.
 
         Args:
-            input_spec (_InputSpec): The input to localize.
+            input_spec (InputSpec): The input to localize.
         """
         super()._transfer_input_spec(input_spec)
 
@@ -359,7 +359,7 @@ class WdlStep(Step):
         whether the Step runs or not. It validates the output_spec.
 
         Args:
-            output_spec (_OutputSpec): The output to preprocess.
+            output_spec (OutputSpec): The output to preprocess.
         """
         if not output_spec.name and not output_spec.filename:
             raise ValueError(f"{output_spec} both name and filename are unspecified")
@@ -372,6 +372,6 @@ class WdlStep(Step):
         by the user via the delocalize_by parameter.
 
         Args:
-            output_spec (_OutputSpec): The output to delocalize.
+            output_spec (OutputSpec): The output to delocalize.
         """
         super()._transfer_output_spec(output_spec)

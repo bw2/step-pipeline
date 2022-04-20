@@ -8,7 +8,7 @@ from enum import Enum
 import hailtop.batch as hb
 
 from .constants import Backend
-from .io import _InputSpec, _InputValueSpec, InputType
+from .io import InputSpec, InputValueSpec, InputType
 from .pipeline import Pipeline, Step, Localize, Delocalize
 from .utils import check_gcloud_storage_region
 
@@ -620,7 +620,7 @@ class BatchStep(Step):
         Step necessary for performing this localization.
 
         Args:
-            input_spec (_InputSpec): The input to localize.
+            input_spec (InputSpec): The input to localize.
         """
 
         super()._preprocess_input_spec(input_spec)
@@ -646,7 +646,7 @@ class BatchStep(Step):
         each input to the Step. It performs the Steps necessary for localizing this input.
 
         Args:
-            input_spec (_InputSpec): The input to localize.
+            input_spec (InputSpec): The input to localize.
         """
         super()._transfer_input_spec(input_spec)
 
@@ -694,7 +694,7 @@ class BatchStep(Step):
         """Utility method that implements localizing an input via gcsfuse.
 
         Args:
-            input_spec (_InputSpec): The input to localize.
+            input_spec (InputSpec): The input to localize.
         """
         args = self._pipeline.parse_args()
 
@@ -755,7 +755,7 @@ EOF""")
         whether the Step runs or not. It validates the output_spec.
 
         Args:
-            output_spec (_OutputSpec): The output to preprocess.
+            output_spec (OutputSpec): The output to preprocess.
         """
         if output_spec.delocalize_by not in self._get_supported_delocalize_by_choices():
             raise ValueError(f"Unexpected output_spec.delocalize_by value: {output_spec.delocalize_by}")
@@ -778,7 +778,7 @@ EOF""")
         by the user via the delocalize_by parameter.
 
         Args:
-            output_spec (_OutputSpec): The output to delocalize.
+            output_spec (OutputSpec): The output to delocalize.
         """
         super()._transfer_output_spec(output_spec)
 

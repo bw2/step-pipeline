@@ -5,7 +5,7 @@ import unittest
 
 from step_pipeline.pipeline import Pipeline, Step
 from step_pipeline.io import Localize, Delocalize
-from step_pipeline.utils import check_gcloud_storage_region, _GoogleStorageException, \
+from step_pipeline.utils import check_gcloud_storage_region, GoogleStorageException, \
     _path_exists__cached, _file_stat__cached, _generate_gs_path_to_file_stat_dict, are_any_inputs_missing, \
     are_outputs_up_to_date
 
@@ -251,7 +251,7 @@ class Test(unittest.TestCase):
 
     def test_check_gcloud_storage_region(self):
         self.assertRaisesRegex(
-            _GoogleStorageException,
+            GoogleStorageException,
             "does not have .* access",
             check_gcloud_storage_region,
             "gs://test/access-denied",
@@ -271,7 +271,7 @@ class Test(unittest.TestCase):
             ))
 
         self.assertRaisesRegex(
-            _GoogleStorageException, "is located in US-CENTRAL1",
+            GoogleStorageException, "is located in US-CENTRAL1",
             check_gcloud_storage_region,
             "gs://seqr-reference-data/GRCh38/1kg/1kg.wgs.phase3.20170504.GRCh38_sites.vcf.gz",
             expected_regions=("US", ),

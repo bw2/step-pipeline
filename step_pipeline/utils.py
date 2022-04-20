@@ -71,7 +71,7 @@ def _generate_gs_path_to_file_stat_dict(gs_path_with_wildcards):
         )):
             return {}
         else:
-            raise _GoogleStorageException(e.output)
+            raise GoogleStorageException(e.output)
     # map path to file size in bytes and its last-modified date (eg. "2020-05-20T16:52:01Z")
     def parse_gsutil_date_string(date_string):
         #utc_date = datetime.strptime(date_string, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
@@ -281,7 +281,7 @@ def are_outputs_up_to_date(step, verbose=False):
     return latest_input_modified_date <= oldest_output_modified_date
 
 
-class _GoogleStorageException(Exception):
+class GoogleStorageException(Exception):
     pass
 
 
@@ -316,13 +316,13 @@ def check_gcloud_storage_region(gs_path, expected_regions=("US", "US-CENTRAL1"),
             BUCKET_LOCATION_CACHE[bucket_name] = location
         except Exception as e:
             if not ignore_access_denied_exception or "access" not in str(e).lower():
-                raise _GoogleStorageException(f"ERROR: Could not determine gs://{bucket_name} bucket region: {e}")
+                raise GoogleStorageException(f"ERROR: Could not determine gs://{bucket_name} bucket region: {e}")
 
             print(f"WARNING: Unable to check bucket region for gs://{bucket_name}: {e}")
             return
 
     if location not in expected_regions:
-        #raise _GoogleStorageException(
+        #raise GoogleStorageException(
         print(
             f"ERROR: gs://{bucket_name} is located in {location} which is not one of the "
             f"expected regions {expected_regions}")

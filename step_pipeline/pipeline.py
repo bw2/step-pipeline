@@ -7,7 +7,7 @@ import sys
 
 from step_pipeline.utils import _file_stat__cached
 from .utils import are_any_inputs_missing, are_outputs_up_to_date
-from .io import Localize, Delocalize, _InputSpec, _InputValueSpec, _OutputSpec
+from .io import Localize, Delocalize, InputSpec, InputValueSpec, OutputSpec
 
 
 class Pipeline(ABC):
@@ -520,7 +520,7 @@ class Step(ABC):
             localize_by (Localize): How this path should be localized.
 
         Return:
-            _InputSpec: An object that describes the specified input file or directory.
+            InputSpec: An object that describes the specified input file or directory.
         """
         return self.input(glob_path, name=name, localize_by=localize_by)
 
@@ -533,9 +533,9 @@ class Step(ABC):
             input_type (InputType): The value's type.
 
         Return:
-            _InputValueSpec: An object that contains the input value, name, and type.
+            InputValueSpec: An object that contains the input value, name, and type.
         """
-        input_value_spec = _InputValueSpec(
+        input_value_spec = InputValueSpec(
             value=value,
             name=name,
             input_type=input_type,
@@ -554,7 +554,7 @@ class Step(ABC):
             localize_by (Localize): How this path should be localized.
 
         Return:
-            _InputSpec: An object that describes the specified input file or directory.
+            InputSpec: An object that describes the specified input file or directory.
         """
         localize_by = localize_by or self._localize_by
 
@@ -565,7 +565,7 @@ class Step(ABC):
                 Localize.HAIL_BATCH_GCSFUSE_VIA_TEMP_BUCKET):
             raise ValueError(f"source_path '{source_path}' doesn't start with gs://")
 
-        input_spec = _InputSpec(
+        input_spec = InputSpec(
             source_path=source_path,
             name=name,
             localize_by=localize_by,
@@ -586,7 +586,7 @@ class Step(ABC):
             localize_by (Localize): How these paths should be localized.
 
         Return:
-            list: A list of _InputSpec objects that describe these input files or directories. The list will contain
+            list: A list of InputSpec objects that describe these input files or directories. The list will contain
                 one entry for each passed-in source path.
         """
         source_paths_flat_list = []
@@ -616,7 +616,7 @@ class Step(ABC):
                 from other_step will be reused.
 
         Return:
-             list: A list of new _InputSpec objects that describe the inputs copied from other_step. The returned list
+             list: A list of new InputSpec objects that describe the inputs copied from other_step. The returned list
                 will contain one entry for each input of other_step.
         """
         localize_by = localize_by or self._localize_by
@@ -645,7 +645,7 @@ class Step(ABC):
             localize_by (Localize): Specify how these inputs should be localized. If not specified, the default
                 localize_by value for the pipeline will be used.
         Return:
-             list: A list of new _InputSpec objects that describe the inputs defined based on the outputs of
+             list: A list of new InputSpec objects that describe the inputs defined based on the outputs of
              previous_step. The returned list will contain one entry for each output of previous_step.
         """
         self.depends_on(previous_step)
@@ -690,14 +690,14 @@ class Step(ABC):
             delocalize_by (Delocalize): How this path should be delocalized.
 
         Returns:
-            _OutputSpec: An object describing this output.
+            OutputSpec: An object describing this output.
         """
 
         delocalize_by = delocalize_by or self._delocalize_by
         if delocalize_by is None:
             raise ValueError("delocalize_by not specified")
 
-        output_spec = _OutputSpec(
+        output_spec = OutputSpec(
             local_path=local_path,
             output_dir=output_dir or self._output_dir,
             output_path=output_path,
@@ -721,7 +721,7 @@ class Step(ABC):
             delocalize_by (Delocalize): How the path(s) should be delocalized.
 
         Returns:
-            list: A list of _OutputSpec objects that describe these outputs. The list will contain one entry for each passed-in path.
+            list: A list of OutputSpec objects that describe these outputs. The list will contain one entry for each passed-in path.
         """
         local_paths = [local_path, *local_paths]
         output_specs = []
@@ -873,7 +873,7 @@ class Step(ABC):
         Step subclasses must implement this method.
 
         Args:
-            input_spec (_InputSpec): The input to preprocess.
+            input_spec (InputSpec): The input to preprocess.
         """
         if input_spec.localize_by not in self._get_supported_localize_by_choices():
             raise ValueError(f"Unexpected input_spec.localize_by value: {input_spec.localize_by}")
@@ -885,7 +885,7 @@ class Step(ABC):
         requested by the user via the localize_by parameter.
 
         Args:
-            input_spec (_InputSpec): The input to localize.
+            input_spec (InputSpec): The input to localize.
         """
         if input_spec.localize_by not in self._get_supported_localize_by_choices():
             raise ValueError(f"Unexpected input_spec.localize_by value: {input_spec.localize_by}")
@@ -898,7 +898,7 @@ class Step(ABC):
         Step subclasses must implement this method.
 
         Args:
-            output_spec (_OutputSpec): The output to preprocess.
+            output_spec (OutputSpec): The output to preprocess.
         """
         if output_spec.delocalize_by not in self._get_supported_delocalize_by_choices():
             raise ValueError(f"Unexpected output_spec.delocalize_by value: {output_spec.delocalize_by}")
@@ -910,7 +910,7 @@ class Step(ABC):
         destination path using the approach requested by the user via the delocalize_by parameter.
 
         Args:
-            output_spec (_OutputSpec): The output to delocalize.
+            output_spec (OutputSpec): The output to delocalize.
         """
         if output_spec.delocalize_by not in self._get_supported_delocalize_by_choices():
             raise ValueError(f"Unexpected output_spec.delocalize_by value: {output_spec.delocalize_by}")
