@@ -459,6 +459,130 @@ hail to be installed inside the execution container.</p>
 
 </dd></dl>
 
+<dl class="py class">
+<dt class="sig sig-object py" id="step_pipeline.io.InputSpecBase">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">step_pipeline.io.</span></span><span class="sig-name descname"><span class="pre">InputSpecBase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.io.InputSpecBase" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">abc.ABC</span></code></p>
+<p>This is the InputSpec parent class, with subclasses implementing specific types of input specs which contain
+metadata about inputs to a Pipeline Step.</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="step_pipeline.io.InputSpecBase.name">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#step_pipeline.io.InputSpecBase.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="step_pipeline.io.InputSpecBase.uuid">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">uuid</span></span><a class="headerlink" href="#step_pipeline.io.InputSpecBase.uuid" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="step_pipeline.io.InputValueSpec">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">step_pipeline.io.</span></span><span class="sig-name descname"><span class="pre">InputValueSpec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">InputType.STRING</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.io.InputValueSpec" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#step_pipeline.io.InputSpecBase" title="step_pipeline.io.InputSpecBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">step_pipeline.io.InputSpecBase</span></code></a></p>
+<p>An InputValueSpec stores metadata about an input that’s not a file path</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="step_pipeline.io.InputValueSpec.value">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">value</span></span><a class="headerlink" href="#step_pipeline.io.InputValueSpec.value" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="step_pipeline.io.InputValueSpec.input_type">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">input_type</span></span><a class="headerlink" href="#step_pipeline.io.InputValueSpec.input_type" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="step_pipeline.io.InputSpec">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">step_pipeline.io.</span></span><span class="sig-name descname"><span class="pre">InputSpec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">localize_by</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">localization_root_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.io.InputSpec" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#step_pipeline.io.InputSpecBase" title="step_pipeline.io.InputSpecBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">step_pipeline.io.InputSpecBase</span></code></a></p>
+<p>An InputSpec stores metadata about an input file or directory</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="step_pipeline.io.InputSpec.source_path">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">source_path</span></span><a class="headerlink" href="#step_pipeline.io.InputSpec.source_path" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="step_pipeline.io.InputSpec.source_bucket">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">source_bucket</span></span><a class="headerlink" href="#step_pipeline.io.InputSpec.source_bucket" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="step_pipeline.io.InputSpec.source_path_without_protocol">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">source_path_without_protocol</span></span><a class="headerlink" href="#step_pipeline.io.InputSpec.source_path_without_protocol" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="step_pipeline.io.InputSpec.source_dir">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">source_dir</span></span><a class="headerlink" href="#step_pipeline.io.InputSpec.source_dir" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="step_pipeline.io.InputSpec.filename">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">filename</span></span><a class="headerlink" href="#step_pipeline.io.InputSpec.filename" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="step_pipeline.io.InputSpec.local_path">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">local_path</span></span><a class="headerlink" href="#step_pipeline.io.InputSpec.local_path" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="step_pipeline.io.InputSpec.local_dir">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">local_dir</span></span><a class="headerlink" href="#step_pipeline.io.InputSpec.local_dir" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="step_pipeline.io.InputSpec.localize_by">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">localize_by</span></span><a class="headerlink" href="#step_pipeline.io.InputSpec.localize_by" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="step_pipeline.io.OutputSpec">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">step_pipeline.io.</span></span><span class="sig-name descname"><span class="pre">OutputSpec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">local_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delocalize_by</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.io.OutputSpec" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>An OutputSpec stores metadata about an output file or directory from a Step</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="step_pipeline.io.OutputSpec.output_path">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">output_path</span></span><a class="headerlink" href="#step_pipeline.io.OutputSpec.output_path" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="step_pipeline.io.OutputSpec.output_dir">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">output_dir</span></span><a class="headerlink" href="#step_pipeline.io.OutputSpec.output_dir" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="step_pipeline.io.OutputSpec.filename">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">filename</span></span><a class="headerlink" href="#step_pipeline.io.OutputSpec.filename" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="step_pipeline.io.OutputSpec.name">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#step_pipeline.io.OutputSpec.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="step_pipeline.io.OutputSpec.local_path">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">local_path</span></span><a class="headerlink" href="#step_pipeline.io.OutputSpec.local_path" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="step_pipeline.io.OutputSpec.local_dir">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">local_dir</span></span><a class="headerlink" href="#step_pipeline.io.OutputSpec.local_dir" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="step_pipeline.io.OutputSpec.delocalize_by">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">delocalize_by</span></span><a class="headerlink" href="#step_pipeline.io.OutputSpec.delocalize_by" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
 </section>
 <section id="module-step_pipeline.main">
 <span id="step-pipeline-main-module"></span><h2>step_pipeline.main module<a class="headerlink" href="#module-step_pipeline.main" title="Permalink to this headline">¶</a></h2>
@@ -699,7 +823,7 @@ reused to run multiple steps (for example, where step 1 creates a VCF and step 2
 <dd class="field-even"><p>An object that describes the specified input file or directory.</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>_InputSpec</p>
+<dd class="field-odd"><p><a class="reference internal" href="#step_pipeline.io.InputSpec" title="step_pipeline.io.InputSpec">InputSpec</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -720,7 +844,7 @@ reused to run multiple steps (for example, where step 1 creates a VCF and step 2
 <dd class="field-even"><p>An object that contains the input value, name, and type.</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>_InputValueSpec</p>
+<dd class="field-odd"><p><a class="reference internal" href="#step_pipeline.io.InputValueSpec" title="step_pipeline.io.InputValueSpec">InputValueSpec</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -741,7 +865,7 @@ reused to run multiple steps (for example, where step 1 creates a VCF and step 2
 <dd class="field-even"><p>An object that describes the specified input file or directory.</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>_InputSpec</p>
+<dd class="field-odd"><p><a class="reference internal" href="#step_pipeline.io.InputSpec" title="step_pipeline.io.InputSpec">InputSpec</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -760,7 +884,7 @@ reused to run multiple steps (for example, where step 1 creates a VCF and step 2
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p><dl class="simple">
-<dt>A list of _InputSpec objects that describe these input files or directories. The list will contain</dt><dd><p>one entry for each passed-in source path.</p>
+<dt>A list of InputSpec objects that describe these input files or directories. The list will contain</dt><dd><p>one entry for each passed-in source path.</p>
 </dd>
 </dl>
 </p>
@@ -786,7 +910,7 @@ from other_step will be reused.</p></li>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p><dl class="simple">
-<dt>A list of new _InputSpec objects that describe the inputs copied from other_step. The returned list</dt><dd><p>will contain one entry for each input of other_step.</p>
+<dt>A list of new InputSpec objects that describe the inputs copied from other_step. The returned list</dt><dd><p>will contain one entry for each input of other_step.</p>
 </dd>
 </dl>
 </p>
@@ -811,7 +935,7 @@ localize_by value for the pipeline will be used.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p>A list of new _InputSpec objects that describe the inputs defined based on the outputs of
+<dd class="field-even"><p>A list of new InputSpec objects that describe the inputs defined based on the outputs of
 previous_step. The returned list will contain one entry for each output of previous_step.</p>
 </dd>
 <dt class="field-odd">Return type</dt>
@@ -853,7 +977,7 @@ as being relative to output_dir.</p></li>
 <dd class="field-even"><p>An object describing this output.</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>_OutputSpec</p>
+<dd class="field-odd"><p><a class="reference internal" href="#step_pipeline.io.OutputSpec" title="step_pipeline.io.OutputSpec">OutputSpec</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -872,7 +996,7 @@ as being relative to output_dir.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p>A list of _OutputSpec objects that describe these outputs. The list will contain one entry for each passed-in path.</p>
+<dd class="field-even"><p>A list of OutputSpec objects that describe these outputs. The list will contain one entry for each passed-in path.</p>
 </dd>
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>list</p>
@@ -987,6 +1111,12 @@ inside the execution container.</p></li>
 <dt class="sig sig-object py" id="step_pipeline.utils.are_outputs_up_to_date">
 <span class="sig-prename descclassname"><span class="pre">step_pipeline.utils.</span></span><span class="sig-name descname"><span class="pre">are_outputs_up_to_date</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">step</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.utils.are_outputs_up_to_date" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns True if all of the Step’s outputs already exist and are newer than all inputs</p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="step_pipeline.utils.GoogleStorageException">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">step_pipeline.utils.</span></span><span class="sig-name descname"><span class="pre">GoogleStorageException</span></span><a class="headerlink" href="#step_pipeline.utils.GoogleStorageException" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></p>
 </dd></dl>
 
 <dl class="py function">

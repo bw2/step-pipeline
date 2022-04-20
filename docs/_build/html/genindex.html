@@ -58,6 +58,7 @@
  | <a href="#S"><strong>S</strong></a>
  | <a href="#T"><strong>T</strong></a>
  | <a href="#U"><strong>U</strong></a>
+ | <a href="#V"><strong>V</strong></a>
  | <a href="#W"><strong>W</strong></a>
  
 </div>
@@ -158,14 +159,14 @@
       </ul></li>
       <li><a href="source/step_pipeline.html#step_pipeline.pipeline.Pipeline.default_output_dir">default_output_dir() (step_pipeline.pipeline.Pipeline method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="source/step_pipeline.html#step_pipeline.batch.BatchPipeline.default_python_image">default_python_image() (step_pipeline.batch.BatchPipeline method)</a>
 
       <ul>
         <li><a href="source/step_pipeline.html#step_pipeline.pipeline.Pipeline.default_python_image">(step_pipeline.pipeline.Pipeline method)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="source/step_pipeline.html#step_pipeline.batch.BatchPipeline.default_storage">default_storage() (step_pipeline.batch.BatchPipeline method)</a>
 
       <ul>
@@ -179,6 +180,8 @@
 </li>
       </ul></li>
       <li><a href="source/step_pipeline.html#step_pipeline.io.Delocalize">Delocalize (class in step_pipeline.io)</a>
+</li>
+      <li><a href="source/step_pipeline.html#step_pipeline.io.OutputSpec.delocalize_by">delocalize_by (step_pipeline.io.OutputSpec property)</a>
 </li>
       <li><a href="source/step_pipeline.html#step_pipeline.pipeline.Step.depends_on">depends_on() (step_pipeline.pipeline.Step method)</a>
 </li>
@@ -195,6 +198,14 @@
 
 <h2 id="F">F</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="source/step_pipeline.html#step_pipeline.io.InputSpec.filename">filename (step_pipeline.io.InputSpec property)</a>
+
+      <ul>
+        <li><a href="source/step_pipeline.html#step_pipeline.io.OutputSpec.filename">(step_pipeline.io.OutputSpec property)</a>
+</li>
+      </ul></li>
+  </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="source/step_pipeline.html#step_pipeline.io.InputType.FLOAT">FLOAT (step_pipeline.io.InputType attribute)</a>
 </li>
@@ -215,6 +226,8 @@
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="source/step_pipeline.html#step_pipeline.io.Localize.get_subdir_name">get_subdir_name() (step_pipeline.io.Localize method)</a>
+</li>
+      <li><a href="source/step_pipeline.html#step_pipeline.utils.GoogleStorageException">GoogleStorageException</a>
 </li>
       <li><a href="source/step_pipeline.html#step_pipeline.io.Delocalize.GSUTIL_COPY">GSUTIL_COPY (step_pipeline.io.Delocalize attribute)</a>
 
@@ -256,13 +269,21 @@
 </li>
       <li><a href="source/step_pipeline.html#step_pipeline.pipeline.Step.input_glob">input_glob() (step_pipeline.pipeline.Step method)</a>
 </li>
+      <li><a href="source/step_pipeline.html#step_pipeline.io.InputValueSpec.input_type">input_type (step_pipeline.io.InputValueSpec property)</a>
+</li>
       <li><a href="source/step_pipeline.html#step_pipeline.pipeline.Step.input_value">input_value() (step_pipeline.pipeline.Step method)</a>
+</li>
+      <li><a href="source/step_pipeline.html#step_pipeline.pipeline.Step.inputs">inputs() (step_pipeline.pipeline.Step method)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="source/step_pipeline.html#step_pipeline.pipeline.Step.inputs">inputs() (step_pipeline.pipeline.Step method)</a>
+      <li><a href="source/step_pipeline.html#step_pipeline.io.InputSpec">InputSpec (class in step_pipeline.io)</a>
+</li>
+      <li><a href="source/step_pipeline.html#step_pipeline.io.InputSpecBase">InputSpecBase (class in step_pipeline.io)</a>
 </li>
       <li><a href="source/step_pipeline.html#step_pipeline.io.InputType">InputType (class in step_pipeline.io)</a>
+</li>
+      <li><a href="source/step_pipeline.html#step_pipeline.io.InputValueSpec">InputValueSpec (class in step_pipeline.io)</a>
 </li>
       <li><a href="source/step_pipeline.html#step_pipeline.io.InputType.INT">INT (step_pipeline.io.InputType attribute)</a>
 </li>
@@ -272,7 +293,23 @@
 <h2 id="L">L</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="source/step_pipeline.html#step_pipeline.io.InputSpec.local_dir">local_dir (step_pipeline.io.InputSpec property)</a>
+
+      <ul>
+        <li><a href="source/step_pipeline.html#step_pipeline.io.OutputSpec.local_dir">(step_pipeline.io.OutputSpec property)</a>
+</li>
+      </ul></li>
+      <li><a href="source/step_pipeline.html#step_pipeline.io.InputSpec.local_path">local_path (step_pipeline.io.InputSpec property)</a>
+
+      <ul>
+        <li><a href="source/step_pipeline.html#step_pipeline.io.OutputSpec.local_path">(step_pipeline.io.OutputSpec property)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="source/step_pipeline.html#step_pipeline.io.Localize">Localize (class in step_pipeline.io)</a>
+</li>
+      <li><a href="source/step_pipeline.html#step_pipeline.io.InputSpec.localize_by">localize_by (step_pipeline.io.InputSpec property)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -313,8 +350,16 @@
 <h2 id="N">N</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="source/step_pipeline.html#step_pipeline.io.InputSpecBase.name">name (step_pipeline.io.InputSpecBase property)</a>
+
+      <ul>
+        <li><a href="source/step_pipeline.html#step_pipeline.io.OutputSpec.name">(step_pipeline.io.OutputSpec property)</a>
+</li>
+      </ul></li>
       <li><a href="source/step_pipeline.html#step_pipeline.pipeline.Step.name">name() (step_pipeline.pipeline.Step method)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="source/step_pipeline.html#step_pipeline.batch.BatchPipeline.new_step">new_step() (step_pipeline.batch.BatchPipeline method)</a>
 
       <ul>
@@ -331,11 +376,17 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="source/step_pipeline.html#step_pipeline.pipeline.Step.output">output() (step_pipeline.pipeline.Step method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="source/step_pipeline.html#step_pipeline.io.OutputSpec.output_dir">output_dir (step_pipeline.io.OutputSpec property)</a>
+</li>
       <li><a href="source/step_pipeline.html#step_pipeline.pipeline.Step.output_dir">output_dir() (step_pipeline.pipeline.Step method)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="source/step_pipeline.html#step_pipeline.io.OutputSpec.output_path">output_path (step_pipeline.io.OutputSpec property)</a>
+</li>
       <li><a href="source/step_pipeline.html#step_pipeline.pipeline.Step.outputs">outputs() (step_pipeline.pipeline.Step method)</a>
+</li>
+      <li><a href="source/step_pipeline.html#step_pipeline.io.OutputSpec">OutputSpec (class in step_pipeline.io)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -381,6 +432,14 @@
 <h2 id="S">S</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="source/step_pipeline.html#step_pipeline.io.InputSpec.source_bucket">source_bucket (step_pipeline.io.InputSpec property)</a>
+</li>
+      <li><a href="source/step_pipeline.html#step_pipeline.io.InputSpec.source_dir">source_dir (step_pipeline.io.InputSpec property)</a>
+</li>
+      <li><a href="source/step_pipeline.html#step_pipeline.io.InputSpec.source_path">source_path (step_pipeline.io.InputSpec property)</a>
+</li>
+      <li><a href="source/step_pipeline.html#step_pipeline.io.InputSpec.source_path_without_protocol">source_path_without_protocol (step_pipeline.io.InputSpec property)</a>
+</li>
       <li><a href="source/step_pipeline.html#step_pipeline.pipeline.Step">Step (class in step_pipeline.pipeline)</a>
 </li>
       <li>
@@ -411,6 +470,8 @@
         <li><a href="source/step_pipeline.html#module-step_pipeline.io">module</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     step_pipeline.main
 
@@ -418,8 +479,6 @@
         <li><a href="source/step_pipeline.html#module-step_pipeline.main">module</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     step_pipeline.pipeline
 
@@ -474,6 +533,16 @@
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="source/step_pipeline.html#step_pipeline.pipeline.Step.use_the_same_inputs_as">use_the_same_inputs_as() (step_pipeline.pipeline.Step method)</a>
+</li>
+      <li><a href="source/step_pipeline.html#step_pipeline.io.InputSpecBase.uuid">uuid (step_pipeline.io.InputSpecBase property)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="V">V</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="source/step_pipeline.html#step_pipeline.io.InputValueSpec.value">value (step_pipeline.io.InputValueSpec property)</a>
 </li>
   </ul></td>
 </tr></table>
