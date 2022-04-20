@@ -13,8 +13,8 @@ with open("requirements.txt", "rt") as fh:
 class CoverageCommand(build_py):
     """Run all unittests and generate a coverage report."""
     def run(self):
-        os.system("python3 -m coverage run ./setup.py test "
-                  "&& python3 -m coverage html --include=src/*.py "
+        os.system("python3.7 -m coverage run ./setup.py test "
+                  "&& python3.7 -m coverage html --include=src/*.py "
                   "&& open htmlcov/index.html")
 
 
@@ -22,9 +22,9 @@ class PublishCommand(build_py):
     """Publish package to PyPI"""
     def run(self):
         os.system("rm -rf dist")
-        os.system("python3 setup.py sdist"
-                  "&& python3 setup.py bdist_wheel"
-                  "&& python3 -m twine upload dist/*whl dist/*gz")
+        os.system("python3.7 setup.py sdist"
+                  "&& python3.7 setup.py bdist_wheel"
+                  "&& python3.7 -m twine upload dist/*whl dist/*gz")
 
 setup(
     name='step_pipeline',
