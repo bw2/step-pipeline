@@ -727,7 +727,7 @@ class BatchStep(Step):
         local_mount_dir = os.path.join(local_root_dir, subdir, source_bucket)
         if source_bucket not in self._buckets_mounted_via_gcsfuse:
             self._job.command(f"mkdir -p {local_mount_dir}")
-            self._job.gcsfuse(source_bucket, local_mount_dir, read_only=True)
+            self._job.cloudfuse(source_bucket, local_mount_dir, read_only=True)
             self._buckets_mounted_via_gcsfuse.add(source_bucket)
 
     def _add_commands_for_hail_hadoop_copy(self, source_path, output_dir):
