@@ -601,7 +601,7 @@ class Step(ABC):
             input_spec = self.input(source_path, name=name, localize_by=localize_by)
             input_specs.append(input_spec)
 
-        if len(source_paths_flat_list) == 1:
+        if len(input_specs) == 1:
             return input_specs[0]
         else:
             return input_specs
@@ -631,7 +631,10 @@ class Step(ABC):
 
             input_specs.append(input_spec)
 
-        return input_specs
+        if len(input_specs) == 1:
+            return input_specs[0]
+        else:
+            return input_specs
 
     def use_previous_step_outputs_as_inputs(self, previous_step, localize_by=None):
         """Define Step inputs to be the output paths of an upstream Step and explicitly mark this Step as downstream of
@@ -659,7 +662,10 @@ class Step(ABC):
 
             input_specs.append(input_spec)
 
-        return input_specs
+        if len(input_specs) == 1:
+            return input_specs[0]
+        else:
+            return input_specs
 
     def output_dir(self, path):
         """If an output path is specified as a relative path, it will be relative to this dir.
