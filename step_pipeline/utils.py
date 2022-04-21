@@ -84,7 +84,7 @@ def _generate_gs_path_to_file_stat_dict(gs_path_with_wildcards):
             r[2]: (int(r[0]), parse_gsutil_date_string(r[1])) for r in records
         }
     except Exception as e:
-        raise Exception(f"Unable to parse gsutil output for {gs_path_with_wildcards}: {e}\n{gsutil_output}")
+        raise GoogleStorageException(f"Unable to parse gsutil output for {gs_path_with_wildcards}: {e}\n{gsutil_output}")
 
     print(f"Found {len(path_to_file_stat_dict)} matching paths")
 
@@ -193,8 +193,10 @@ def _file_stat__cached(path, verbose=False):
                         parser.parse(stat_results["modification_time"], ignoretz=True))
                 except Exception as e:
                     raise Exception(f"Unable to parse 'modification_time' from {stat_results}: {e}")
+            elif stat_results["modification_time"] == None:
+                raise GoogleStorageException(f"hl.stat returned modification_time == None for {path}")
             else:
-                raise Exception(f"Unexpected stat_results type: {type(stat_results)}: {stat_results}")
+                raise GoogleStorageException(f"Unexpected modification_time type: {type(stat_results['modification_time'])} in {stat_results}")
 
             PATH_STAT_CACHE[path] = [stat_results]
             PATH_EXISTS_CACHE[path] = True
