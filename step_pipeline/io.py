@@ -26,18 +26,18 @@ class Localize(Enum):
     Hail to be installed inside the execution container.
     """
 
-    HAIL_BATCH_GCSFUSE = ("hail_batch_gcsfuse", "gcsfuse")
-    """HAIL_BATCH_GCSFUSE use the Hail Batch gcsfuse function to mount a google bucket into the execution container 
+    HAIL_BATCH_CLOUDFUSE = ("hail_batch_cloudfuse", "cloudfuse")
+    """HAIL_BATCH_CLOUDFUSE use the Hail Batch cloudfuse function to mount a google bucket into the execution container 
     as a network drive, without copying the files. This Hail Batch service account must have read access to the bucket.
     """
 
-    HAIL_BATCH_GCSFUSE_VIA_TEMP_BUCKET = ("hail_batch_gcsfuse_via_temp_bucket", "gcsfuse")
-    """HAIL_BATCH_GCSFUSE_VIA_TEMP_BUCKET is useful for situations where you'd like to use gcsfuse to localize files and 
+    HAIL_BATCH_CLOUDFUSE_VIA_TEMP_BUCKET = ("hail_batch_cloudfuse_via_temp_bucket", "cloudfuse")
+    """HAIL_BATCH_CLOUDFUSE_VIA_TEMP_BUCKET is useful for situations where you'd like to use cloudfuse to localize files and 
     your personal gcloud account has read access to the source bucket, but the Hail Batch service account cannot be 
     granted read access to that bucket. Since it's possible to run 'gsutil cp' under your personal credentials within
-    the execution container, but Hail Batch gcsfuse always runs under the Hail Batch service account credentials, this 
+    the execution container, but Hail Batch cloudfuse always runs under the Hail Batch service account credentials, this 
     workaround 1) runs 'gsutil cp' under your personal credentials to copy the source files to a temporary bucket that 
-    you control, and where you have granted read access to the Hail Batch service account 2) uses gcsfuse to mount the 
+    you control, and where you have granted read access to the Hail Batch service account 2) uses cloudfuse to mount the 
     temporary bucket 3) performs computational steps on the mounted data 4) deletes the source files from the temporary 
     bucket when the Batch job completes.
     

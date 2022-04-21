@@ -415,7 +415,7 @@ class BatchStep(Step):
         self._output_file_counter = 0
 
         self._paths_localized_via_temp_bucket = set()
-        self._buckets_mounted_via_gcsfuse = set()
+        self._buckets_mounted_via_cloudfuse = set()
 
         self._step_type = BatchStepType.BASH
         self._write_commands_to_script = False
@@ -602,8 +602,8 @@ class BatchStep(Step):
         return super()._get_supported_localize_by_choices() | {
             Localize.COPY,
             Localize.GSUTIL_COPY,
-            Localize.HAIL_BATCH_GCSFUSE,
-            Localize.HAIL_BATCH_GCSFUSE_VIA_TEMP_BUCKET,
+            Localize.HAIL_BATCH_CLOUDFUSE,
+            Localize.HAIL_BATCH_CLOUDFUSE_VIA_TEMP_BUCKET,
         }
 
     def _get_supported_delocalize_by_choices(self):
@@ -634,8 +634,8 @@ class BatchStep(Step):
 
         elif input_spec.localize_by in (
                 Localize.COPY,
-                Localize.HAIL_BATCH_GCSFUSE,
-                Localize.HAIL_BATCH_GCSFUSE_VIA_TEMP_BUCKET):
+                Localize.HAIL_BATCH_CLOUDFUSE,
+                Localize.HAIL_BATCH_CLOUDFUSE_VIA_TEMP_BUCKET):
             pass  # these will be handled in _transfer_input_spec(..)
         elif input_spec.localize_by not in super()._get_supported_localize_by_choices():
             raise ValueError(
@@ -666,9 +666,9 @@ class BatchStep(Step):
                 self._job.command(f"mkdir -p '{input_spec.local_dir}'")
                 self._job.command(f"ln -s {input_spec.read_input_obj} {input_spec.local_path}")
         elif input_spec.localize_by in (
-            Localize.HAIL_BATCH_GCSFUSE,
-            Localize.HAIL_BATCH_GCSFUSE_VIA_TEMP_BUCKET):
-            self._handle_input_transfer_using_gcsfuse(input_spec)
+            Localize.HAIL_BATCH_CLOUDFUSE,
+            Localize.HAIL_BATCH_CLOUDFUSE_VIA_TEMP_BUCKET):
+            self._handle_input_transfer_using_cloudfuse(input_spec)
         elif input_spec.localize_by == Localize.HAIL_HADOOP_COPY:
             self._add_commands_for_hail_hadoop_copy(input_spec.source_path, input_spec.local_dir)
 
@@ -690,8 +690,8 @@ class BatchStep(Step):
         output_dir = output_dir.rstrip("/") + "/"
         return f"time {gsutil_command} -m cp -r '{source_path}' '{output_dir}'"
 
-    def _handle_input_transfer_using_gcsfuse(self, input_spec):
-        """Utility method that implements localizing an input via gcsfuse.
+    def _handle_input_transfer_using_cloudfuse(self, input_spec):
+        """Utility method that implements localizing an input via cloudfuse.
 
         Args:
             input_spec (InputSpec): The input to localize.
@@ -702,7 +702,7 @@ class BatchStep(Step):
         source_path_without_protocol = input_spec.source_path_without_protocol
 
         localize_by = input_spec.localize_by
-        if localize_by == Localize.HAIL_BATCH_GCSFUSE_VIA_TEMP_BUCKET:
+        if localize_by == Localize.HAIL_BATCH_CLOUDFUSE_VIA_TEMP_BUCKET:
             if not args.batch_remote_tmpdir:
                 raise ValueError("--batch-remote-tmpdir not specified.")
 
@@ -725,10 +725,10 @@ class BatchStep(Step):
         source_bucket = input_spec.source_bucket
         local_root_dir = self._pipeline._get_localization_root_dir(localize_by)
         local_mount_dir = os.path.join(local_root_dir, subdir, source_bucket)
-        if source_bucket not in self._buckets_mounted_via_gcsfuse:
+        if source_bucket not in self._buckets_mounted_via_cloudfuse:
             self._job.command(f"mkdir -p {local_mount_dir}")
             self._job.cloudfuse(source_bucket, local_mount_dir, read_only=True)
-            self._buckets_mounted_via_gcsfuse.add(source_bucket)
+            self._buckets_mounted_via_cloudfuse.add(source_bucket)
 
     def _add_commands_for_hail_hadoop_copy(self, source_path, output_dir):
         """Utility method that implements localizing an input via hl.hadoop_copy.

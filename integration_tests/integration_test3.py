@@ -5,14 +5,14 @@ with pipeline("summarize fasta index", backend=Backend.HAIL_BATCH_SERVICE) as sp
     sp.default_output_dir("gs://seqr-bw/step-pipeline-test/intergration_test3")
 
     p = sp.get_config_arg_parser()
-    p.add_argument("--use-gcsfuse", action="store_true", help="Use GCSFUSE to access the reference index file")
+    p.add_argument("--use-cloudfuse", action="store_true", help="Use CLOUDFUSE to access the reference index file")
     args = sp.parse_args()
 
     # step 1
     s1 = sp.new_step("save HLA contigs", step_number=1)
     ref_fasta_index = s1.input(
         "gs://gcp-public-data--broad-references/hg38/v0/Homo_sapiens_assembly38.fasta.fai",
-        localize_by=Localize.HAIL_BATCH_GCSFUSE if args.use_gcsfuse else Localize.COPY,
+        localize_by=Localize.HAIL_BATCH_CLOUDFUSE if args.use_cloudfuse else Localize.COPY,
     )
 
     output_filename = re.sub(".fasta.fai$", "", ref_fasta_index.filename) + ".HLA_contigs"
