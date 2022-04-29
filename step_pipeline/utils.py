@@ -21,6 +21,7 @@ BUCKET_LOCATION_CACHE = {}
 
 LOCAL_TIMEZONE = pytz.timezone("US/Eastern") #datetime.now(timezone.utc).astimezone().tzinfo
 
+DATE_STRFTIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 def _get_bucket_name(gs_path):
     """Get the Google bucket name from the given gs_path."""
@@ -72,6 +73,7 @@ def _generate_gs_path_to_file_stat_dict(gs_path_with_wildcards):
             return {}
         else:
             raise GoogleStorageException(e.output)
+
     # map path to file size in bytes and its last-modified date (eg. "2020-05-20T16:52:01Z")
     def parse_gsutil_date_string(date_string):
         #utc_date = datetime.strptime(date_string, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
@@ -122,7 +124,10 @@ def _path_exists__cached(path, verbose=False):
             PATH_EXISTS_CACHE[path] = os.path.exists(path)
 
     if verbose:
-        print(f"Checked if exists: {path}   Result: ", PATH_EXISTS_CACHE[path])
+        if PATH_EXISTS_CACHE[path]:
+            print(f"Confirmed path exists: {path}")
+        else:
+            print(f"Missing path: {path}")
 
     return PATH_EXISTS_CACHE[path]
 
@@ -207,7 +212,6 @@ def _file_stat__cached(path, verbose=False):
         else:
             local_paths = [path]
 
-        print(f"Running stat on {local_paths}")
         for local_path in local_paths:
             stat = os.stat(local_path)
             if path not in PATH_STAT_CACHE:
@@ -228,9 +232,8 @@ def _file_stat__cached(path, verbose=False):
             except Exception as e:
                 file_size_str = "%s bytes  (%s)" % (stat_results["size_bytes"], str(e))
 
-            print(f"Checked path stats: {path}   Result:",
-                  f"last-modified =", stat_results["modification_time"],
-                  " size =", file_size_str)
+            last_modified_time = stat_results['modification_time']
+            print(f"Checked path stats: {file_size_str:5}  {last_modified_time:15}   {path}")
 
     return PATH_STAT_CACHE[path]
 
@@ -261,24 +264,29 @@ def are_outputs_up_to_date(step, verbose=False):
 
         stat_list = _file_stat__cached(input_path, verbose=verbose)
         for stat in stat_list:
-            latest_input_modified_date = max(latest_input_modified_date, stat["modification_time"])
-            latest_input_path = stat["path"]
+            if stat["modification_time"] > latest_input_modified_date:
+                latest_input_modified_date = stat["modification_time"]
+                latest_input_path = stat["path"]
 
     # check whether any outputs are missing
     oldest_output_path = None
-    oldest_output_modified_date = datetime.now(LOCAL_TIMEZONE)
+    oldest_output_modified_date = None
     for output_spec in step._output_specs:
+        if "*" in output_spec.local_path:
+            continue
+
         if not _path_exists__cached(output_spec.output_path, verbose=verbose):
             return False
 
         stat_list = _file_stat__cached(output_spec.output_path, verbose=verbose)
         for stat in stat_list:
-            oldest_output_modified_date = min(oldest_output_modified_date, stat["modification_time"])
-            oldest_output_path = stat["path"]
+            if oldest_output_modified_date is None or stat["modification_time"] < oldest_output_modified_date:
+                oldest_output_modified_date = stat["modification_time"]
+                oldest_output_path = stat["path"]
 
     if verbose:
-        print(f"Oldest output ({oldest_output_modified_date}): {oldest_output_path},  "
-              f"newest input ({latest_input_modified_date}): {latest_input_path}")
+        print(f"Newest input    {latest_input_modified_date.strftime(DATE_STRFTIME_FORMAT):20}: {latest_input_path}")
+        print(f"Oldest output   {oldest_output_modified_date.strftime(DATE_STRFTIME_FORMAT) if oldest_output_modified_date else '':20}: {oldest_output_path}")
 
     return latest_input_modified_date <= oldest_output_modified_date
 

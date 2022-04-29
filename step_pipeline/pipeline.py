@@ -242,6 +242,8 @@ class Pipeline(ABC):
                     if not decided_this_step_needs_to_run:
                         all_upstream_steps_skipped = all(s._is_being_skipped for s in step._upstream_steps)
                         if not all_upstream_steps_skipped:
+                            if args.verbose:
+                                print(f"Running {step} because upstream step is going to run.")
                             decided_this_step_needs_to_run = True
 
                     if not decided_this_step_needs_to_run:
@@ -251,6 +253,9 @@ class Pipeline(ABC):
 
                         outputs_are_up_to_date = are_outputs_up_to_date(step, verbose=args.verbose)
                         if not outputs_are_up_to_date:
+                            if args.verbose:
+                                print(f"Running {step} because some output(s) are missing or are not up-to-date.")
+
                             decided_this_step_needs_to_run = True
                         else:
                             print(f"Skipping {step}. The {len(step._output_specs)} output(s) already exist and are up-to-date.")
