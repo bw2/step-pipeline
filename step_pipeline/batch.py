@@ -643,7 +643,7 @@ class BatchStep(Step):
 
     def _transfer_input_spec(self, input_spec):
         """When a Step isn't skipped and is being transferred to the execution backend, this method is called for
-        each input to the Step. It performs the Steps necessary for localizing this input.
+        each input to the Step. It performs the steps necessary for localizing this input.
 
         Args:
             input_spec (InputSpec): The input to localize.
