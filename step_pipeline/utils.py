@@ -332,8 +332,7 @@ def check_gcloud_storage_region(gs_path, expected_regions=("US", "US-CENTRAL1"),
             return
 
     if location not in expected_regions:
-        #raise GoogleStorageException(
-        print(
+        raise GoogleStorageException(
             f"ERROR: gs://{bucket_name} is located in {location} which is not one of the "
             f"expected regions {expected_regions}")
     if verbose:

@@ -761,8 +761,6 @@ EOF""")
             raise ValueError(f"Unexpected output_spec.delocalize_by value: {output_spec.delocalize_by}")
 
         super()._preprocess_output_spec(output_spec)
-        if not output_spec.output_dir.startswith("gs://"):
-            raise ValueError(f"{output_spec.output_dir} Destination path must start with gs://")
         if output_spec.delocalize_by == Delocalize.COPY:
             # validate path since Batch delocalization doesn't work for gs:// paths with a Local backend.
             if output_spec.output_path.startswith("gs://") and self._pipeline.backend == Backend.HAIL_BATCH_LOCAL:
@@ -770,6 +768,8 @@ EOF""")
             if not output_spec.filename:
                 raise ValueError(f"{output_spec} filename isn't specified. It is required for Delocalize.COPY")
         elif output_spec.delocalize_by == Delocalize.GSUTIL_COPY:
+            if not output_spec.output_dir.startswith("gs://"):
+                raise ValueError(f"{output_spec.output_dir} Destination path must start with gs://")
             self.command(self._generate_gsutil_copy_command(output_spec.local_path, output_spec.output_dir))
 
     def _transfer_output_spec(self, output_spec):

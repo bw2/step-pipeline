@@ -566,8 +566,8 @@ class Step(ABC):
         # validate inputs
         if not source_path.startswith("gs://") and localize_by in (
                 Localize.GSUTIL_COPY,
-                Localize.HAIL_BATCH_CLOUDFUSE,
-                Localize.HAIL_BATCH_CLOUDFUSE_VIA_TEMP_BUCKET):
+                Localize.HAIL_BATCH_CLOUDFUSE_VIA_TEMP_BUCKET
+        ):
             raise ValueError(f"source_path '{source_path}' doesn't start with gs://")
 
         input_spec = InputSpec(

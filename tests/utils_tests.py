@@ -208,7 +208,6 @@ class Test(unittest.TestCase):
 
         for localize_by in (
                 Localize.GSUTIL_COPY,
-                Localize.HAIL_BATCH_CLOUDFUSE,
                 Localize.HAIL_BATCH_CLOUDFUSE_VIA_TEMP_BUCKET):
             self.assertRaisesRegex(ValueError, "doesn't start with gs://", test_step.input,
                 "some_file.txt", localize_by=localize_by)

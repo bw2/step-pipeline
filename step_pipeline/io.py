@@ -200,8 +200,9 @@ class InputSpec(InputSpecBase):
         self._local_path = None
 
         if source_path is not None:
-            if source_path.startswith("gs://"):
-                self._source_path_without_protocol = re.sub("^gs://", "", source_path)
+            match = re.match("^([a-zA-Z-_]+)://(.*)", source_path)
+            if match:
+                self._source_path_without_protocol = match.group(2)
                 self._source_bucket = self._source_path_without_protocol.split("/")[0]
             elif source_path.startswith("http://") or source_path.startswith("https://"):
                 self._source_path_without_protocol = re.sub("^http[s]?://", "", source_path).split("?")[0]
@@ -310,7 +311,7 @@ class OutputSpec:
         if output_dir:
             self._output_dir = output_dir
             if output_path:
-                if os.path.isabs(output_path) or output_path.startswith("gs://"):
+                if os.path.isabs(output_path) or "://" in output_path:
                     self._output_path = output_path
                 else:
                     self._output_path = os.path.join(output_dir, output_path)
