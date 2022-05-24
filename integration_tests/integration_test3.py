@@ -23,11 +23,11 @@ with pipeline("summarize fasta index", backend=Backend.HAIL_BATCH_SERVICE) as sp
     # step 2
     s2 = sp.new_step("count HLA contigs", step_number=2)
     s2.switch_gcloud_auth_to_user_account()
-    input_specs = s2.use_previous_step_outputs_as_inputs(s1, localize_by=Localize.GSUTIL_COPY)
+    input_spec = s2.use_previous_step_outputs_as_inputs(s1, localize_by=Localize.GSUTIL_COPY)
 
     s2.command("set -ex")
     s2.command("echo Number of HLA contigs:")
-    s2.command(f"cat {input_specs[0].local_path} | wc -l > num_hla_contigs.txt")
+    s2.command(f"cat {input_spec} | wc -l > num_hla_contigs.txt")
     s2.output("num_hla_contigs.txt")
     s2.post_to_slack("step2 is done")
 
