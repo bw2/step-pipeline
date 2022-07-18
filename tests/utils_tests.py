@@ -45,7 +45,7 @@ class StepWithSupportForCopy(Step):
         }
 
     def _preprocess_input_spec(self, input_spec):
-        pass
+        return input_spec
 
     def _preprocess_output_spec(self, output_spec):
         pass

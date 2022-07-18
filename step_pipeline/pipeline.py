@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 
 import configargparse
 import os
+import random
 import re
 import sys
 
@@ -9,6 +10,8 @@ from step_pipeline.utils import _file_stat__cached
 from .utils import are_any_inputs_missing, are_outputs_up_to_date
 from .io import Localize, Delocalize, InputSpec, InputValueSpec, OutputSpec
 
+TOO_MANY_COMMAND_LINE_ARGS_ERROR_THRESHOLD = 500
+TOO_MANY_COMMAND_LINE_ARGS_WARNING_THRESHOLD = 500
 
 class Pipeline(ABC):
     """Pipeline represents the execution pipeline. This base class contains only generalized code that is not specific
@@ -41,6 +44,7 @@ class Pipeline(ABC):
         self._config_arg_parser = config_arg_parser
         self._default_output_dir = None
         self._all_steps = []
+        self._unique_pipeline_instance_id = str(random.randint(10**10, 10**11))
 
         config_arg_parser.add_argument("-v", "--verbose", action='count', default=0, help="Print more info")
         config_arg_parser.add_argument("-c", "--config-file", help="YAML config file path", is_config_file_arg=True)
@@ -110,8 +114,29 @@ class Pipeline(ABC):
         Return:
             argparse args object.
         """
-        args, _ = self._config_arg_parser.parse_known_args(ignore_help_args=True)
-        return args
+        global TOO_MANY_COMMAND_LINE_ARGS_WARNING_THRESHOLD
+
+        current_num_args = len(self._config_arg_parser._actions)
+        shared_message_text = (
+            "To avoid this, you can use the my_pipeline.new_step(arg_suffix=..) argument to specify a single common "
+            "command-line arg suffix for Steps that run in parallel (eg. arg_suffix='step2'), while still specifying "
+            "a unique Step name (such as a sample id) for each individual parallel Step.")
+        if current_num_args > TOO_MANY_COMMAND_LINE_ARGS_ERROR_THRESHOLD:
+            raise ValueError(
+                f"The pipeline now has more than {TOO_MANY_COMMAND_LINE_ARGS_ERROR_THRESHOLD} command-line args. "
+                f"{shared_message_text}")
+        elif current_num_args > TOO_MANY_COMMAND_LINE_ARGS_WARNING_THRESHOLD:
+            print(f"WARNING: The pipeline now has more than {TOO_MANY_COMMAND_LINE_ARGS_WARNING_THRESHOLD} "
+                  f"command-line args. {shared_message_text}")
+            TOO_MANY_COMMAND_LINE_ARGS_WARNING_THRESHOLD = 10**10
+
+        # speed up this method by caching the results of parse_known_args(..) until the number of args changes
+        if not hasattr(self, "_num_args") or self._num_args != current_num_args:
+            args, _ = self._config_arg_parser.parse_known_args(ignore_help_args=True)
+            self._cached_args = args
+            self._num_args = current_num_args
+
+        return self._cached_args
 
     @abstractmethod
     def new_step(self, name, step_number=None):
@@ -310,6 +335,12 @@ response = slack.chat.post_message("{channel}", "{message}", as_user=False, icon
 print(response.raw)
 EOF"""
 
+    def precache_file_paths(self, glob_path):
+        """This method is an alias for the check_input_glob(..) method"""
+
+        return self.check_input_glob(glob_path)
+
+
     def check_input_glob(self, glob_path):
         """This method is useful for checking the existence of multiple input files and caching the results.
         Input file(s) to this Step using glob syntax (ie. using wildcards as in `gs://bucket/**/sample*.cram`)
@@ -329,8 +360,10 @@ EOF"""
             ]
 
         """
-
-        return _file_stat__cached(glob_path)
+        try:
+            return _file_stat__cached(glob_path)
+        except FileNotFoundError as e:
+            return []
 
     def export_pipeline_graph(self, output_svg_path=None):
         """Renders the pipeline execution graph diagram based on the Steps defined so far.
@@ -402,7 +435,8 @@ class Step(ABC):
     reused to run multiple steps (for example, where step 1 creates a VCF and step 2 tabixes it).
     """
     _STEP_ID_COUNTER = 0
-    _USED_ARG_SUFFIXES = set()
+    _USED_FORCE_ARG_SUFFIXES = set()
+    _USED_SKIP_ARG_SUFFIXES = set()
 
     def __init__(self,
                  pipeline,
@@ -458,6 +492,8 @@ class Step(ABC):
         Step._STEP_ID_COUNTER += 1
         self._step_id = Step._STEP_ID_COUNTER  # this id is unique to each Step object
 
+        self._unique_step_instance_id = str(random.randint(10**10, 10**11))
+
         # define command line args for skipping or forcing execution of this step
         argument_parser = pipeline.get_config_arg_parser()
 
@@ -475,21 +511,23 @@ class Step(ABC):
         for suffix in command_line_arg_suffixes:
             if add_force_command_line_args:
                 self._force_this_step_arg_names.append(f"force_{suffix}")
-                if suffix not in Step._USED_ARG_SUFFIXES:
+                if suffix not in Step._USED_FORCE_ARG_SUFFIXES:
                     argument_parser.add_argument(
                         f"--force-{suffix}",
                         help=f"Force execution of '{name}'.",
                         action="store_true",
                     )
+                    Step._USED_FORCE_ARG_SUFFIXES.add(suffix)
+
             if add_skip_command_line_args:
                 self._skip_this_step_arg_names.append(f"skip_{suffix}")
-                if suffix not in Step._USED_ARG_SUFFIXES:
+                if suffix not in Step._USED_SKIP_ARG_SUFFIXES:
                     argument_parser.add_argument(
                         f"--skip-{suffix}",
                         help=f"Skip '{name}' even if --force is used.",
                         action="store_true",
                     )
-            Step._USED_ARG_SUFFIXES.add(suffix)
+                    Step._USED_SKIP_ARG_SUFFIXES.add(suffix)
 
     def name(self, name):
         """Set the short name for this Step.
@@ -564,11 +602,18 @@ class Step(ABC):
         localize_by = localize_by or self._localize_by
 
         # validate inputs
+        if source_path is not None and not isinstance(source_path, str):
+            raise ValueError(f"source_path '{source_path}' has type {type(source_path).__name__} instead of string")
+
         if not source_path.startswith("gs://") and localize_by in (
                 Localize.GSUTIL_COPY,
-                Localize.HAIL_BATCH_CLOUDFUSE_VIA_TEMP_BUCKET
         ):
             raise ValueError(f"source_path '{source_path}' doesn't start with gs://")
+
+        if not source_path.startswith("gs://") and not source_path.startswith("hail-az://") and localize_by in (
+                Localize.HAIL_BATCH_CLOUDFUSE_VIA_TEMP_BUCKET,
+        ):
+            raise ValueError(f"source_path '{source_path}' doesn't start with gs:// or hail-az://")
 
         input_spec = InputSpec(
             source_path=source_path,
@@ -577,7 +622,7 @@ class Step(ABC):
             localization_root_dir=self._pipeline._get_localization_root_dir(localize_by),
         )
 
-        self._preprocess_input_spec(input_spec)
+        input_spec = self._preprocess_input_spec(input_spec)
         self._input_specs.append(input_spec)
 
         return input_spec
@@ -879,9 +924,14 @@ class Step(ABC):
 
         Args:
             input_spec (InputSpec): The input to preprocess.
+
+        Return:
+            input_spec (InputSpec): A potentially-updated input_spec.
         """
         if input_spec.localize_by not in self._get_supported_localize_by_choices():
             raise ValueError(f"Unexpected input_spec.localize_by value: {input_spec.localize_by}")
+
+        return input_spec
 
     @abstractmethod
     def _transfer_input_spec(self, input_spec):

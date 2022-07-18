@@ -175,7 +175,9 @@ class InputSpec(InputSpecBase):
             source_path=None,
             name=None,
             localize_by=None,
-            localization_root_dir=None):
+            localization_root_dir=None,
+            original_source_path=None,
+    ):
         """InputSpec constructor
 
         Args:
@@ -184,12 +186,16 @@ class InputSpec(InputSpecBase):
             name (str): Optional name for this input.
             localize_by (Localize): Approach to use to localize this path.
             localization_root_dir (str): This input will be localized to this directory within the container filesystem.
+            original_source_path (str): Sometimes the file is copied to a different cloud location as part of
+                localization. This is an optional arg to records its original location.
         """
 
         super().__init__(name=name)
 
         self._source_path = source_path
         self._localize_by = localize_by
+        self._localization_root_dir = localization_root_dir
+        self._original_source_path = original_source_path or source_path
 
         # these fields are computed based on the source_path
         self._source_bucket = None
@@ -234,6 +240,12 @@ class InputSpec(InputSpecBase):
         return self._source_path
 
     @property
+    def original_source_path(self):
+        if self._original_source_path is None:
+            raise ValueError("original_source_path not available for this input")
+        return self._original_source_path
+
+    @property
     def source_bucket(self):
         if self._source_bucket is None:
             raise ValueError("source_path not available for this input")
@@ -272,6 +284,10 @@ class InputSpec(InputSpecBase):
     @property
     def localize_by(self):
         return self._localize_by
+
+    @property
+    def localization_root_dir(self):
+        return self._localization_root_dir
 
 
 class OutputSpec:

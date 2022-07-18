@@ -498,9 +498,6 @@ class BatchStep(Step):
             else:
                 raise ValueError(f"Unexpected BatchStepType: {self._step_type}")
 
-        self._unique_batch_id = abs(hash(batch)) % 10**9
-        self._unique_job_id = abs(hash(self._job)) % 10**9
-
         # set execution parameters
         if self._image:
             self._job.image(self._image)
@@ -538,38 +535,35 @@ class BatchStep(Step):
 
         # transfer inputs
         for input_spec in self._input_specs:
-            print(" "*4 + f"Input: {input_spec.source_path}  ({input_spec.localize_by})")
+            print(" "*4 + f"Input: {input_spec.original_source_path}  ({input_spec.localize_by})")
             self._transfer_input_spec(input_spec)
 
         # transfer commands
-        if self._write_commands_to_script:
-            # write to script
+        if self._write_commands_to_script or len(" ".join(self._commands)) > 5*10**4:
             args = self._pipeline.parse_args()
 
-            script_lines = []
-            # set bash options for easier debugging and to make command execution more robust
-            script_lines.append("set -euxo pipefail")
-            for command in self._commands:
-                script_lines.append(command)
-
+            # write script to a temp file
             script_file = tempfile.NamedTemporaryFile("wt", prefix="script_", suffix=".sh", encoding="UTF-8", delete=True)
-            script_file.writelines(script_lines)
+            for command in self._commands:
+                script_file.write(f"{command}\n")
             script_file.flush()
 
             # upload script to the temp bucket or output dir
             script_temp_gcloud_path = os.path.join(
                 args.batch_remote_tmpdir,
-                f"batch_{self._unique_batch_id}/job_{self._unique_job_id}",
+                f"pipeline_{self._pipeline._unique_pipeline_instance_id}/step_{self._unique_step_instance_id}",
                 os.path.basename(script_file.name))
 
             os.chmod(script_file.name, mode=stat.S_IREAD | stat.S_IEXEC)
-            script_file_upload_command = self._generate_gsutil_copy_command(script_file.name, script_temp_gcloud_path)
+            script_file_upload_command = self._generate_gsutil_copy_command(
+                script_file.name, os.path.dirname(script_temp_gcloud_path))
             os.system(script_file_upload_command)
             script_file.close()
 
             script_input_spec = self.input(script_temp_gcloud_path)
             self._transfer_input_spec(script_input_spec)
-            self._job.command(f"bash -c '{script_input_spec.local_path}'")
+            #self._job.command(f"bash -c 'chmod +x {script_input_spec.local_path}'")
+            self._job.command(f"bash -c 'source {script_input_spec.local_path}'")
         else:
             for command in self._commands:
                 command_summary = command
@@ -586,12 +580,15 @@ class BatchStep(Step):
 
         # clean up any files that were copied to the temp bucket
         if self._paths_localized_via_temp_bucket:
-            cleanup_job_name = f"cleanup {len(self._paths_localized_via_temp_bucket)} files"
+            cleanup_job_name = f"clean up {len(self._paths_localized_via_temp_bucket)} files"
             if self.name:
-                cleanup_job_name += self.name
+                cleanup_job_name += f" from {self.name}"
             cleanup_job = self._pipeline._batch.new_job(name=cleanup_job_name)
+            cleanup_job.image("docker.io/hailgenetics/genetics:0.2.77")
             cleanup_job.depends_on(self._job)
             cleanup_job.always_run()
+            cleanup_job.command("set -x")
+            cleanup_job.command(f"gcloud auth activate-service-account --key-file /gsa-key/key.json")
             for temp_file_path in self._paths_localized_via_temp_bucket:
                 cleanup_job.command(f"gsutil -m rm -r {temp_file_path}")
             self._paths_localized_via_temp_bucket = set()
@@ -623,23 +620,55 @@ class BatchStep(Step):
             input_spec (InputSpec): The input to localize.
         """
 
-        super()._preprocess_input_spec(input_spec)
+        input_spec = super()._preprocess_input_spec(input_spec)
 
         if input_spec.localize_by == Localize.GSUTIL_COPY:
-            if not input_spec.source_path.startswith("gs://"):
+            if not input_spec.original_source_path.startswith("gs://"):
                 raise ValueError(f"Expected gs:// path but instead found '{input_spec.local_dir}'")
             self.command(f"mkdir -p '{input_spec.local_dir}'")
-            self.command(self._generate_gsutil_copy_command(input_spec.source_path, input_spec.local_dir))
+            self.command(self._generate_gsutil_copy_command(input_spec.original_source_path, input_spec.local_dir))
             self.command(f"ls -lh '{input_spec.local_path}'")   # check that file was copied successfully
 
         elif input_spec.localize_by in (
                 Localize.COPY,
-                Localize.HAIL_BATCH_CLOUDFUSE,
-                Localize.HAIL_BATCH_CLOUDFUSE_VIA_TEMP_BUCKET):
+                Localize.HAIL_BATCH_CLOUDFUSE):
             pass  # these will be handled in _transfer_input_spec(..)
+        elif input_spec.localize_by == Localize.HAIL_BATCH_CLOUDFUSE_VIA_TEMP_BUCKET:
+            args = self._pipeline.parse_args()
+            source_path = input_spec.source_path
+            source_path_without_protocol = input_spec.source_path_without_protocol
+
+            if not args.batch_remote_tmpdir:
+                raise ValueError("--batch-remote-tmpdir not specified.")
+
+            temp_dir = os.path.join(
+                args.batch_remote_tmpdir,
+                f"pipeline_{self._pipeline._unique_pipeline_instance_id}/step_{self._unique_step_instance_id}",
+                os.path.dirname(source_path_without_protocol).strip("/")+"/")
+            temp_file_path = os.path.join(temp_dir, input_spec.filename)
+
+            if temp_file_path in self._paths_localized_via_temp_bucket:
+                raise ValueError(f"{source_path} has already been localized via temp bucket.")
+            self._paths_localized_via_temp_bucket.add(temp_file_path)
+
+            # copy file to temp bucket
+            gsutil_command = self._generate_gsutil_copy_command(source_path, temp_dir)
+            self.command(gsutil_command)
+
+            # create an InputSpec with the updated source path
+            input_spec = InputSpec(
+                source_path=temp_file_path,
+                name=input_spec.name,
+                localize_by=input_spec.localize_by,
+                localization_root_dir=input_spec.localization_root_dir,
+                original_source_path=input_spec.source_path,
+            )
+
         elif input_spec.localize_by not in super()._get_supported_localize_by_choices():
             raise ValueError(
                 f"The hail Batch backend doesn't support input_spec.localize_by={input_spec.localize_by}")
+
+        return input_spec
 
     def _transfer_input_spec(self, input_spec):
         """When a Step isn't skipped and is being transferred to the execution backend, this method is called for
@@ -696,35 +725,10 @@ class BatchStep(Step):
         Args:
             input_spec (InputSpec): The input to localize.
         """
-        args = self._pipeline.parse_args()
-
-        source_path = input_spec.source_path
-        source_path_without_protocol = input_spec.source_path_without_protocol
-
         localize_by = input_spec.localize_by
-        if localize_by == Localize.HAIL_BATCH_CLOUDFUSE_VIA_TEMP_BUCKET:
-            if not args.batch_remote_tmpdir:
-                raise ValueError("--batch-remote-tmpdir not specified.")
-
-            temp_dir = os.path.join(
-                args.batch_remote_tmpdir,
-                f"batch_{self._unique_batch_id}/job_{self._unique_job_id}",
-                source_path_without_protocol.strip("/")+"/")
-            temp_file_path = os.path.join(temp_dir, input_spec.filename)
-
-            if temp_file_path in self._paths_localized_via_temp_bucket:
-                raise ValueError(f"{source_path} has already been localized via temp bucket.")
-            self._paths_localized_via_temp_bucket.add(temp_file_path)
-
-            # copy file to temp bucket
-            gsutil_command = self._generate_gsutil_copy_command(source_path, temp_dir)
-            print("Running: ", gsutil_command)
-            self._job.command(gsutil_command)
-
-        subdir = localize_by.get_subdir_name()
         source_bucket = input_spec.source_bucket
         local_root_dir = self._pipeline._get_localization_root_dir(localize_by)
-        local_mount_dir = os.path.join(local_root_dir, subdir, source_bucket)
+        local_mount_dir = os.path.join(local_root_dir, localize_by.get_subdir_name(), source_bucket)
         if source_bucket not in self._buckets_mounted_via_cloudfuse:
             self._job.command(f"mkdir -p {local_mount_dir}")
             self._job.cloudfuse(source_bucket, local_mount_dir, read_only=True)
@@ -763,8 +767,10 @@ EOF""")
         super()._preprocess_output_spec(output_spec)
         if output_spec.delocalize_by == Delocalize.COPY:
             # validate path since Batch delocalization doesn't work for gs:// paths with a Local backend.
-            if output_spec.output_path.startswith("gs://") and self._pipeline.backend == Backend.HAIL_BATCH_LOCAL:
-                raise ValueError("The hail Batch Local backend doesn't support Delocalize.COPY for gs:// paths")
+            if self._pipeline.backend == Backend.HAIL_BATCH_LOCAL and any(
+                    output_spec.output_path.startswith(s) for s in ("gs://", "hail-az://")):
+                raise ValueError("The hail Batch Local backend doesn't support Delocalize.COPY for non-local path: "
+                                 f"{output_spec.output_path}")
             if not output_spec.filename:
                 raise ValueError(f"{output_spec} filename isn't specified. It is required for Delocalize.COPY")
         elif output_spec.delocalize_by == Delocalize.GSUTIL_COPY:

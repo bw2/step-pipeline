@@ -343,7 +343,7 @@ class WdlStep(Step):
             input_spec (InputSpec): The input to localize.
         """
 
-        super()._preprocess_input_spec(input_spec)
+        return super()._preprocess_input_spec(input_spec)
 
     def _transfer_input_spec(self, input_spec):
         """When a Step isn't skipped and is being transferred to the execution backend, this method is called for
