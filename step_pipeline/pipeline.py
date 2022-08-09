@@ -7,7 +7,7 @@ import re
 import sys
 
 from step_pipeline.utils import _file_stat__cached
-from .utils import are_any_inputs_missing, are_outputs_up_to_date
+from .utils import are_any_inputs_missing, are_outputs_up_to_date, all_outputs_exist
 from .io import Localize, Delocalize, InputSpec, InputValueSpec, OutputSpec
 
 TOO_MANY_COMMAND_LINE_ARGS_ERROR_THRESHOLD = 500
@@ -50,7 +50,13 @@ class Pipeline(ABC):
         config_arg_parser.add_argument("-c", "--config-file", help="YAML config file path", is_config_file_arg=True)
         config_arg_parser.add_argument("--dry-run", action="store_true", help="Don't run commands, just print them.")
         config_arg_parser.add_argument("-f", "--force", action="store_true", help="Force execution of all steps.")
-
+        config_arg_parser.add_argument(
+            "--dont-check-file-last-modified-dates",
+            action="store_true",
+            help="When deciding whether a Step can be skipped, only check whether all output files already exist, "
+                 "and don't bother checking input and output file last-modified dates to make sure that all output "
+                 "files are newer than all input files. This is useful when some steps have so many input and ouptut "
+                 "files that it takes too long to get the last-modified dates for all of them.")
         config_arg_parser.add_argument(
             "--skip-steps-with-missing-inputs",
             action="store_true",
@@ -270,24 +276,30 @@ class Pipeline(ABC):
                             if args.verbose:
                                 print(f"Running {step} because upstream step is going to run.")
                             decided_this_step_needs_to_run = True
-
-                    if not decided_this_step_needs_to_run:
-                        # only do this check if upstream steps are being skipped. Otherwise, input files may not exist yet.
-                        if args.skip_steps_with_missing_inputs and are_any_inputs_missing(step, verbose=args.verbose):
+                        elif args.skip_steps_with_missing_inputs and are_any_inputs_missing(step, verbose=args.verbose):
+                            # only do this check if upstream steps are being skipped. Otherwise, input files may not exist yet.
                             continue  # skip this step
 
-                        outputs_are_up_to_date = are_outputs_up_to_date(step, verbose=args.verbose)
-                        if not outputs_are_up_to_date:
-                            if args.verbose:
-                                print(f"Running {step} because some output(s) are missing or are not up-to-date.")
-
-                            decided_this_step_needs_to_run = True
+                    if not decided_this_step_needs_to_run:
+                        if args.dont_check_file_last_modified_dates:
+                            if not all_outputs_exist(step, verbose=args.verbose):
+                                if args.verbose:
+                                    print(f"Running {step} because some output(s) don't exist yet.")
+                                decided_this_step_needs_to_run = True
                         else:
-                            print(f"Skipping {step}. The {len(step._output_specs)} output(s) already exist and are up-to-date.")
-                            if args.verbose > 0:
-                                print(f"Outputs:")
-                                for o in step._output_specs:
-                                    print(f"       {o}")
+                            if not are_outputs_up_to_date(step, verbose=args.verbose):
+                                if args.verbose:
+                                    print(f"Running {step} because some output(s) don't exist yet or are not up-to-date.")
+
+                                decided_this_step_needs_to_run = True
+
+                    if not decided_this_step_needs_to_run:
+                        print(f"Skipping {step}. The {len(step._output_specs)} output(s) already exist" +
+                              (" and are up-to-date." if args.dont_check_file_last_modified_dates else "."))
+                        if args.verbose > 0:
+                            print(f"Outputs:")
+                            for o in step._output_specs:
+                                print(f"       {o}")
 
                 if decided_this_step_needs_to_run:
                     print(f"==> Running {step}")

@@ -692,6 +692,9 @@ class BatchStep(Step):
         elif input_spec.localize_by == Localize.COPY:
             input_spec.read_input_obj = self._job._batch.read_input(input_spec.source_path)
             if self._step_type == BatchStepType.BASH:
+                # NOTE: this currently causes Hail Batch to raise an AssertionError:
+                # "every job spec must be less than max_bunch_bytesize" when there are many input files.
+                # The only workaround is to use Localize.GSUTIL_COPY instead of Localize.COPY
                 self._job.command(f"mkdir -p '{input_spec.local_dir}'")
                 self._job.command(f"ln -s {input_spec.read_input_obj} {input_spec.local_path}")
         elif input_spec.localize_by in (

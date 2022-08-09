@@ -249,6 +249,14 @@ def are_any_inputs_missing(step, verbose=False):
     return False
 
 
+def all_outputs_exist(step, verbose=False):
+    """Returns True if all of the Step's output files already exist"""
+    for output_spec in step._output_specs:
+        if not _path_exists__cached(output_spec.output_path, verbose=verbose):
+            return False
+
+    return True
+
 def are_outputs_up_to_date(step, verbose=False):
     """Returns True if all of the Step's outputs already exist and are newer than all inputs"""
 
