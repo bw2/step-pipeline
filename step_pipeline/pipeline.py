@@ -51,12 +51,12 @@ class Pipeline(ABC):
         config_arg_parser.add_argument("--dry-run", action="store_true", help="Don't run commands, just print them.")
         config_arg_parser.add_argument("-f", "--force", action="store_true", help="Force execution of all steps.")
         config_arg_parser.add_argument(
-            "--dont-check-file-last-modified-dates",
+            "--dont-check-file-last-modified-times",
             action="store_true",
             help="When deciding whether a Step can be skipped, only check whether all output files already exist, "
-                 "and don't bother checking input and output file last-modified dates to make sure that all output "
+                 "and don't bother checking input and output file last-modified times to make sure that all output "
                  "files are newer than all input files. This is useful when some steps have so many input and ouptut "
-                 "files that it takes too long to get the last-modified dates for all of them.")
+                 "files that it takes too long to get the last-modified times for all of them.")
         config_arg_parser.add_argument(
             "--skip-steps-with-missing-inputs",
             action="store_true",
@@ -281,7 +281,7 @@ class Pipeline(ABC):
                             continue  # skip this step
 
                     if not decided_this_step_needs_to_run:
-                        if args.dont_check_file_last_modified_dates:
+                        if args.dont_check_file_last_modified_times:
                             if not all_outputs_exist(step, verbose=args.verbose):
                                 if args.verbose:
                                     print(f"Running {step} because some output(s) don't exist yet.")
@@ -295,7 +295,7 @@ class Pipeline(ABC):
 
                     if not decided_this_step_needs_to_run:
                         print(f"Skipping {step}. The {len(step._output_specs)} output(s) already exist" +
-                              (" and are up-to-date." if args.dont_check_file_last_modified_dates else "."))
+                              (" and are up-to-date." if args.dont_check_file_last_modified_times else "."))
                         if args.verbose > 0:
                             print(f"Outputs:")
                             for o in step._output_specs:
