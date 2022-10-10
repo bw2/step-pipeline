@@ -54,7 +54,7 @@ class BatchPipeline(Pipeline):
                  "gsutil iam ch serviceAccount:[SERVICE_ACCOUNT_NAME]:objectAdmin gs://[BUCKET_NAME]"
         )
 
-        args = self.parse_args()
+        args = self.parse_known_args()
 
         self._backend = backend
         self._gcloud_project = args.gcloud_project
@@ -263,7 +263,7 @@ class BatchPipeline(Pipeline):
     def _create_batch_obj(self):
         """Instantiate the Hail Batch Backend."""
 
-        args = self.parse_args()
+        args = self.parse_known_args()
 
         if self._backend == Backend.HAIL_BATCH_LOCAL:
             self._backend_obj = hb.LocalBackend()
@@ -326,7 +326,7 @@ class BatchPipeline(Pipeline):
         num_steps_transferred = super()._transfer_all_steps()
 
         # handle --slack-when-done by adding an always-run job
-        args = self.parse_args()
+        args = self.parse_known_args()
         if args.slack_when_done and num_steps_transferred > 0:
             post_to_slack_job = self._batch.new_job(name="post to slack when done")
             for step in self._all_steps:
@@ -634,7 +634,7 @@ class BatchStep(Step):
                 Localize.HAIL_BATCH_CLOUDFUSE):
             pass  # these will be handled in _transfer_input_spec(..)
         elif input_spec.localize_by == Localize.HAIL_BATCH_CLOUDFUSE_VIA_TEMP_BUCKET:
-            args = self._pipeline.parse_args()
+            args = self._pipeline.parse_known_args()
             source_path = input_spec.source_path
             source_path_without_protocol = input_spec.source_path_without_protocol
 
@@ -679,7 +679,7 @@ class BatchStep(Step):
         """
         super()._transfer_input_spec(input_spec)
 
-        args = self._pipeline.parse_args()
+        args = self._pipeline.parse_known_args()
         if args.acceptable_storage_regions:
             check_gcloud_storage_region(
                 input_spec.source_path,
@@ -714,7 +714,7 @@ class BatchStep(Step):
         Return:
             str: gsutil command string
         """
-        args = self._pipeline.parse_args()
+        args = self._pipeline.parse_known_args()
         gsutil_command = f"gsutil"
         if args.gcloud_project:
             gsutil_command += f" -u {args.gcloud_project}"

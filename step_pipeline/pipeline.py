@@ -96,10 +96,15 @@ class Pipeline(ABC):
         )
 
         # validate the command-line args defined so far
-        args = self.parse_args()
+        args = self.parse_known_args()
         if args.slack_when_done and (not args.slack_token or not args.slack_channel):
             config_arg_parser.error(
                 "Both --slack-token and --slack-channel must be specified when --slack-when-done is used")
+
+    def set_name(self, name):
+        """Update the pipeline name"""
+
+        self.name = name
 
     def get_config_arg_parser(self):
         """Returns the configargparse.ArgumentParser object used by the Pipeline to define command-line args.
@@ -115,6 +120,14 @@ class Pipeline(ABC):
         return self._config_arg_parser
 
     def parse_args(self):
+        """Parse command line args.
+
+        Return:
+            argparse args object.
+        """
+        return self._config_arg_parser.parse_args()
+
+    def parse_known_args(self):
         """Parse command line args defined up to this point. This method can be called more than once.
 
         Return:
@@ -192,8 +205,8 @@ class Pipeline(ABC):
         They should use this method to perform initialization of the specific execution backend and then call
         self._transfer_all_steps(..).
         """
-        # run parse_args(..) instead of self.parse_args() for the 1st time to confirm that all required command-line
-        # args were provided
+        # run self.parse_args(..) instead of self.parse_known_args() for the 1st time to confirm that all required
+        # command-line args were provided
         self._argument_parser.parse_args()
 
         args = self.parse_args()
@@ -332,7 +345,7 @@ class Pipeline(ABC):
             str: command that posts the given message to Slack
         """
 
-        args = self.parse_args()
+        args = self.parse_known_args()
         slack_token = slack_token or args.slack_token
         if not slack_token:
             raise ValueError("slack token not provided")
@@ -889,7 +902,7 @@ class Step(ABC):
                 with the auth steps.
         """
 
-        args = self._pipeline.parse_args()
+        args = self._pipeline.parse_known_args()
         if not gcloud_credentials_path:
             gcloud_credentials_path = args.gcloud_credentials_path
             if not gcloud_credentials_path:
