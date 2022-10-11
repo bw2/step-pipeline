@@ -205,6 +205,12 @@ class InputSpec(InputSpecBase):
         self._local_dir = None
         self._local_path = None
 
+        if localize_by and not isinstance(localize_by, Localize):
+            raise ValueError(f"localize_by arg: {localize_by} is not an instance of the Localize enum")
+
+        if localization_root_dir and not isinstance(localization_root_dir, str):
+            raise ValueError(f"localization_root_dir arg: {localization_root_dir} is not a string")
+
         if source_path is not None:
             match = re.match("^([a-zA-Z-_]+)://(.*)", source_path)
             if match:
@@ -315,6 +321,9 @@ class OutputSpec:
         self._name = name
         self._delocalize_by = delocalize_by
 
+        if delocalize_by and not isinstance(delocalize_by, Delocalize):
+            raise ValueError(f"localize_by arg: {delocalize_by} is not an instance of the Delocalize enum")
+
         # define self._output_filename
         if output_path:
             self._output_filename = os.path.basename(output_path)
@@ -324,7 +333,10 @@ class OutputSpec:
             self._output_filename = None
 
         # define self._output_path and self._output_dir
-        if output_dir:
+        if output_path:
+            self._output_path = output_path
+            self._output_dir = os.path.dirname(self._output_path)
+        elif output_dir:
             self._output_dir = output_dir
             if output_path:
                 if os.path.isabs(output_path) or "://" in output_path:
@@ -336,9 +348,6 @@ class OutputSpec:
             else:
                 self._output_path = output_dir
 
-        elif output_path:
-            self._output_path = output_path
-            self._output_dir = os.path.dirname(self._output_path)
         else:
             raise ValueError("Neither output_dir nor output_path were specified.")
 
