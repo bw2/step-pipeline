@@ -777,9 +777,12 @@ EOF""")
             if not output_spec.filename:
                 raise ValueError(f"{output_spec} filename isn't specified. It is required for Delocalize.COPY")
         elif output_spec.delocalize_by == Delocalize.GSUTIL_COPY:
-            if not output_spec.output_dir.startswith("gs://"):
-                raise ValueError(f"{output_spec.output_dir} Destination path must start with gs://")
-            self.command(self._generate_gsutil_copy_command(output_spec.local_path, output_spec.output_dir))
+            if not output_spec.output_dir:
+                raise ValueError(f"{output_spec} output directory is required for Delocalize.GSUTIL_COPY")
+            destination_path = output_spec.output_path or output_spec.output_dir
+            if not destination_path.startswith("gs://"):
+                raise ValueError(f"{destination_path} Destination path must start with gs://")
+            self.command(self._generate_gsutil_copy_command(output_spec.local_path, destination_path))
 
     def _transfer_output_spec(self, output_spec):
         """When a Step isn't skipped and is being transferred to the execution backend, this method is called for
