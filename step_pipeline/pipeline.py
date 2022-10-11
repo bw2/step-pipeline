@@ -1,3 +1,4 @@
+import collections
 from abc import ABC, abstractmethod
 
 import configargparse
@@ -12,6 +13,7 @@ from .io import Localize, Delocalize, InputSpec, InputValueSpec, OutputSpec
 
 TOO_MANY_COMMAND_LINE_ARGS_ERROR_THRESHOLD = 500
 TOO_MANY_COMMAND_LINE_ARGS_WARNING_THRESHOLD = 500
+
 
 class Pipeline(ABC):
     """Pipeline represents the execution pipeline. This base class contains only generalized code that is not specific
@@ -258,6 +260,8 @@ class Pipeline(ABC):
 
         args = self.parse_args()
 
+        step_counters = collections.defaultdict(int)  # count steps seen (by name)
+        step_run_counters = collections.defaultdict(int) # count steps run (by name)
         current_steps = [s for s in self._all_steps if not s.has_upstream_steps()]
         num_steps_transferred = 0
         while current_steps:
@@ -267,11 +271,21 @@ class Pipeline(ABC):
                     print(f"WARNING: No commands specified for step [{step}]. Skipping...")
                     continue
 
+                step_counters[step.name] += 1
+
                 # decide whether this step needs to run
                 decided_this_step_needs_to_run = False
 
                 skip_requested = any(
                     getattr(args, skip_arg_name.replace("-", "_")) for skip_arg_name in step._skip_this_step_arg_names
+                )
+                skip_requested |= any(
+                    (getattr(args, run_n_arg_name.replace("-", "_")) or 10**9) < step_run_counters[step.name]
+                    for run_n_arg_name in step._run_n_arg_names
+                )
+                skip_requested |= any(
+                    (getattr(args, run_offset_arg_name.replace("-", "_")) or 0) > step_counters[step.name]
+                    for run_offset_arg_name in step._run_offset_arg_names
                 )
 
                 if skip_requested:
@@ -295,7 +309,11 @@ class Pipeline(ABC):
 
                     if not decided_this_step_needs_to_run:
                         if args.dont_check_file_last_modified_times:
-                            if not all_outputs_exist(step, verbose=args.verbose):
+                            if len(step._output_specs) == 0:
+                                if args.verbose:
+                                    print(f"Running {step}. No outputs specified.")
+                                decided_this_step_needs_to_run = True
+                            elif not all_outputs_exist(step, verbose=args.verbose):
                                 if args.verbose:
                                     print(f"Running {step} because some output(s) don't exist yet.")
                                 decided_this_step_needs_to_run = True
@@ -307,8 +325,9 @@ class Pipeline(ABC):
                                 decided_this_step_needs_to_run = True
 
                     if not decided_this_step_needs_to_run:
-                        print(f"Skipping {step}. The {len(step._output_specs)} output(s) already exist" +
-                              (" and are up-to-date." if args.dont_check_file_last_modified_times else "."))
+                        print(f"Skipping {step}. The {len(step._output_specs)} output" +
+                              ("s already exist and are" if len(step._output_specs) > 1 else " already exists and is") +
+                              (" up-to-date." if args.dont_check_file_last_modified_times else "."))
                         if args.verbose > 0:
                             print(f"Outputs:")
                             for o in step._output_specs:
@@ -318,6 +337,8 @@ class Pipeline(ABC):
                     print(f"==> Running {step}")
                     step._is_being_skipped = False
                     step._transfer_step()
+
+                    step_run_counters[step.name] += 1
                     num_steps_transferred += 1
                 else:
                     step._is_being_skipped = True
@@ -462,6 +483,7 @@ class Step(ABC):
     _STEP_ID_COUNTER = 0
     _USED_FORCE_ARG_SUFFIXES = set()
     _USED_SKIP_ARG_SUFFIXES = set()
+    _USED_RUN_SUBSET_ARG_SUFFIXES = set()
 
     def __init__(self,
                  pipeline,
@@ -472,7 +494,9 @@ class Step(ABC):
                  localize_by=None,
                  delocalize_by=None,
                  add_force_command_line_args=True,
-                 add_skip_command_line_args=True):
+                 add_skip_command_line_args=True,
+                 add_run_subset_command_line_args=True,
+        ):
         """Step constructor
 
         Args:
@@ -487,6 +511,8 @@ class Step(ABC):
             delocalize_by (Delocalize): If specified, this will be the default Delocalize approach used by Step outputs.
             add_force_command_line_args (bool): Whether to add command line args for forcing execution of this Step.
             add_skip_command_line_args (bool): Whether to add command line args for skipping execution of this Step.
+            add_run_subset_command_line_args (bool): Whether to add command line args for running a subset of
+                parallel jobs from this Step (--run-n-step1, --run-offset-step1).
         """
         self._pipeline = pipeline
         self.name = name
@@ -513,6 +539,8 @@ class Step(ABC):
 
         self._force_this_step_arg_names = []
         self._skip_this_step_arg_names = []
+        self._run_n_arg_names = []
+        self._run_offset_arg_names = []
 
         Step._STEP_ID_COUNTER += 1
         self._step_id = Step._STEP_ID_COUNTER  # this id is unique to each Step object
@@ -523,10 +551,13 @@ class Step(ABC):
         argument_parser = pipeline.get_config_arg_parser()
 
         command_line_arg_suffixes = []
+        def cleanup_arg_suffix(suffix):
+            return suffix.replace(" ", "-").replace(":", "").replace("_", "-")
+
         if arg_suffix:
-            command_line_arg_suffixes.append(arg_suffix)
+            command_line_arg_suffixes.append(cleanup_arg_suffix(arg_suffix))
         elif name:
-            command_line_arg_suffixes.append(name.replace(" ", "-").replace(":", ""))
+            command_line_arg_suffixes.append(cleanup_arg_suffix(name))
 
         if step_number is not None:
             if not isinstance(step_number, (int, float)):
@@ -553,6 +584,24 @@ class Step(ABC):
                         action="store_true",
                     )
                     Step._USED_SKIP_ARG_SUFFIXES.add(suffix)
+
+            if add_run_subset_command_line_args:
+                self._run_n_arg_names.append(f"run_n_{suffix}")
+                self._run_offset_arg_names.append(f"run_offset_{suffix}")
+                if suffix not in Step._USED_RUN_SUBSET_ARG_SUFFIXES:
+                    argument_parser.add_argument(
+                        f"--run-n-{suffix}",
+                        help=f"Run only this many parallel jobs for '{name}' even if --force is used. This can be "
+                             f"useful for test-running a pipeline.",
+                        type=int,
+                    )
+                    argument_parser.add_argument(
+                        f"--run-offset-{suffix}",
+                        help=f"Skip the first this many parallel jobs from '{name}' even if --force is used. This can "
+                             f"be useful for test-running a pipeline, especially when used with --run-n-..",
+                        type=int,
+                    )
+                    Step._USED_RUN_SUBSET_ARG_SUFFIXES.add(suffix)
 
     def name(self, name):
         """Set the short name for this Step.
