@@ -53,12 +53,11 @@ class Pipeline(ABC):
         config_arg_parser.add_argument("--dry-run", action="store_true", help="Don't run commands, just print them.")
         config_arg_parser.add_argument("-f", "--force", action="store_true", help="Force execution of all steps.")
         config_arg_parser.add_argument(
-            "--dont-check-file-last-modified-times",
+            "--check-file-last-modified-times",
             action="store_true",
-            help="When deciding whether a Step can be skipped, only check whether all output files already exist, "
-                 "and don't bother checking input and output file last-modified times to make sure that all output "
-                 "files are newer than all input files. This is useful when some steps have so many input and ouptut "
-                 "files that it takes too long to get the last-modified times for all of them.")
+            help="When deciding whether a Step can be skipped, instead of only checking whether all output files "
+                 "already exist, also check input and output file last-modified times to make sure that all output "
+                 "files are newer than all input files.")
         config_arg_parser.add_argument(
             "--skip-steps-with-missing-inputs",
             action="store_true",
@@ -308,7 +307,7 @@ class Pipeline(ABC):
                             continue  # skip this step
 
                     if not decided_this_step_needs_to_run:
-                        if args.dont_check_file_last_modified_times:
+                        if not args.check_file_last_modified_times:
                             if len(step._output_specs) == 0:
                                 if args.verbose:
                                     print(f"Running {step}. No outputs specified.")
@@ -326,8 +325,9 @@ class Pipeline(ABC):
 
                     if not decided_this_step_needs_to_run:
                         print(f"Skipping {step}. The {len(step._output_specs)} output" +
-                              ("s already exist and are" if len(step._output_specs) > 1 else " already exists and is") +
-                              (" up-to-date." if args.dont_check_file_last_modified_times else "."))
+                              ("s already exist" if len(step._output_specs) > 1 else " already exists") +
+                              ("." if args.check_file_last_modified_times else
+                               " and are up-to-date." if len(step._output_specs) > 1 else " and is up-to-date"))
                         if args.verbose > 0:
                             print(f"Outputs:")
                             for o in step._output_specs:
@@ -550,19 +550,19 @@ class Step(ABC):
         # define command line args for skipping or forcing execution of this step
         argument_parser = pipeline.get_config_arg_parser()
 
-        command_line_arg_suffixes = []
+        command_line_arg_suffixes = set()
         def cleanup_arg_suffix(suffix):
             return suffix.replace(" ", "-").replace(":", "").replace("_", "-")
 
         if arg_suffix:
-            command_line_arg_suffixes.append(cleanup_arg_suffix(arg_suffix))
+            command_line_arg_suffixes.add(cleanup_arg_suffix(arg_suffix))
         elif name:
-            command_line_arg_suffixes.append(cleanup_arg_suffix(name))
+            command_line_arg_suffixes.add(cleanup_arg_suffix(name))
 
         if step_number is not None:
             if not isinstance(step_number, (int, float)):
                 raise ValueError(f"step_number must be an integer or a float rather than '{step_number}'")
-            command_line_arg_suffixes.append(f"step{step_number}")
+            command_line_arg_suffixes.add(f"step{step_number}")
 
         for suffix in command_line_arg_suffixes:
             if add_force_command_line_args:
