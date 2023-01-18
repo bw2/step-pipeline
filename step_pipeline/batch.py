@@ -303,7 +303,7 @@ class BatchPipeline(Pipeline):
         elif self._backend == Backend.HAIL_BATCH_SERVICE:
             result = self._batch.run(
                 dry_run=args.dry_run,
-                verbose=args.verbose,
+                verbose=False,  # always set to False since hail verbose output is too detailed
                 delete_scratch_on_exit=None,  # If True, delete temporary directories with intermediate files
                 wait=True,  # If True, wait for the batch to finish executing before returning
                 open=False,  # If True, open the UI page for the batch
@@ -420,6 +420,16 @@ class BatchStep(Step):
         self._step_type = BatchStepType.BASH
         self._write_commands_to_script = False
 
+        self._regions = None
+
+    def regions(self, *region):
+        """Set one or more compute regions.
+
+        Args:
+            region (str): eg. "us-central1".
+        """
+        self._regions = region
+
     def cpu(self, cpu):
         """Set the CPU requirement for this Step.
 
@@ -502,6 +512,12 @@ class BatchStep(Step):
         if self._image:
             self._job.image(self._image)
 
+        if self._regions is not None:
+            self._job.regions(self._regions)
+        else:
+            # set the default region to us-central1 to avoid random egress charges
+            self._job.regions(["us-central1"])
+
         if self._cpu is not None:
             if self._cpu < 0.25 or self._cpu > 16:
                 raise ValueError(f"CPU arg is {self._cpu}. This is outside the range of 0.25 to 16 CPUs")
@@ -556,7 +572,7 @@ class BatchStep(Step):
 
             os.chmod(script_file.name, mode=stat.S_IREAD | stat.S_IEXEC)
             script_file_upload_command = self._generate_gsutil_copy_command(
-                script_file.name, os.path.dirname(script_temp_gcloud_path))
+                script_file.name, output_dir=os.path.dirname(script_temp_gcloud_path))
             os.system(script_file_upload_command)
             script_file.close()
 
@@ -600,7 +616,7 @@ class BatchStep(Step):
             Localize.COPY,
             Localize.GSUTIL_COPY,
             Localize.HAIL_BATCH_CLOUDFUSE,
-            Localize.HAIL_BATCH_CLOUDFUSE_VIA_TEMP_BUCKET,
+            #Localize.HAIL_BATCH_CLOUDFUSE_VIA_TEMP_BUCKET,
         }
 
     def _get_supported_delocalize_by_choices(self):
@@ -626,7 +642,8 @@ class BatchStep(Step):
             if not input_spec.original_source_path.startswith("gs://"):
                 raise ValueError(f"Expected gs:// path but instead found '{input_spec.local_dir}'")
             self.command(f"mkdir -p '{input_spec.local_dir}'")
-            self.command(self._generate_gsutil_copy_command(input_spec.original_source_path, input_spec.local_dir))
+            self.command(self._generate_gsutil_copy_command(
+                input_spec.original_source_path, output_dir=input_spec.local_dir))
             self.command(f"ls -lh '{input_spec.local_path}'")   # check that file was copied successfully
 
         elif input_spec.localize_by in (
@@ -634,6 +651,8 @@ class BatchStep(Step):
                 Localize.HAIL_BATCH_CLOUDFUSE):
             pass  # these will be handled in _transfer_input_spec(..)
         elif input_spec.localize_by == Localize.HAIL_BATCH_CLOUDFUSE_VIA_TEMP_BUCKET:
+            raise ValueError("Localize.HAIL_BATCH_CLOUDFUSE_VIA_TEMP_BUCKET is no longer supported due to changes in gcloud egress charges")
+
             args = self._pipeline.parse_known_args()
             source_path = input_spec.source_path
             source_path_without_protocol = input_spec.source_path_without_protocol
@@ -652,7 +671,7 @@ class BatchStep(Step):
             self._paths_localized_via_temp_bucket.add(temp_file_path)
 
             # copy file to temp bucket
-            gsutil_command = self._generate_gsutil_copy_command(source_path, temp_dir)
+            gsutil_command = self._generate_gsutil_copy_command(source_path, output_dir=temp_dir)
             self.command(gsutil_command)
 
             # create an InputSpec with the updated source path
@@ -704,13 +723,14 @@ class BatchStep(Step):
         elif input_spec.localize_by == Localize.HAIL_HADOOP_COPY:
             self._add_commands_for_hail_hadoop_copy(input_spec.source_path, input_spec.local_dir)
 
-    def _generate_gsutil_copy_command(self, source_path, output_dir):
-        """Utility method that puts together the gsutil command for copying the given source path to an output directory.
+    def _generate_gsutil_copy_command(self, source_path, output_dir=None, output_path=None):
+        """Utility method that puts together the gsutil command for copying the given source path to an output path
+        or directory. Either the output path or the output directory must be provided.
 
         Args:
             source_path (str): The source path.
             output_dir (str): Output directory.
-
+            output_path (str): Output file path.
         Return:
             str: gsutil command string
         """
@@ -719,8 +739,14 @@ class BatchStep(Step):
         if args.gcloud_project:
             gsutil_command += f" -u {args.gcloud_project}"
 
-        output_dir = output_dir.rstrip("/") + "/"
-        return f"time {gsutil_command} -m cp -r '{source_path}' '{output_dir}'"
+        if output_path:
+            destination = output_path
+        elif output_dir:
+            destination = output_dir.rstrip("/") + "/"
+        else:
+            raise ValueError("Neither output_path nor output_dir arg was specified")
+
+        return f"time {gsutil_command} -m cp -r '{source_path}' '{destination}'"
 
     def _handle_input_transfer_using_cloudfuse(self, input_spec):
         """Utility method that implements localizing an input via cloudfuse.
@@ -777,12 +803,9 @@ EOF""")
             if not output_spec.filename:
                 raise ValueError(f"{output_spec} filename isn't specified. It is required for Delocalize.COPY")
         elif output_spec.delocalize_by == Delocalize.GSUTIL_COPY:
-            if not output_spec.output_dir:
-                raise ValueError(f"{output_spec} output directory is required for Delocalize.GSUTIL_COPY")
-            destination_path = output_spec.output_path or output_spec.output_dir
-            if not destination_path.startswith("gs://"):
-                raise ValueError(f"{destination_path} Destination path must start with gs://")
-            self.command(self._generate_gsutil_copy_command(output_spec.local_path, destination_path))
+            if not output_spec.output_path.startswith("gs://"):
+                raise ValueError(f"{output_spec.output_path} Destination path must start with gs://")
+            self.command(self._generate_gsutil_copy_command(output_spec.local_path, output_path=output_spec.output_path))
 
     def _transfer_output_spec(self, output_spec):
         """When a Step isn't skipped and is being transferred to the execution backend, this method is called for
