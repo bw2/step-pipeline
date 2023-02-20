@@ -492,6 +492,7 @@ class BatchStep(Step):
     def _transfer_step(self):
         """Submit this Step to the Batch backend. This method is only called if the Step isn't skipped."""
         # create Batch Job object
+
         batch = self._pipeline._batch
         if self._reuse_job_from_previous_step:
             # reuse previous Job

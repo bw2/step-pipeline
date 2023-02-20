@@ -241,6 +241,31 @@ class Pipeline(ABC):
 
         self.run()
 
+    def _check_step_graph_for_cycles(self, start_with_step=None):
+        """TODO test implementation"""
+
+        if start_with_step is None:
+            for step in self._all_steps:
+                # initialize variables to keep track of DAG traversal
+                step.dag_traversal_all_descendents_already_visited = False
+                step.dag_traversal_step_visit_count = 0
+
+            steps = [s for s in self._all_steps if not s.has_upstream_steps()]
+        else:
+            steps = [start_with_step]
+
+        for step in steps:
+            step.dag_traversal_step_visit_count += 1
+            if not step.dag_traversal_all_descendents_already_visited and step.dag_traversal_step_visit_count > 1:
+                raise ValueError(f"Cycle detected. {next_step} was already visited")
+
+            # push child steps
+            for next_step in step._downstream_steps:
+                if not next_step.dag_traversal_all_descendents_already_visited:
+                    self._check_step_graph_for_cycles(start_with_step=next_step)
+
+            step.dag_traversal_all_descendents_already_visited = True
+
     def _transfer_all_steps(self):
         """This method performs the core task of executing a pipeline. It traverses the execution graph (DAG) of
         user-defined Steps and decides which steps can be skipped, and which should be executed (ie. transferred to
@@ -259,13 +284,22 @@ class Pipeline(ABC):
 
         args = self.parse_args()
 
+        self._check_step_graph_for_cycles()
+
         step_counters = collections.defaultdict(int)  # count steps seen (by name)
         step_run_counters = collections.defaultdict(int) # count steps run (by name)
         current_steps = [s for s in self._all_steps if not s.has_upstream_steps()]
         num_steps_transferred = 0
+
+        # set up 'visited' boolean to track whether a Step has already been visited by the DAG traversal
+        for step in self._all_steps:
+            step.visited = False
+
+        # begin traversal of DAG
         while current_steps:
-            #print("Next steps: ", current_steps)
             for step in current_steps:
+                step.visited = True
+
                 if not step._commands:
                     print(f"WARNING: No commands specified for step [{step}]. Skipping...")
                     continue
@@ -347,9 +381,15 @@ class Pipeline(ABC):
             next_steps = []
             for step in current_steps:
                 for downstream_step in step._downstream_steps:
-                    # if multiple current steps share the same downstream step, avoid adding it multiple times
-                    if downstream_step not in next_steps:
-                        next_steps.append(downstream_step)
+                    if downstream_step in next_steps:
+                        # when multiple current steps share the same downstream step, avoid adding it multiple times
+                        continue
+
+                    if any(not s.visited for s in downstream_step._upstream_steps):
+                        # if any of the steps this downstream step depends on haven't been processed yet, wait for that
+                        continue
+                    next_steps.append(downstream_step)
+
             current_steps = next_steps
 
         return num_steps_transferred
@@ -602,6 +642,15 @@ class Step(ABC):
                         type=int,
                     )
                     Step._USED_RUN_SUBSET_ARG_SUFFIXES.add(suffix)
+
+    def __eq__(self, other):
+        return isinstance(other, Step) and self._step_id == other._step_id
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __hash__(self):
+        return self._step_id
 
     def name(self, name):
         """Set the short name for this Step.
@@ -871,14 +920,17 @@ class Step(ABC):
             upstream_step (Step): The upstream Step this Step depends on.
         """
         if isinstance(upstream_step, Step):
-            self._upstream_steps.append(upstream_step)
-            upstream_step._downstream_steps.append(self)
+            if upstream_step not in self._upstream_steps:
+                self._upstream_steps.append(upstream_step)
+            if self not in upstream_step._downstream_steps:
+                upstream_step._downstream_steps.append(self)
 
         elif isinstance(upstream_step, list):
-            self._upstream_steps.extend(upstream_step)
             for _upstream_step in upstream_step:
-                _upstream_step._downstream_steps.append(self)
-
+                if _upstream_step not in self._upstream_steps:
+                    self._upstream_steps.append(_upstream_step)
+                if self not in _upstream_step._downstream_steps:
+                    _upstream_step._downstream_steps.append(self)
         else:
             raise ValueError(f"Unexpected step object type: {type(upstream_step)}")
 
