@@ -1,7 +1,7 @@
 import hailtop.batch as hb
 
 b = hb.Batch(name="summarize fasta index", backend=hb.ServiceBackend("tgg-rare-disease",
-        remote_tmpdir="gs://gnomad-bw2-delete-after-15-days"))
+        remote_tmpdir="gs://bw2-delete-after-5-days"), requester_pays_project="bw2-rare-disease")
 
 j = b.new_job(name="save HLA contigs")
 ref_fasta_index = b.read_input(
