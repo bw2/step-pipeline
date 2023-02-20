@@ -65,6 +65,8 @@ class BatchPipeline(Pipeline):
         self._default_cpu = None
         self._default_storage = None
         self._default_timeout = None
+        self._default_custom_machine_type = None
+        self._default_custom_machine_is_preemptible = None
         self._backend_obj = None
 
     @property
@@ -229,10 +231,28 @@ class BatchPipeline(Pipeline):
         """Set the default job timeout duration.
 
         Args:
-            default_timeout: Maximum time in seconds for a job to run before being killed. Only applicable for the
+            default_timeout (int): Maximum time in seconds for a job to run before being killed. Only applicable for the
                 ServiceBackend. If None, there is no timeout.
         """
         self._default_timeout = default_timeout
+        return self
+
+    def default_custom_machine_type(self, default_custom_machine_type):
+        """Set the default custom machine type.
+
+        Args:
+            default_custom_machine_type (str): Cloud machine type, eg. 'n1-highmem-32'
+        """
+        self._default_custom_machine_type = default_custom_machine_type
+        return self
+
+    def default_custom_machine_is_preemptible(self, default_custom_machine_is_preemptible):
+        """Set whether the custom machine should be preemptible.
+
+        Args:
+            default_custom_machine_is_preemptible (bool): Whether the custom machine is preemptible.
+        """
+        self._default_custom_machine_is_preemptible = default_custom_machine_is_preemptible
         return self
 
     def run(self):
@@ -356,6 +376,8 @@ class BatchStep(Step):
         storage=None,
         always_run=False,
         timeout=None,
+        custom_machine_type=None,
+        custom_machine_is_preemptible=None,
         output_dir=None,
         reuse_job_from_previous_step=None,
         localize_by=Localize.COPY,
@@ -388,6 +410,8 @@ class BatchStep(Step):
                 All values are rounded up to the nearest Gi.
             always_run (bool): Set the Step to always run, even if dependencies fail.
             timeout (float, int): Set the maximum amount of time this job can run for before being killed.
+            custom_machine_type (str):
+            custom_machine_is_preemptible (bool):
             output_dir (str): Optional default output directory for Step outputs.
             reuse_job_from_previous_step (Step): Optionally, reuse the batch.Job object from this other upstream Step.
             localize_by (Localize): If specified, this will be the default Localize approach used by Step inputs.
@@ -409,6 +433,8 @@ class BatchStep(Step):
         self._storage = storage
         self._always_run = always_run
         self._timeout = timeout
+        self._custom_machine_type = custom_machine_type
+        self._custom_machine_is_preemptible = custom_machine_is_preemptible
         self._reuse_job_from_previous_step = reuse_job_from_previous_step
 
         self._job = None
@@ -489,6 +515,24 @@ class BatchStep(Step):
         self._timeout = timeout
         return self
 
+    def custom_machine_type(self, custom_machine_type):
+        """Set a custom machine type.
+
+        Args:
+            custom_machine_type (str): Cloud machine type, eg. 'n1-highmem-32'
+        """
+        self._custom_machine_type = custom_machine_type
+        return self
+
+    def custom_machine_is_preemptible(self, custom_machine_is_preemptible):
+        """Set whether the custom machine should be preemptible.
+
+        Args:
+            custom_machine_is_preemptible (bool): Whether the custom machine is preemptible.
+        """
+        self._custom_machine_is_preemptible = custom_machine_is_preemptible
+        return self
+
     def _transfer_step(self):
         """Submit this Step to the Batch backend. This method is only called if the Step isn't skipped."""
         # create Batch Job object
@@ -535,6 +579,18 @@ class BatchStep(Step):
                 self._job.memory(self._memory)
             else:
                 raise ValueError(f"Unexpected memory arg type: {type(self._memory)}")
+
+        custom_machine_type_requested = any(p is not None for p in [
+            self._custom_machine_type, self._custom_machine_is_preemptible,
+            batch._default_custom_machine_type, batch._default_custom_machine_is_preemptible,
+        ])
+        if custom_machine_type_requested:
+            if self._cpu or self._memory:
+                raise ValueError("Both a custom_machine_type or custom_machine_is_preemptible as well as cpu or memory "
+                                 "arguments were specified. Only one or the other should be provided.")
+            self.job._machine_type = self._custom_machine_type or batch._default_custom_machine_type
+            #if self._custom_machine_is_preemptible is not None or self._default_custom_machine_is_preemptible is not None:
+            self.job._preemptible = self._custom_machine_is_preemptible or batch._default_custom_machine_is_preemptible
 
         if self._storage:
             self._job.storage(self._storage)
