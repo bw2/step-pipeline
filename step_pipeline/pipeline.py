@@ -967,6 +967,11 @@ class Step(ABC):
 
         self.command(self._pipeline._generate_post_to_slack_command(message, channel=channel, slack_token=slack_token))
 
+    def gcloud_auth_activate_service_account(self):
+        """Utility method to active gcloud auth using the Hail Batch-provided service account"""
+
+        self.command(f"gcloud auth activate-service-account --key-file /gsa-key/key.json")
+
     def switch_gcloud_auth_to_user_account(self, gcloud_credentials_path=None, gcloud_user_account=None,
                                            gcloud_project=None, debug=False):
         """This method adds commands to this Step to switch gcloud auth from the Batch-provided service
@@ -1020,7 +1025,7 @@ class Step(ABC):
         if debug:
             self.command(f"gcloud auth list")
         
-        self.command(f"gcloud auth activate-service-account --key-file /gsa-key/key.json")
+        self.gcloud_auth_activate_service_account()
         self.command(f"gsutil -m cp -r {os.path.join(gcloud_credentials_path, '.config')} /tmp/")
         self.command(f"rm -rf ~/.config")
         self.command(f"mv /tmp/.config ~/")
@@ -1030,6 +1035,8 @@ class Step(ABC):
         
         if debug:
             self.command(f"gcloud auth list")  # print auth list again to check if 'gcloud config set account' succeeded
+
+        self._switched_gcloud_auth_to_user_account = True
 
     @abstractmethod
     def _get_supported_localize_by_choices(self):

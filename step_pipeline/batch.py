@@ -582,15 +582,15 @@ class BatchStep(Step):
 
         custom_machine_type_requested = any(p is not None for p in [
             self._custom_machine_type, self._custom_machine_is_preemptible,
-            batch._default_custom_machine_type, batch._default_custom_machine_is_preemptible,
+            self._pipeline._default_custom_machine_type, self._pipeline._default_custom_machine_is_preemptible,
         ])
         if custom_machine_type_requested:
             if self._cpu or self._memory:
                 raise ValueError("Both a custom_machine_type or custom_machine_is_preemptible as well as cpu or memory "
                                  "arguments were specified. Only one or the other should be provided.")
-            self.job._machine_type = self._custom_machine_type or batch._default_custom_machine_type
+            self.job._machine_type = self._custom_machine_type or self._pipeline._default_custom_machine_type
             #if self._custom_machine_is_preemptible is not None or self._default_custom_machine_is_preemptible is not None:
-            self.job._preemptible = self._custom_machine_is_preemptible or batch._default_custom_machine_is_preemptible
+            self.job._preemptible = self._custom_machine_is_preemptible or self._pipeline._default_custom_machine_is_preemptible
 
         if self._storage:
             self._job.storage(self._storage)
@@ -862,6 +862,9 @@ EOF""")
         elif output_spec.delocalize_by == Delocalize.GSUTIL_COPY:
             if not output_spec.output_path.startswith("gs://"):
                 raise ValueError(f"{output_spec.output_path} Destination path must start with gs://")
+
+            if not hasattr(self, "_switched_gcloud_auth_to_user_account"):
+                self.gcloud_auth_activate_service_account()
             self.command(self._generate_gsutil_copy_command(output_spec.local_path, output_path=output_spec.output_path))
 
     def _transfer_output_spec(self, output_spec):
