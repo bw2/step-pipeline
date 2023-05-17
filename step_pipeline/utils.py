@@ -251,22 +251,33 @@ def are_any_inputs_missing(step, verbose=False):
 
 def all_outputs_exist(step, verbose=False):
     """Returns True if all of the Step's output files already exist"""
-    for output_spec in step._output_specs:
-        if not _path_exists__cached(output_spec.output_path, verbose=verbose):
+    return files_exist([output_spec.output_path for output_spec in step._output_specs], verbose=verbose)
+
+
+def files_exist(file_paths, verbose=False):
+    """Returns True if all of the files exist"""
+    for file_path in file_paths:
+        if not _path_exists__cached(file_path, verbose=verbose):
             return False
 
     return True
 
-def are_outputs_up_to_date(step, verbose=False):
-    """Returns True if all of the Step's outputs already exist and are newer than all inputs"""
 
-    if len(step._output_specs) == 0:
+def are_output_files_up_to_date(input_paths, output_paths, verbose=False):
+    """Returns True if all of the output files already exist and are newer than all the input files.
+
+    input_paths (list): gs:// paths of input files
+    output_paths (list): gs:// paths of output files
+
+    Returns:
+        bool: True if all output files exist and are newer than all input files
+    """
+    if len(output_paths) == 0:
         return False
 
     latest_input_path = None
     latest_input_modified_date = datetime(2, 1, 1, tzinfo=LOCAL_TIMEZONE)
-    for input_spec in step._input_specs:
-        input_path = input_spec.original_source_path
+    for input_path in input_paths:
         if not _path_exists__cached(input_path, verbose=verbose):
             raise ValueError(f"Input path doesn't exist: {input_path}")
 
@@ -279,14 +290,11 @@ def are_outputs_up_to_date(step, verbose=False):
     # check whether any outputs are missing
     oldest_output_path = None
     oldest_output_modified_date = None
-    for output_spec in step._output_specs:
-        #if "*" in output_spec.local_path:
-        #    continue
-
-        if not _path_exists__cached(output_spec.output_path, verbose=verbose):
+    for output_path in output_paths:
+        if not _path_exists__cached(output_path, verbose=verbose):
             return False
 
-        stat_list = _file_stat__cached(output_spec.output_path, verbose=verbose)
+        stat_list = _file_stat__cached(output_path, verbose=verbose)
         for stat in stat_list:
             if oldest_output_modified_date is None or stat["modification_time"] < oldest_output_modified_date:
                 oldest_output_modified_date = stat["modification_time"]
@@ -297,6 +305,15 @@ def are_outputs_up_to_date(step, verbose=False):
         print(f"Oldest output   {oldest_output_modified_date.strftime(DATE_STRFTIME_FORMAT) if oldest_output_modified_date else '':20}: {oldest_output_path}")
 
     return oldest_output_modified_date is not None and latest_input_modified_date <= oldest_output_modified_date
+
+
+def are_outputs_up_to_date(step, verbose=False):
+    """Returns True if all of the Step's outputs already exist and are newer than all inputs"""
+
+    input_paths = [input_spec.original_source_path for input_spec in step._input_specs]
+    output_paths = [output_spec.output_path for output_spec in step._output_specs]
+
+    return are_output_files_up_to_date(input_paths, output_paths, verbose=verbose)
 
 
 class GoogleStorageException(Exception):

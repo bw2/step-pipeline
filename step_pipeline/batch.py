@@ -447,6 +447,7 @@ class BatchStep(Step):
         self._write_commands_to_script = False
 
         self._regions = None
+        self._localize_by_copy_already_created_dirs_set = set()
 
     def regions(self, *region):
         """Set one or more compute regions.
@@ -632,11 +633,9 @@ class BatchStep(Step):
                 script_file.name, output_dir=os.path.dirname(script_temp_gcloud_path))
             os.system(script_file_upload_command)
             script_file.close()
-
-            script_input_spec = self.input(script_temp_gcloud_path)
-            self._transfer_input_spec(script_input_spec)
-            #self._job.command(f"bash -c 'chmod +x {script_input_spec.local_path}'")
-            self._job.command(f"bash -c 'source {script_input_spec.local_path}'")
+            print(" "*4 + f"Will run commands from: {script_temp_gcloud_path}")
+            script_input_obj = self._job._batch.read_input(script_temp_gcloud_path)
+            self._job.command(f"bash -c 'source {script_input_obj}'")
         else:
             for command in self._commands:
                 command_summary = command
@@ -768,11 +767,24 @@ class BatchStep(Step):
         elif input_spec.localize_by == Localize.COPY:
             input_spec.read_input_obj = self._job._batch.read_input(input_spec.source_path)
             if self._step_type == BatchStepType.BASH:
-                # NOTE: this currently causes Hail Batch to raise an AssertionError:
-                # "every job spec must be less than max_bunch_bytesize" when there are many input files.
-                # The only workaround is to use Localize.GSUTIL_COPY instead of Localize.COPY
-                self._job.command(f"mkdir -p '{input_spec.local_dir}'")
-                self._job.command(f"ln -s {input_spec.read_input_obj} {input_spec.local_path}")
+                self._job.command(f"touch {input_spec.read_input_obj}")   # needed to trigger download
+
+                echo_done_command = 'echo "Done localizing files via COPY"'
+                commands_to_set_up_path = []
+                if not input_spec.local_dir in self._localize_by_copy_already_created_dirs_set:
+                    commands_to_set_up_path.append(f"mkdir -p '{input_spec.local_dir}'")
+                    self._localize_by_copy_already_created_dirs_set.add(input_spec.local_dir)
+                commands_to_set_up_path.append(f"ln -s {input_spec.read_input_obj} {input_spec.local_path}")
+
+                try:
+                    echo_done_command_index = self._commands.index(echo_done_command)
+                except ValueError:
+                    echo_done_command_index = 0
+                    commands_to_set_up_path.append(echo_done_command)
+
+                for command_to_set_up_path in commands_to_set_up_path[::-1]:
+                    self._commands.insert(echo_done_command_index, command_to_set_up_path)
+                
         elif input_spec.localize_by in (
             Localize.HAIL_BATCH_CLOUDFUSE,
             Localize.HAIL_BATCH_CLOUDFUSE_VIA_TEMP_BUCKET):
