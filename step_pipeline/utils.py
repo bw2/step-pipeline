@@ -80,7 +80,7 @@ def _generate_gs_path_to_file_stat_dict(gs_path_with_wildcards):
         utc_date = parser.parse(date_string).replace(tzinfo=timezone.utc)
         return utc_date.astimezone(LOCAL_TIMEZONE)
 
-    records = [r.strip().split("  ") for r in gsutil_output.strip().split("\n") if not r.startswith("TOTAL: ")]
+    records = [r.strip().split("  ") for r in gsutil_output.strip().split("\n") if r.startswith("   ") and "gs://" in r]
     try:
         path_to_file_stat_dict = {
             r[2]: (int(r[0]), parse_gsutil_date_string(r[1])) for r in records
