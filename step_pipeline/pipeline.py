@@ -718,7 +718,6 @@ class Step(ABC):
             source_path (str): Path of input file or directory to localize.
             name (str): Optional name for this input.
             localize_by (Localize): How this path should be localized.
-
         Return:
             InputSpec: An object that describes the specified input file or directory.
         """
@@ -848,7 +847,7 @@ class Step(ABC):
         """
         self._output_dir = path
 
-    def output(self, local_path, output_path=None, output_dir=None, name=None, delocalize_by=None):
+    def output(self, local_path, output_path=None, output_dir=None, name=None, delocalize_by=None, optional=False):
         """Specify a Step output file or directory.
 
         Args:
@@ -857,10 +856,14 @@ class Step(ABC):
             output_dir (str): Optional destination directory to which the local_path should be delocalized.
                 It is expected that either output_path will be specified, or an output_dir value will be provided as an
                 argument to this method or previously (such as by calling the step.output_dir(..) setter method).
-                If both output_path and output_dir are specified and output_path is a relative path, it is interpretted
+                If both output_path and output_dir are specified and output_path is a relative path, it is interpreted
                 as being relative to output_dir.
             name (str): Optional name for this output.
             delocalize_by (Delocalize): How this path should be delocalized.
+            optional (bool): If True, this output is considered optional and, although it will be delocalized, steps
+                that didn't produce this output will still be skipped even if this output is missing. This is useful
+                for modifying existing pipelines to output additional files (eg. log files) without this triggering a
+                rerun of previously steps that completed previously without generating these files.
 
         Returns:
             OutputSpec: An object describing this output.
@@ -876,6 +879,7 @@ class Step(ABC):
             output_path=output_path,
             name=name,
             delocalize_by=delocalize_by,
+            optional=optional,
         )
 
         self._preprocess_output_spec(output_spec)

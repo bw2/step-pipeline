@@ -300,12 +300,14 @@ class OutputSpec:
     """An OutputSpec stores metadata about an output file or directory from a Step"""
 
     def __init__(
-            self,
-            local_path=None,
-            output_dir=None,
-            output_path=None,
-            name=None,
-            delocalize_by=None):
+        self,
+        local_path=None,
+        output_dir=None,
+        output_path=None,
+        name=None,
+        delocalize_by=None,
+        optional=False,
+    ):
         """OutputSpec constructor
 
         Args:
@@ -315,11 +317,13 @@ class OutputSpec:
             output_path (str): Optional destination path - either absolute, or relative to output_dir.
             name (str): Optional name for this output.
             delocalize_by (Delocalize): Approach to use to delocalize this path.
+            optional (bool): Whether this output is optional.
         """
         self._local_path = local_path
         self._local_dir = os.path.dirname(local_path)
         self._name = name
         self._delocalize_by = delocalize_by
+        self._optional = optional
 
         if delocalize_by and not isinstance(delocalize_by, Delocalize):
             raise ValueError(f"localize_by arg: {delocalize_by} is not an instance of the Delocalize enum")
