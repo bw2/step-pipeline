@@ -28,7 +28,7 @@ class PublishCommand(build_py):
 
 setup(
     name='step_pipeline',
-    version="0.2.5",
+    version="0.2.6",
     description="Pipeline library that simplifies creation of pipelines that run on top of hail Batch and other compute enviornments",
     install_requires=install_requires,
     cmdclass={

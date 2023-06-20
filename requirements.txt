@@ -1,6 +1,5 @@
 configargparse>=1.4.1
 hail
-pygraphviz
 google-cloud-storage
 
 mock

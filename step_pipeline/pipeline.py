@@ -461,7 +461,12 @@ EOF"""
         if not output_svg_path:
             output_svg_path = re.sub("[ :]", "_", self.name) + ".pipeline_diagram.svg"
 
-        import pygraphviz as pgv
+        try:
+            import pygraphviz as pgv
+        except ImportError as e:
+            print("Error: pygraphviz is required for this feature. Please install it first.")
+            return
+
         G = pgv.AGraph(strict=False, directed=True)
         G.node_attr["shape"] = "none"
         G.graph_attr["rankdir"] = "TB"
