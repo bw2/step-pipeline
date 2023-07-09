@@ -251,7 +251,7 @@ def are_any_inputs_missing(step, verbose=False):
 
 def all_outputs_exist(step, verbose=False):
     """Returns True if all of the Step's output files already exist"""
-    return files_exist([output_spec.output_path for output_spec in step._output_specs if not output_spec._optional], verbose=verbose)
+    return files_exist([output_spec.output_path_including_any_wildcards for output_spec in step._output_specs if not output_spec._optional], verbose=verbose)
 
 
 def files_exist(file_paths, verbose=False):
@@ -311,7 +311,7 @@ def are_outputs_up_to_date(step, verbose=False):
     """Returns True if all of the Step's outputs already exist and are newer than all inputs"""
 
     input_paths = [input_spec.original_source_path for input_spec in step._input_specs]
-    output_paths = [output_spec.output_path for output_spec in step._output_specs if not output_spec._optional]
+    output_paths = [output_spec.output_path_including_any_wildcards for output_spec in step._output_specs if not output_spec._optional]
 
     return are_output_files_up_to_date(input_paths, output_paths, verbose=verbose)
 

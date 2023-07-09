@@ -328,30 +328,35 @@ class OutputSpec:
         if delocalize_by and not isinstance(delocalize_by, Delocalize):
             raise ValueError(f"localize_by arg: {delocalize_by} is not an instance of the Delocalize enum")
 
-        # define self._output_filename
+        # define self._output_filename and self._output_filename_including_any_wildcards
         if output_path:
             self._output_filename = os.path.basename(output_path)
+            self._output_filename_including_any_wildcards = self._output_filename
         elif "*" not in local_path:
             self._output_filename = os.path.basename(local_path)
+            self._output_filename_including_any_wildcards = self._output_filename
         else:
             self._output_filename = None
+            self._output_filename_including_any_wildcards = os.path.basename(local_path)
 
-        # define self._output_path and self._output_dir
+        # define self._output_dir and self._output_path and self._output_path_including_any_wildcards
+        self._output_path_including_any_wildcards = None
         if output_path:
             self._output_path = output_path
             self._output_dir = os.path.dirname(self._output_path)
+            self._output_path_including_any_wildcards = output_path
         elif output_dir:
             self._output_dir = output_dir
-            if output_path:
-                if os.path.isabs(output_path) or "://" in output_path:
-                    self._output_path = output_path
-                else:
-                    self._output_path = os.path.join(output_dir, output_path)
-            elif self._output_filename:
+            assert not output_path
+
+            if self._output_filename:
                 self._output_path = os.path.join(output_dir, self._output_filename)
             else:
                 self._output_path = output_dir
 
+            if self._output_filename_including_any_wildcards:
+                self._output_path_including_any_wildcards = os.path.join(
+                    output_dir, self._output_filename_including_any_wildcards)
         else:
             raise ValueError("Neither output_dir nor output_path were specified.")
 
@@ -364,6 +369,10 @@ class OutputSpec:
     @property
     def output_path(self):
         return self._output_path
+
+    @property
+    def output_path_including_any_wildcards(self):
+        return self._output_path_including_any_wildcards
 
     @property
     def output_dir(self):
