@@ -539,6 +539,8 @@ class BatchStep(Step):
         # create Batch Job object
 
         batch = self._pipeline._batch
+        args = self._pipeline.parse_known_args()
+
         if self._reuse_job_from_previous_step:
             # reuse previous Job
             if self._reuse_job_from_previous_step._job is None:
@@ -609,12 +611,11 @@ class BatchStep(Step):
 
         # transfer inputs
         for input_spec in self._input_specs:
-            print(" "*4 + f"Input: {input_spec.original_source_path}  ({input_spec.localize_by})")
+            if args.verbose: print(" "*4 + f"Input: {input_spec.original_source_path}  ({input_spec.localize_by})")
             self._transfer_input_spec(input_spec)
 
         # transfer commands
         if self._write_commands_to_script or len(" ".join(self._commands)) > 5*10**4:
-            args = self._pipeline.parse_args()
 
             # write script to a temp file
             script_file = tempfile.NamedTemporaryFile("wt", prefix="script_", suffix=".sh", encoding="UTF-8", delete=True)
@@ -633,7 +634,7 @@ class BatchStep(Step):
                 script_file.name, output_dir=os.path.dirname(script_temp_gcloud_path))
             os.system(script_file_upload_command)
             script_file.close()
-            print(" "*4 + f"Will run commands from: {script_temp_gcloud_path}")
+            if args.verbose: print(" "*4 + f"Will run commands from: {script_temp_gcloud_path}")
             script_input_obj = self._job._batch.read_input(script_temp_gcloud_path)
             self._job.command(f"bash -c 'source {script_input_obj}'")
         else:
@@ -642,13 +643,13 @@ class BatchStep(Step):
                 command_summary_line_count = len(command_summary.split("\n"))
                 if command_summary_line_count > 5:
                     command_summary = "\n".join(command_summary.split("\n")[:5]) + f"\n...  {command_summary_line_count-5} more line(s)"
-                print(" "*4 + f"Adding command: {command_summary}")
+                if args.verbose: print(" "*4 + f"Adding command: {command_summary}")
                 self._job.command(command)
 
         # transfer outputs
         for output_spec in self._output_specs:
             self._transfer_output_spec(output_spec)
-            print(" "*4 + f"Output: {output_spec}  ({output_spec.delocalize_by})")
+            if args.verbose: print(" "*4 + f"Output: {output_spec}  ({output_spec.delocalize_by})")
 
         # clean up any files that were copied to the temp bucket
         if self._paths_localized_via_temp_bucket:
@@ -892,7 +893,7 @@ EOF""")
         if output_spec.delocalize_by == Delocalize.COPY:
             self._output_file_counter += 1
             output_file_obj = self._job[f"ofile{self._output_file_counter}"]
-            self._job.command(f'cp {output_spec.local_path} {output_file_obj}')
+            self._job.command(f"cp '{output_spec.local_path}' {output_file_obj}")
 
             if not output_spec.output_dir:
                 raise ValueError(f"{output_spec} output directory is required for Delocalize.COPY")

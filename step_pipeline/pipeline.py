@@ -297,7 +297,7 @@ class Pipeline(ABC):
 
         # begin traversal of DAG
         while current_steps:
-            for step in current_steps:
+            for i, step in enumerate(current_steps):
                 step.visited = True
 
                 if not step._commands:
@@ -368,7 +368,7 @@ class Pipeline(ABC):
                                 print(f"       {o}")
 
                 if decided_this_step_needs_to_run:
-                    print(f"==> Running {step}")
+                    print(("%120s" % f"==> Running {step}") + f"(i{i+1})")
                     step._is_being_skipped = False
                     step._transfer_step()
 
