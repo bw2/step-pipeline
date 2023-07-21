@@ -90,6 +90,8 @@ class BatchPipeline(Pipeline):
         reuse_job_from_previous_step=None,
         localize_by=Localize.COPY,
         delocalize_by=Delocalize.COPY,
+        all_inputs_precached=False,
+        all_outputs_precached=False,
     ):
         """Creates a new pipeline Step.
 
@@ -122,6 +124,12 @@ class BatchPipeline(Pipeline):
             reuse_job_from_previous_step (Step): Optionally, reuse the batch.Job object from this other upstream Step.
             localize_by (Localize): If specified, this will be the default Localize approach used by Step inputs.
             delocalize_by (Delocalize): If specified, this will be the default Delocalize approach used by Step outputs.
+            all_inputs_precached (bool): If True, all inputs for this Step will be assumed to have been checked and
+                pre-cached already via call(s) to pipeline.precache_file_paths(..). This allows for much faster
+                processing when deciding which steps need to run and which can be skipped because their outputs
+                already exist and are newer than their inputs.
+            all_outputs_precached (bool): Same as the  all_inputs_precached argument, but for outputs.
+
         Return:
             BatchStep: The new BatchStep object.
         """
@@ -141,6 +149,8 @@ class BatchPipeline(Pipeline):
             reuse_job_from_previous_step=reuse_job_from_previous_step,
             localize_by=localize_by,
             delocalize_by=delocalize_by,
+            all_inputs_precached=all_inputs_precached,
+            all_outputs_precached=all_outputs_precached,
         )
 
         if depends_on:
@@ -382,6 +392,8 @@ class BatchStep(Step):
         reuse_job_from_previous_step=None,
         localize_by=Localize.COPY,
         delocalize_by=Delocalize.COPY,
+        all_inputs_precached=False,
+        all_outputs_precached=False,
     ):
         """Step constructor.
 
@@ -416,6 +428,11 @@ class BatchStep(Step):
             reuse_job_from_previous_step (Step): Optionally, reuse the batch.Job object from this other upstream Step.
             localize_by (Localize): If specified, this will be the default Localize approach used by Step inputs.
             delocalize_by (Delocalize): If specified, this will be the default Delocalize approach used by Step outputs.
+            all_inputs_precached (bool): If True, all inputs for this Step will be assumed to have been checked and
+                pre-cached already via call(s) to pipeline.precache_file_paths(..). This allows for much faster
+                processing when deciding which steps need to run and which can be skipped because their outputs
+                already exist and are newer than their inputs.
+            all_outputs_precached (bool): Same as the  all_inputs_precached argument, but for outputs.
         """
         super().__init__(
             pipeline,
@@ -425,6 +442,8 @@ class BatchStep(Step):
             output_dir=output_dir,
             localize_by=localize_by,
             delocalize_by=delocalize_by,
+            all_inputs_precached=all_inputs_precached,
+            all_outputs_precached=all_outputs_precached,
         )
 
         self._image = image

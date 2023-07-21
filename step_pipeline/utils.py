@@ -1,5 +1,6 @@
 """This module contains misc. utility functions used by other modules."""
 
+import collections
 from datetime import datetime, timezone
 from dateutil import parser
 import glob
@@ -18,10 +19,13 @@ PATH_EXISTS_CACHE = {}
 PATH_STAT_CACHE = {}
 GSUTIL_PATH_TO_FILE_STAT_CACHE = {}
 BUCKET_LOCATION_CACHE = {}
+_BUCKET_ERROR_COUNTER = collections.defaultdict(int)
+_MAX_ERROR_MESSAGES_TO_PRINT_PER_BUCKET = 1000
 
 LOCAL_TIMEZONE = pytz.timezone("US/Eastern") #datetime.now(timezone.utc).astimezone().tzinfo
 
 DATE_STRFTIME_FORMAT = "%Y-%m-%d %H:%M:%S"
+
 
 def _get_bucket_name(gs_path):
     """Get the Google bucket name from the given gs_path."""
@@ -95,13 +99,14 @@ def _generate_gs_path_to_file_stat_dict(gs_path_with_wildcards):
     return path_to_file_stat_dict
 
 
-def _path_exists__cached(path, verbose=False):
+def _path_exists__cached(path, only_check_the_cache=False, verbose=False):
     """Takes a local path or a gs:// Google Storage path and returns True if the path exists.
     The path can contain wildcards (*) in which case this method returns True if at least one matching file or directory
     exists.
 
     Args:
         path (str): local path or gs:// Google Storage path. The path can contain wildcards (*).
+        only_check_the_cache (bool): if True, only check the cache and don't run any file system commands.
         verbose (bool):
     Return:
         bool: True if the path exists.
@@ -111,6 +116,9 @@ def _path_exists__cached(path, verbose=False):
 
     if path in PATH_EXISTS_CACHE:
         return PATH_EXISTS_CACHE[path]
+    elif only_check_the_cache:
+        # if we're only checking the cache and the path isn't in the cache, then we can return False
+        return False
 
     if path.startswith("gs://"):
         if "*" in path:
@@ -132,12 +140,13 @@ def _path_exists__cached(path, verbose=False):
     return PATH_EXISTS_CACHE[path]
 
 
-def _file_stat__cached(path, verbose=False):
+def _file_stat__cached(path, only_check_the_cache=False, verbose=False):
     """Takes a local file path or gs:// Google Storage path and returns a list of file stats including the size in bytes
     and the modification time.
 
     Args:
         path (str): local file path or gs:// Google Storage path. The path can contain wildcards (*).
+        only_check_the_cache (bool): if True, only check the cache and don't run any file system commands.
         verbose (bool): print more detailed log output
 
     Return:
@@ -152,6 +161,9 @@ def _file_stat__cached(path, verbose=False):
     """
     if path in PATH_STAT_CACHE:
         return PATH_STAT_CACHE[path]
+    elif only_check_the_cache:
+        # if we're only checking the cache and the path isn't in the cache, then we can return False
+        return False
 
     if path.startswith("gs://"):
         if "*" in path:
@@ -238,36 +250,40 @@ def _file_stat__cached(path, verbose=False):
     return PATH_STAT_CACHE[path]
 
 
-def are_any_inputs_missing(step, verbose=False):
+def are_any_inputs_missing(step, only_check_the_cache=False, verbose=False):
     """Returns True if any of the Step's inputs don't exist"""
     for input_spec in step._input_specs:
         input_path = input_spec.source_path
-        if not _path_exists__cached(input_path, verbose=verbose):
+        if not _path_exists__cached(input_path, only_check_the_cache=only_check_the_cache, verbose=verbose):
             print(f"WARNING: Input missing: {input_path}")
             return True
 
     return False
 
 
-def all_outputs_exist(step, verbose=False):
+def all_outputs_exist(step, only_check_the_cache=False, verbose=False):
     """Returns True if all of the Step's output files already exist"""
-    return files_exist([output_spec.output_path_including_any_wildcards for output_spec in step._output_specs if not output_spec._optional], verbose=verbose)
+    paths_to_check = [output_spec.output_path_including_any_wildcards
+                      for output_spec in step._output_specs if not output_spec._optional]
+    return files_exist(paths_to_check, only_check_the_cache=only_check_the_cache, verbose=verbose)
 
 
-def files_exist(file_paths, verbose=False):
+def files_exist(file_paths, only_check_the_cache=False, verbose=False):
     """Returns True if all of the files exist"""
     for file_path in file_paths:
-        if not _path_exists__cached(file_path, verbose=verbose):
+        if not _path_exists__cached(file_path, only_check_the_cache=only_check_the_cache, verbose=verbose):
             return False
 
     return True
 
 
-def are_output_files_up_to_date(input_paths, output_paths, verbose=False):
+def are_output_files_up_to_date(input_paths, output_paths, only_check_the_cache=False, verbose=False):
     """Returns True if all of the output files already exist and are newer than all the input files.
 
     input_paths (list): gs:// paths of input files
     output_paths (list): gs:// paths of output files
+    only_check_the_cache (bool): if True, only check the cache and don't run any file system commands.
+    verbose (bool): if True, print more logging output
 
     Returns:
         bool: True if all output files exist and are newer than all input files
@@ -278,10 +294,10 @@ def are_output_files_up_to_date(input_paths, output_paths, verbose=False):
     latest_input_path = None
     latest_input_modified_date = datetime(2, 1, 1, tzinfo=LOCAL_TIMEZONE)
     for input_path in input_paths:
-        if not _path_exists__cached(input_path, verbose=verbose):
+        if not _path_exists__cached(input_path, only_check_the_cache=only_check_the_cache, verbose=verbose):
             raise ValueError(f"Input path doesn't exist: {input_path}")
 
-        stat_list = _file_stat__cached(input_path, verbose=verbose)
+        stat_list = _file_stat__cached(input_path, only_check_the_cache=only_check_the_cache, verbose=verbose)
         for stat in stat_list:
             if stat["modification_time"] > latest_input_modified_date:
                 latest_input_modified_date = stat["modification_time"]
@@ -291,10 +307,10 @@ def are_output_files_up_to_date(input_paths, output_paths, verbose=False):
     oldest_output_path = None
     oldest_output_modified_date = None
     for output_path in output_paths:
-        if not _path_exists__cached(output_path, verbose=verbose):
+        if not _path_exists__cached(output_path, only_check_the_cache=only_check_the_cache, verbose=verbose):
             return False
 
-        stat_list = _file_stat__cached(output_path, verbose=verbose)
+        stat_list = _file_stat__cached(output_path, only_check_the_cache=only_check_the_cache, verbose=verbose)
         for stat in stat_list:
             if oldest_output_modified_date is None or stat["modification_time"] < oldest_output_modified_date:
                 oldest_output_modified_date = stat["modification_time"]
@@ -307,13 +323,14 @@ def are_output_files_up_to_date(input_paths, output_paths, verbose=False):
     return oldest_output_modified_date is not None and latest_input_modified_date <= oldest_output_modified_date
 
 
-def are_outputs_up_to_date(step, verbose=False):
+def are_outputs_up_to_date(step, only_check_the_cache=False, verbose=False):
     """Returns True if all of the Step's outputs already exist and are newer than all inputs"""
 
     input_paths = [input_spec.original_source_path for input_spec in step._input_specs]
-    output_paths = [output_spec.output_path_including_any_wildcards for output_spec in step._output_specs if not output_spec._optional]
+    output_paths = [output_spec.output_path_including_any_wildcards
+                    for output_spec in step._output_specs if not output_spec._optional]
 
-    return are_output_files_up_to_date(input_paths, output_paths, verbose=verbose)
+    return are_output_files_up_to_date(input_paths, output_paths, only_check_the_cache=only_check_the_cache, verbose=verbose)
 
 
 class GoogleStorageException(Exception):
@@ -340,6 +357,8 @@ def check_gcloud_storage_region(gs_path, expected_regions=("US", "US-CENTRAL1"),
         StorageRegionException: If the given gs_path is not stored in one the expected_regions.
     """
     bucket_name = _get_bucket_name(gs_path)
+    if _BUCKET_ERROR_COUNTER[bucket_name] > _MAX_ERROR_MESSAGES_TO_PRINT_PER_BUCKET:
+        return
 
     if bucket_name in BUCKET_LOCATION_CACHE:
         location = BUCKET_LOCATION_CACHE[bucket_name]
@@ -353,6 +372,7 @@ def check_gcloud_storage_region(gs_path, expected_regions=("US", "US-CENTRAL1"),
             if not ignore_access_denied_exception or "access" not in str(e).lower():
                 raise GoogleStorageException(f"ERROR: Could not determine gs://{bucket_name} bucket region: {e}")
 
+            _BUCKET_ERROR_COUNTER[bucket_name] += 1
             print(f"WARNING: Unable to check bucket region for gs://{bucket_name}: {e}")
             return
 

@@ -346,12 +346,18 @@ class Pipeline(ABC):
                                 if args.verbose:
                                     print(f"Running {step}. No outputs specified.")
                                 decided_this_step_needs_to_run = True
-                            elif not all_outputs_exist(step, verbose=args.verbose):
+                            elif not all_outputs_exist(
+                                    step,
+                                    only_check_the_cache=step._all_outputs_precached,
+                                    verbose=args.verbose):
                                 if args.verbose:
                                     print(f"Running {step} because some output(s) don't exist yet.")
                                 decided_this_step_needs_to_run = True
                         else:
-                            if not are_outputs_up_to_date(step, verbose=args.verbose):
+                            if not are_outputs_up_to_date(
+                                    step,
+                                    only_check_the_cache=step._all_inputs_precached and step._all_outputs_precached,
+                                    verbose=args.verbose):
                                 if args.verbose:
                                     print(f"Running {step} because some output(s) don't exist yet or are not up-to-date.")
 
@@ -368,7 +374,8 @@ class Pipeline(ABC):
                                 print(f"       {o}")
 
                 if decided_this_step_needs_to_run:
-                    print(("%120s" % f"==> Running {step}") + f"(i{i+1})")
+                    print(("%-120s" % f"==> Running {step}") + (
+                        f"[#{i+1}]" if len(current_steps) > 1 else ""))
                     step._is_being_skipped = False
                     step._transfer_step()
 
@@ -541,6 +548,8 @@ class Step(ABC):
                  add_force_command_line_args=True,
                  add_skip_command_line_args=True,
                  add_run_subset_command_line_args=True,
+                 all_inputs_precached=False,
+                all_outputs_precached=False,
         ):
         """Step constructor
 
@@ -558,6 +567,11 @@ class Step(ABC):
             add_skip_command_line_args (bool): Whether to add command line args for skipping execution of this Step.
             add_run_subset_command_line_args (bool): Whether to add command line args for running a subset of
                 parallel jobs from this Step (--run-n-step1, --run-offset-step1).
+            all_inputs_precached (bool): If True, all inputs for this Step will be assumed to have been checked and
+                pre-cached already via call(s) to pipeline.precache_file_paths(..). This allows for much faster
+                processing when deciding which steps need to run and which can be skipped because their outputs
+                already exist and are newer than their inputs.
+            all_outputs_precached (bool): Same as the  all_inputs_precached argument, but for outputs.
         """
         self._pipeline = pipeline
         self.name = name
@@ -586,6 +600,8 @@ class Step(ABC):
         self._skip_this_step_arg_names = []
         self._run_n_arg_names = []
         self._run_offset_arg_names = []
+        self._all_inputs_precached = all_inputs_precached
+        self._all_outputs_precached = all_outputs_precached
 
         Step._STEP_ID_COUNTER += 1
         self._step_id = Step._STEP_ID_COUNTER  # this id is unique to each Step object
