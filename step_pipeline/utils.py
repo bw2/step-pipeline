@@ -84,7 +84,7 @@ def _generate_gs_path_to_file_stat_dict(gs_path_with_wildcards):
         utc_date = parser.parse(date_string).replace(tzinfo=timezone.utc)
         return utc_date.astimezone(LOCAL_TIMEZONE)
 
-    records = [r.strip().split("  ") for r in gsutil_output.strip().split("\n") if r.startswith("   ") and "gs://" in r]
+    records = [r.strip().split("  ") for r in gsutil_output.strip().split("\n") if "gs://" in r]
     try:
         path_to_file_stat_dict = {
             r[2]: (int(r[0]), parse_gsutil_date_string(r[1])) for r in records
@@ -122,12 +122,18 @@ def _path_exists__cached(path, only_check_the_cache=False, verbose=False):
 
     if path.startswith("gs://"):
         if "*" in path:
-            PATH_EXISTS_CACHE[path] = bool(_generate_gs_path_to_file_stat_dict(path))
+            path_dict = _generate_gs_path_to_file_stat_dict(path)
+            PATH_EXISTS_CACHE[path] = bool(path_dict)
+            for path_without_star in path_dict:
+                PATH_EXISTS_CACHE[path_without_star] = True
         else:
             PATH_EXISTS_CACHE[path] = hl.hadoop_exists(path)
     else:
         if "*" in path:
-            PATH_EXISTS_CACHE[path] = len(glob.glob(path)) > 0
+            path_dict = glob.glob(path)
+            PATH_EXISTS_CACHE[path] = len(path_dict) > 0
+            for path_without_star in path_dict:
+                PATH_EXISTS_CACHE[path_without_star] = True
         else:
             PATH_EXISTS_CACHE[path] = os.path.exists(path)
 
