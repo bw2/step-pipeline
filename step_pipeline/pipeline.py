@@ -48,47 +48,49 @@ class Pipeline(ABC):
         self._all_steps = []
         self._unique_pipeline_instance_id = str(random.randint(10**10, 10**11))
 
+        self._config_arg_parser_groups = {}
         config_arg_parser.add_argument("-v", "--verbose", action='count', default=0, help="Print more info")
         config_arg_parser.add_argument("-c", "--config-file", help="YAML config file path", is_config_file_arg=True)
-        config_arg_parser.add_argument("--dry-run", action="store_true", help="Don't run commands, just print them.")
-        config_arg_parser.add_argument("-f", "--force", action="store_true", help="Force execution of all steps.")
-        config_arg_parser.add_argument(
+        pipeline_group = self.get_config_arg_parser_group("pipeline")
+        pipeline_group.add_argument("--dry-run", action="store_true", help="Don't run commands, just print them.")
+        pipeline_group.add_argument("-f", "--force", action="store_true", help="Force execution of all steps.")
+        pipeline_group.add_argument(
             "--check-file-last-modified-times",
             action="store_true",
             help="When deciding whether a Step can be skipped, instead of only checking whether all output files "
                  "already exist, also check input and output file last-modified times to make sure that all output "
                  "files are newer than all input files.")
-        config_arg_parser.add_argument(
+        pipeline_group.add_argument(
             "--skip-steps-with-missing-inputs",
             action="store_true",
             help="When a Step is ready to run but has missing input file(s), the default behavior is to print an error "
                  "and exit. This arg instead causes the Step to be skipped with a warning.")
 
-        config_arg_parser.add_argument("--export-pipeline-graph", action="store_true",
+        pipeline_group.add_argument("--export-pipeline-graph", action="store_true",
             help="Export an SVG image with the pipeline flow diagram")
 
-        grp = config_arg_parser.add_argument_group("notifications")
-        grp.add_argument("--slack-when-done", action="store_true", help="Post to Slack when execution completes")
-        grp.add_argument("--slack-token", env_var="SLACK_TOKEN", help="Slack token to use for notifications")
-        grp.add_argument("--slack-channel", env_var="SLACK_CHANNEL", help="Slack channel to use for notifications")
+        notifications_group = self.get_config_arg_parser_group("notifications")
+        notifications_group.add_argument("--slack-when-done", action="store_true", help="Post to Slack when execution completes")
+        notifications_group.add_argument("--slack-token", env_var="SLACK_TOKEN", help="Slack token to use for notifications")
+        notifications_group.add_argument("--slack-channel", env_var="SLACK_CHANNEL", help="Slack channel to use for notifications")
 
-        gcloud_args = config_arg_parser.add_argument_group("google cloud")
-        gcloud_args.add_argument(
+        gcloud_group = self.get_config_arg_parser_group("google cloud")
+        gcloud_group.add_argument(
             "--gcloud-project",
             env_var="GCLOUD_PROJECT",
             help="The Google Cloud project to use for accessing requester-pays buckets, etc."
         )
-        gcloud_args.add_argument(
+        gcloud_group.add_argument(
             "--gcloud-credentials-path",
             help="Google bucket path of gcloud credentials to use in step.switch_gcloud_auth_to_user_account(..)."
                  "See the docs of that method for details.",
         )
-        gcloud_args.add_argument(
+        gcloud_group.add_argument(
             "--gcloud-user-account",
             help="Google user account to use in step.switch_gcloud_auth_to_user_account(..). See the docs of that "
                  "method for details.",
         )
-        gcloud_args.add_argument(
+        gcloud_group.add_argument(
             "--acceptable-storage-regions",
             nargs="*",
             default=("US", "US-CENTRAL1"),
@@ -119,6 +121,11 @@ class Pipeline(ABC):
         args = pipeline.parse_args()
         """
         return self._config_arg_parser
+
+    def get_config_arg_parser_group(self, group_name):
+        if group_name not in self._config_arg_parser_groups:
+            self._config_arg_parser_groups[group_name] = self.get_config_arg_parser().add_argument_group(group_name)
+        return self._config_arg_parser_groups[group_name]
 
     def parse_args(self):
         """Parse command line args.
@@ -585,7 +592,6 @@ class Step(ABC):
         self._input_specs = []
         self._input_value_specs = []
         self._output_specs = []
-
         self._commands = []   # used for BashJobs
 
         #self._calls = []  # use for PythonJobs (Not yet implemented)
@@ -609,8 +615,6 @@ class Step(ABC):
         self._unique_step_instance_id = str(random.randint(10**10, 10**11))
 
         # define command line args for skipping or forcing execution of this step
-        argument_parser = pipeline.get_config_arg_parser()
-
         command_line_arg_suffixes = set()
         def cleanup_arg_suffix(suffix):
             return suffix.replace(" ", "-").replace(":", "").replace("_", "-")
@@ -629,7 +633,7 @@ class Step(ABC):
             if add_force_command_line_args:
                 self._force_this_step_arg_names.append(f"force_{suffix}")
                 if suffix not in Step._USED_FORCE_ARG_SUFFIXES:
-                    argument_parser.add_argument(
+                    self._pipeline.get_config_arg_parser_group("pipeline").add_argument(
                         f"--force-{suffix}",
                         help=f"Force execution of '{name}'.",
                         action="store_true",
@@ -639,7 +643,7 @@ class Step(ABC):
             if add_skip_command_line_args:
                 self._skip_this_step_arg_names.append(f"skip_{suffix}")
                 if suffix not in Step._USED_SKIP_ARG_SUFFIXES:
-                    argument_parser.add_argument(
+                    self._pipeline.get_config_arg_parser_group("pipeline").add_argument(
                         f"--skip-{suffix}",
                         help=f"Skip '{name}' even if --force is used.",
                         action="store_true",
@@ -650,13 +654,13 @@ class Step(ABC):
                 self._run_n_arg_names.append(f"run_n_{suffix}")
                 self._run_offset_arg_names.append(f"run_offset_{suffix}")
                 if suffix not in Step._USED_RUN_SUBSET_ARG_SUFFIXES:
-                    argument_parser.add_argument(
+                    self._pipeline.get_config_arg_parser_group("pipeline").add_argument(
                         f"--run-n-{suffix}",
                         help=f"Run only this many parallel jobs for '{name}' even if --force is used. This can be "
                              f"useful for test-running a pipeline.",
                         type=int,
                     )
-                    argument_parser.add_argument(
+                    self._pipeline.get_config_arg_parser_group("pipeline").add_argument(
                         f"--run-offset-{suffix}",
                         help=f"Skip the first this many parallel jobs from '{name}' even if --force is used. This can "
                              f"be useful for test-running a pipeline, especially when used with --run-n-..",

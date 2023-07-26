@@ -8,11 +8,13 @@ from .batch import BatchPipeline
 from .wdl import WdlPipeline
 
 # for debugging (from https://stackoverflow.com/questions/132058/showing-the-stack-trace-from-a-running-python-application)
-# pkill -SIGUSR1 -f mypythonapp to print stack trace
+#   pkill -SIGHUP -f mypythonapp to print stack trace
+#   pkill -SIGUSR1 -f mypythonapp to print stack trace
 import signal
 import traceback
-signal.signal(signal.SIGUSR1, lambda sig, stack: traceback.print_stack(stack))
 #import faulthandler
+for sig in signal.SIGUSR1, signal.SIGHUP:
+    signal.signal(sig, lambda _, stack: traceback.print_stack(stack))
 
 
 def pipeline(name=None, backend=Backend.HAIL_BATCH_SERVICE, config_file_path="~/.step_pipeline"):

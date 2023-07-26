@@ -37,7 +37,7 @@ class BatchPipeline(Pipeline):
         """
         super().__init__(name=name, config_arg_parser=config_arg_parser)
 
-        batch_args = config_arg_parser.add_argument_group("hail batch")
+        batch_args = self.get_config_arg_parser_group("hail batch")
         batch_args.add_argument(
             "--batch-billing-project",
             env_var="BATCH_BILLING_PROJECT",
@@ -90,6 +90,9 @@ class BatchPipeline(Pipeline):
         reuse_job_from_previous_step=None,
         localize_by=Localize.COPY,
         delocalize_by=Delocalize.COPY,
+        add_force_command_line_args=True,
+        add_skip_command_line_args=True,
+        add_run_subset_command_line_args=True,
         all_inputs_precached=False,
         all_outputs_precached=False,
     ):
@@ -124,6 +127,10 @@ class BatchPipeline(Pipeline):
             reuse_job_from_previous_step (Step): Optionally, reuse the batch.Job object from this other upstream Step.
             localize_by (Localize): If specified, this will be the default Localize approach used by Step inputs.
             delocalize_by (Delocalize): If specified, this will be the default Delocalize approach used by Step outputs.
+            add_force_command_line_args (bool): Whether to add command line args for forcing execution of this Step.
+            add_skip_command_line_args (bool): Whether to add command line args for skipping execution of this Step.
+            add_run_subset_command_line_args (bool): Whether to add command line args for running a subset of
+                parallel jobs from this Step (--run-n-step1, --run-offset-step1).
             all_inputs_precached (bool): If True, all inputs for this Step will be assumed to have been checked and
                 pre-cached already via call(s) to pipeline.precache_file_paths(..). This allows for much faster
                 processing when deciding which steps need to run and which can be skipped because their outputs
@@ -149,6 +156,9 @@ class BatchPipeline(Pipeline):
             reuse_job_from_previous_step=reuse_job_from_previous_step,
             localize_by=localize_by,
             delocalize_by=delocalize_by,
+            add_force_command_line_args=add_force_command_line_args,
+            add_skip_command_line_args=add_skip_command_line_args,
+            add_run_subset_command_line_args=add_run_subset_command_line_args,
             all_inputs_precached=all_inputs_precached,
             all_outputs_precached=all_outputs_precached,
         )
@@ -309,6 +319,19 @@ class BatchPipeline(Pipeline):
         else:
             raise Exception(f"Unexpected _backend: {self._backend}")
 
+        if args.verbose:
+            print("Creating Batch with the following parameters:")
+            if self.name:                       print(f"  name: {self.name}")
+            if self._backend_obj:               print(f"  backend: {self._backend_obj}")
+            if self._gcloud_project:            print(f"  requester_pays_project: {self._gcloud_project}")
+            if self._cancel_after_n_failures:   print(f"  cancel_after_n_failures: {self._cancel_after_n_failures}")
+            if self.default_image:              print(f"  default_image: {self._default_image}")
+            if self.default_python_image:       print(f"  default_python_image: {self._default_python_image}")
+            if self.default_memory:             print(f"  default_memory: {self._default_memory}")
+            if self.default_cpu:                print(f"  default_cpu: {self._default_cpu}")
+            if self._default_storage:           print(f"  default_storage: {self._default_storage}")
+            if self._default_timeout:           print(f"  default_timeout: {self._default_timeout}")
+
         self._batch = hb.Batch(
             backend=self._backend_obj,
             name=self.name,
@@ -392,6 +415,9 @@ class BatchStep(Step):
         reuse_job_from_previous_step=None,
         localize_by=Localize.COPY,
         delocalize_by=Delocalize.COPY,
+        add_force_command_line_args=True,
+        add_skip_command_line_args=True,
+        add_run_subset_command_line_args=True,
         all_inputs_precached=False,
         all_outputs_precached=False,
     ):
@@ -428,6 +454,10 @@ class BatchStep(Step):
             reuse_job_from_previous_step (Step): Optionally, reuse the batch.Job object from this other upstream Step.
             localize_by (Localize): If specified, this will be the default Localize approach used by Step inputs.
             delocalize_by (Delocalize): If specified, this will be the default Delocalize approach used by Step outputs.
+            add_force_command_line_args (bool): Whether to add command line args for forcing execution of this Step.
+            add_skip_command_line_args (bool): Whether to add command line args for skipping execution of this Step.
+            add_run_subset_command_line_args (bool): Whether to add command line args for running a subset of
+                parallel jobs from this Step (--run-n-step1, --run-offset-step1).
             all_inputs_precached (bool): If True, all inputs for this Step will be assumed to have been checked and
                 pre-cached already via call(s) to pipeline.precache_file_paths(..). This allows for much faster
                 processing when deciding which steps need to run and which can be skipped because their outputs
@@ -442,6 +472,9 @@ class BatchStep(Step):
             output_dir=output_dir,
             localize_by=localize_by,
             delocalize_by=delocalize_by,
+            add_force_command_line_args=add_force_command_line_args,
+            add_skip_command_line_args=add_skip_command_line_args,
+            add_run_subset_command_line_args=add_run_subset_command_line_args,
             all_inputs_precached=all_inputs_precached,
             all_outputs_precached=all_outputs_precached,
         )
