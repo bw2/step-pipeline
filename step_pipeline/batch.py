@@ -6,6 +6,7 @@ import tempfile
 from enum import Enum
 
 import hailtop.batch as hb
+import hailtop.fs as hfs
 
 from .constants import Backend
 from .io import InputSpec, InputValueSpec, InputType
@@ -320,6 +321,10 @@ class BatchPipeline(Pipeline):
             raise Exception(f"Unexpected _backend: {self._backend}")
 
         if args.verbose:
+            print("Args:")
+            for key, value in sorted(vars(args).items(), key=lambda x: x[0]):
+                print(f"  {key}: {value}")
+
             print("Creating Batch with the following parameters:")
             if self.name:                       print(f"  name: {self.name}")
             if self._backend_obj:               print(f"  backend: {self._backend_obj}")
@@ -682,9 +687,7 @@ class BatchStep(Step):
                 os.path.basename(script_file.name))
 
             os.chmod(script_file.name, mode=stat.S_IREAD | stat.S_IEXEC)
-            script_file_upload_command = self._generate_gsutil_copy_command(
-                script_file.name, output_dir=os.path.dirname(script_temp_gcloud_path))
-            os.system(script_file_upload_command)
+            hfs.copy(script_file.name, script_temp_gcloud_path)
             script_file.close()
             if args.verbose: print(" "*4 + f"Will run commands from: {script_temp_gcloud_path}")
             script_input_obj = self._job._batch.read_input(script_temp_gcloud_path)

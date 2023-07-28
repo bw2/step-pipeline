@@ -798,10 +798,7 @@ class Step(ABC):
             input_spec = self.input(source_path, name=name, localize_by=localize_by)
             input_specs.append(input_spec)
 
-        if len(input_specs) == 1:
-            return input_specs[0]
-        else:
-            return input_specs
+        return input_specs
 
     def use_the_same_inputs_as(self, other_step, localize_by=None):
         """Copy the inputs of another step, while optionally changing the localize_by approach. This is a utility method
