@@ -306,69 +306,70 @@ class Pipeline(ABC):
         while current_steps:
             for i, step in enumerate(current_steps):
                 step.visited = True
+                try:
+                    decided_this_step_needs_to_run = False
+                    if step._cancel_this_step:
+                        continue
 
-                if not step._commands:
-                    print(f"WARNING: No commands specified for step [{step}]. Skipping...")
-                    continue
+                    elif not step._commands:
+                        print(f"WARNING: No commands specified for step [{step}]. Skipping...")
+                        continue
 
-                step_counters[step.name] += 1
+                    step_counters[step.name] += 1
 
-                # decide whether this step needs to run
-                decided_this_step_needs_to_run = False
-
-                skip_requested = any(
-                    getattr(args, skip_arg_name.replace("-", "_")) for skip_arg_name in step._skip_this_step_arg_names
-                )
-                skip_requested |= any(
-                    (getattr(args, run_n_arg_name.replace("-", "_")) or 10**9) < step_run_counters[step.name]
-                    for run_n_arg_name in step._run_n_arg_names
-                )
-                skip_requested |= any(
-                    (getattr(args, run_offset_arg_name.replace("-", "_")) or 0) > step_counters[step.name]
-                    for run_offset_arg_name in step._run_offset_arg_names
-                )
-
-                if skip_requested:
-                    print(f"Skipping {step} as requested")
-                else:
-                    is_being_forced = args.force or any(
-                        getattr(args, force_arg_name.replace("-", "_")) for force_arg_name in step._force_this_step_arg_names
+                    skip_requested = any(
+                        getattr(args, skip_arg_name.replace("-", "_")) for skip_arg_name in step._skip_this_step_arg_names
                     )
-                    if is_being_forced:
-                        decided_this_step_needs_to_run = True
+                    skip_requested |= any(
+                        (getattr(args, run_n_arg_name.replace("-", "_")) or 10**9) < step_run_counters[step.name]
+                        for run_n_arg_name in step._run_n_arg_names
+                    )
+                    skip_requested |= any(
+                        (getattr(args, run_offset_arg_name.replace("-", "_")) or 0) > step_counters[step.name]
+                        for run_offset_arg_name in step._run_offset_arg_names
+                    )
 
-                    if not decided_this_step_needs_to_run:
-                        all_upstream_steps_skipped = all(s._is_being_skipped for s in step._upstream_steps)
-                        if not all_upstream_steps_skipped:
-                            if args.verbose:
-                                print(f"Running {step} because upstream step is going to run.")
+                    if skip_requested:
+                        print(f"Skipping {step} as requested")
+                    else:
+                        is_being_forced = args.force or any(
+                            getattr(args, force_arg_name.replace("-", "_")) for force_arg_name in step._force_this_step_arg_names
+                        )
+                        if is_being_forced:
                             decided_this_step_needs_to_run = True
-                        elif args.skip_steps_with_missing_inputs and are_any_inputs_missing(step, verbose=args.verbose):
-                            # only do this check if upstream steps are being skipped. Otherwise, input files may not exist yet.
-                            continue  # skip this step
 
-                    if not decided_this_step_needs_to_run:
-                        if not args.check_file_last_modified_times:
-                            if len(step._output_specs) == 0:
+                        if not decided_this_step_needs_to_run:
+                            all_upstream_steps_skipped = all(s._is_being_skipped for s in step._upstream_steps)
+                            if not all_upstream_steps_skipped:
                                 if args.verbose:
-                                    print(f"Running {step}. No outputs specified.")
+                                    print(f"Running {step} because upstream step is going to run.")
                                 decided_this_step_needs_to_run = True
-                            elif not all_outputs_exist(
-                                    step,
-                                    only_check_the_cache=step._all_outputs_precached,
-                                    verbose=args.verbose):
-                                if args.verbose:
-                                    print(f"Running {step} because some output(s) don't exist yet.")
-                                decided_this_step_needs_to_run = True
-                        else:
-                            if not are_outputs_up_to_date(
-                                    step,
-                                    only_check_the_cache=step._all_inputs_precached and step._all_outputs_precached,
-                                    verbose=args.verbose):
-                                if args.verbose:
-                                    print(f"Running {step} because some output(s) don't exist yet or are not up-to-date.")
+                            elif args.skip_steps_with_missing_inputs and are_any_inputs_missing(step, verbose=args.verbose):
+                                # only do this check if upstream steps are being skipped. Otherwise, input files may not exist yet.
+                                continue  # skip this step
 
-                                decided_this_step_needs_to_run = True
+                        if not decided_this_step_needs_to_run:
+                            if not args.check_file_last_modified_times:
+                                if len(step._output_specs) == 0:
+                                    if args.verbose:
+                                        print(f"Running {step}. No outputs specified.")
+                                    decided_this_step_needs_to_run = True
+                                elif not all_outputs_exist(
+                                        step,
+                                        only_check_the_cache=step._all_outputs_precached,
+                                        verbose=args.verbose):
+                                    if args.verbose:
+                                        print(f"Running {step} because some output(s) don't exist yet.")
+                                    decided_this_step_needs_to_run = True
+                            else:
+                                if not are_outputs_up_to_date(
+                                        step,
+                                        only_check_the_cache=step._all_inputs_precached and step._all_outputs_precached,
+                                        verbose=args.verbose):
+                                    if args.verbose:
+                                        print(f"Running {step} because some output(s) don't exist yet or are not up-to-date.")
+
+                                    decided_this_step_needs_to_run = True
 
                     if not decided_this_step_needs_to_run:
                         print(f"Skipping {step}. The {len(step._output_specs)} output" +
@@ -380,16 +381,17 @@ class Pipeline(ABC):
                             for o in step._output_specs:
                                 print(f"       {o}")
 
-                if decided_this_step_needs_to_run:
-                    print(("%-120s" % f"==> Running {step}") + (
-                        f"[#{i+1}]" if len(current_steps) > 1 else ""))
-                    step._is_being_skipped = False
-                    step._transfer_step()
+                finally:
+                    if decided_this_step_needs_to_run:
+                        print(("%-120s" % f"==> Running {step}") + (
+                            f"[#{i+1}]" if len(current_steps) > 1 else ""))
+                        step._is_being_skipped = False
+                        step._transfer_step()
 
-                    step_run_counters[step.name] += 1
-                    num_steps_transferred += 1
-                else:
-                    step._is_being_skipped = True
+                        step_run_counters[step.name] += 1
+                        num_steps_transferred += 1
+                    else:
+                        step._is_being_skipped = True
 
             # next, process all steps that depend on the previously-completed steps
             next_steps = []
@@ -600,6 +602,7 @@ class Step(ABC):
         self._upstream_steps = []  # this Step depends on these Steps
         self._downstream_steps = []  # Steps that depend on this Step
 
+        self._cancel_this_step = False  # records whether the user changed their mind and wants to cancel this step.
         self._is_being_skipped = False  # records whether this Step is being skipped
 
         self._force_this_step_arg_names = []
@@ -1159,3 +1162,16 @@ height=1000
 style=DarktStyle
 ') &
 """)
+
+    def cancel(self):
+        """Signals that this Step shouldn't be run after all. Sometimes it is convenient to make this decision after a
+        Step has already been created, but before the pipeline is executed.
+        """
+        self._cancel_this_step = True
+        self._commands = []
+
+
+    def skip(self):
+        """Alias for self.cancel()"""
+        self.cancel()
+
