@@ -1058,7 +1058,8 @@ class Step(ABC):
         self.command(f"gcloud config set account {gcloud_user_account}")
         if gcloud_project:
             self.command(f"gcloud config set project {gcloud_project}")
-        
+        self.command(f"export GOOGLE_APPLICATION_CREDENTIALS=$(find ~/.config/ -name 'adc.json')")
+
         if debug:
             self.command(f"gcloud auth list")  # print auth list again to check if 'gcloud config set account' succeeded
 
