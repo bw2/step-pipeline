@@ -371,7 +371,7 @@ class Pipeline(ABC):
 
                                     decided_this_step_needs_to_run = True
 
-                    if not decided_this_step_needs_to_run:
+                    if not decided_this_step_needs_to_run and not skip_requested:
                         print(f"Skipping {step}. The {len(step._output_specs)} output" +
                               ("s already exist" if len(step._output_specs) > 1 else " already exists") +
                               ("." if args.check_file_last_modified_times else
