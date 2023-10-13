@@ -87,6 +87,8 @@ class BatchPipeline(Pipeline):
         storage=None,
         always_run=False,
         timeout=None,
+        custom_machine_type=None,
+        custom_machine_is_preemptible=None,
         output_dir=None,
         reuse_job_from_previous_step=None,
         localize_by=Localize.COPY,
@@ -124,6 +126,8 @@ class BatchPipeline(Pipeline):
                 All values are rounded up to the nearest Gi.
             always_run (bool): Set the Step to always run, even if dependencies fail.
             timeout (float, int): Set the maximum amount of time this job can run for before being killed.
+            custom_machine_type (str): Use a custom Cloud machine type, eg. 'n1-highmem-32'
+            custom_machine_is_preemptible (bool): Whether to use a preemptible machine type.
             output_dir (str): Optional default output directory for Step outputs.
             reuse_job_from_previous_step (Step): Optionally, reuse the batch.Job object from this other upstream Step.
             localize_by (Localize): If specified, this will be the default Localize approach used by Step inputs.
@@ -153,6 +157,8 @@ class BatchPipeline(Pipeline):
             storage=storage,
             always_run=always_run,
             timeout=timeout,
+            custom_machine_type=custom_machine_type,
+            custom_machine_is_preemptible=custom_machine_is_preemptible,
             output_dir=self._default_output_dir or output_dir,
             reuse_job_from_previous_step=reuse_job_from_previous_step,
             localize_by=localize_by,
@@ -648,9 +654,9 @@ class BatchStep(Step):
             if self._cpu or self._memory:
                 raise ValueError("Both a custom_machine_type or custom_machine_is_preemptible as well as cpu or memory "
                                  "arguments were specified. Only one or the other should be provided.")
-            self.job._machine_type = self._custom_machine_type or self._pipeline._default_custom_machine_type
+            self._job._machine_type = self._custom_machine_type or self._pipeline._default_custom_machine_type
             #if self._custom_machine_is_preemptible is not None or self._default_custom_machine_is_preemptible is not None:
-            self.job._preemptible = self._custom_machine_is_preemptible or self._pipeline._default_custom_machine_is_preemptible
+            self._job._preemptible = self._custom_machine_is_preemptible or self._pipeline._default_custom_machine_is_preemptible
 
         if self._storage:
             self._job.storage(self._storage)
