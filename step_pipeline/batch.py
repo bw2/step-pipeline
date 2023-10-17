@@ -377,6 +377,8 @@ class BatchPipeline(Pipeline):
         else:
             raise Exception(f"Unexpected _backend: {self._backend}")
 
+        self._batch.close()
+
         # The Batch pipeline returns an undocumented result object which can be used to retrieve the Job's status code
         # and logs
         return result
