@@ -386,10 +386,13 @@ class Pipeline(ABC):
                         print(("%-120s" % f"==> Running {step}") + (
                             f"[#{i+1}]" if len(current_steps) > 1 else ""))
                         step._is_being_skipped = False
-                        step._transfer_step()
-
-                        step_run_counters[step.name] += 1
-                        num_steps_transferred += 1
+                        try:
+                            step._transfer_step()
+                            step_run_counters[step.name] += 1
+                            num_steps_transferred += 1
+                        except Exception as e:
+                            print(f"ERROR: while transferring step {step}: {e}. Skipping..")
+                            step._is_being_skipped = True
                     else:
                         step._is_being_skipped = True
 
