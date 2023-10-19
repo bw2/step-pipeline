@@ -219,8 +219,11 @@ class Pipeline(ABC):
 
         args = self.parse_args()
         if args.export_pipeline_graph:
-            output_filename_prefix = re.sub("[:, ]", "_", self.name)
-            output_svg_path = f"{output_filename_prefix}.pipeline_diagram.svg"
+            if self.name is None:
+                output_svg_path = "pipeline_diagram.svg"
+            else:
+                output_filename_prefix = re.sub("[:, ]", "_", self.name)
+                output_svg_path = f"{output_filename_prefix}.pipeline_diagram.svg"
             self.export_pipeline_graph(output_svg_path=output_svg_path)
             print(f"Generated {output_svg_path}. Exiting..")
             sys.exit(0)
