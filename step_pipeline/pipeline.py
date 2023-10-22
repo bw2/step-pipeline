@@ -795,9 +795,6 @@ class Step(ABC):
             list: A list of InputSpec objects that describe these input files or directories. The list will contain
                 one entry for each passed-in source path.
         """
-        if len(source_paths) == 0:
-            return self.input(source_path, name=name, localize_by=localize_by)
-
         source_paths_flat_list = []
         for source_path in [source_path, *source_paths]:
             if isinstance(source_path, str):
