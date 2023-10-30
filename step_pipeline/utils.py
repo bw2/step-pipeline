@@ -92,7 +92,7 @@ def _generate_gs_path_to_file_stat_dict(gs_path_with_wildcards):
     except Exception as e:
         raise GoogleStorageException(f"Unable to parse gsutil output for {gs_path_with_wildcards}: {e}\n{gsutil_output}")
 
-    print(f"Found {len(path_to_file_stat_dict)} matching paths")
+    print(f"Found {len(path_to_file_stat_dict):,d} matching paths in {gs_path_with_wildcards}")
 
     GSUTIL_PATH_TO_FILE_STAT_CACHE[gs_path_with_wildcards] = path_to_file_stat_dict
 
