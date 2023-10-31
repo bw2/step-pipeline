@@ -1005,7 +1005,11 @@ class Step(ABC):
     def gcloud_auth_activate_service_account(self):
         """Utility method to active gcloud auth using the Hail Batch-provided service account"""
 
+        if hasattr(self, "_switched_gcloud_auth_to_service_account"):
+            return
         self.command(f"gcloud auth activate-service-account --key-file /gsa-key/key.json")
+        self._switched_gcloud_auth_to_service_account = True
+
 
     def switch_gcloud_auth_to_user_account(self, gcloud_credentials_path=None, gcloud_user_account=None,
                                            gcloud_project=None, debug=False):
@@ -1042,6 +1046,9 @@ class Step(ABC):
             debug (bool): Whether to add extra "gcloud auth list" commands that are helpful for troubleshooting issues
                 with the auth steps.
         """
+
+        if hasattr(self, "_switched_gcloud_auth_to_user_account"):
+            return
 
         args = self._pipeline.parse_known_args()
         if not gcloud_credentials_path:

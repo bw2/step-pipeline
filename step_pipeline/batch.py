@@ -761,6 +761,7 @@ class BatchStep(Step):
         if input_spec.localize_by == Localize.GSUTIL_COPY:
             if not input_spec.original_source_path.startswith("gs://"):
                 raise ValueError(f"Expected gs:// path but instead found '{input_spec.local_dir}'")
+            self.gcloud_auth_activate_service_account()
             self.command(f"mkdir -p '{input_spec.local_dir}'")
             self.command(self._generate_gsutil_copy_command(
                 input_spec.original_source_path, output_dir=input_spec.local_dir))
@@ -831,23 +832,13 @@ class BatchStep(Step):
         elif input_spec.localize_by == Localize.COPY:
             input_spec.read_input_obj = self._job._batch.read_input(input_spec.source_path)
             if self._step_type == BatchStepType.BASH:
-                self._job.command(f"touch {input_spec.read_input_obj}")   # needed to trigger download
+                if not input_spec.local_dir in self._localize_by_copy_already_created_dirs_set:
+                    self._job.command(f"mkdir -p '{input_spec.local_dir}'")
+                self._job.command(f"cp {input_spec.read_input_obj} '{input_spec.local_path}'")   # needed to trigger download
 
                 echo_done_command = 'echo "Done localizing files via COPY"'
-                commands_to_set_up_path = []
-                if not input_spec.local_dir in self._localize_by_copy_already_created_dirs_set:
-                    commands_to_set_up_path.append(f"mkdir -p '{input_spec.local_dir}'")
-                    self._localize_by_copy_already_created_dirs_set.add(input_spec.local_dir)
-                commands_to_set_up_path.append(f"ln -s {input_spec.read_input_obj} {input_spec.local_path}")
-
-                try:
-                    echo_done_command_index = self._commands.index(echo_done_command)
-                except ValueError:
-                    echo_done_command_index = 0
-                    commands_to_set_up_path.append(echo_done_command)
-
-                for command_to_set_up_path in commands_to_set_up_path[::-1]:
-                    self._commands.insert(echo_done_command_index, command_to_set_up_path)
+                if echo_done_command not in self._commands:
+                    self._commands.insert(0, echo_done_command)
                 
         elif input_spec.localize_by in (
             Localize.HAIL_BATCH_CLOUDFUSE,
@@ -939,8 +930,7 @@ EOF""")
             if not output_spec.output_path.startswith("gs://"):
                 raise ValueError(f"{output_spec.output_path} Destination path must start with gs://")
 
-            if not hasattr(self, "_switched_gcloud_auth_to_user_account"):
-                self.gcloud_auth_activate_service_account()
+            self.gcloud_auth_activate_service_account()
             self.command(self._generate_gsutil_copy_command(output_spec.local_path, output_path=output_spec.output_path))
 
     def _transfer_output_spec(self, output_spec):
