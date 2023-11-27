@@ -496,6 +496,8 @@ class BatchStep(Step):
         self._cpu = cpu
         self._memory = memory
         self._storage = storage
+        self._set_storage_to_fit_all_inputs = False
+        self._storage_to_fit_all_inputs_margin = 0
         self._always_run = always_run
         self._timeout = timeout
         self._custom_machine_type = custom_machine_type
@@ -560,8 +562,27 @@ class BatchStep(Step):
                 64 Ti. If storage is set to a value between 0 Gi and 10 Gi, the storage request is rounded up to 10 Gi.
                 All values are rounded up to the nearest Gi.
         """
+        if self._set_storage_to_fit_all_inputs:
+            raise ValueError(f"storage(..) call conflicts with previous set_storage_to_fit_all_inputs(..) call")
+
         self._storage = storage
         return self
+
+    def set_storage_to_fit_all_inputs(self, margin=10):
+        """Set the storage size to fit all inputs. The total storage needed will be calculated when the job is submitted.
+
+        Args:
+            margin (int): Add this many GiB to the calculated storage size to ensure enough space is available.
+        """
+        if self._storage:
+            raise ValueError(f"set_storage_to_fit_all_inputs(..) call conflicts with storage previously being set "
+                             f"to {self._storage}")
+
+        self._set_storage_to_fit_all_inputs = True
+        self._storage_to_fit_all_inputs_margin = margin
+
+        return self
+
 
     def always_run(self, always_run):
         """Set the always_run parameter for this Step.
@@ -620,6 +641,11 @@ class BatchStep(Step):
                 self._job = batch.new_bash_job(name=self.name)
             else:
                 raise ValueError(f"Unexpected BatchStepType: {self._step_type}")
+
+        if self._set_storage_to_fit_all_inputs:
+            # calculate storage needed to fit all inputs
+            total_size_in_bytes = self._get_size_of_all_inputs_localized_by_copy()
+            self._storage = f"{int(total_size_in_bytes / 2**30) + self._storage_to_fit_all_inputs_margin}Gi"
 
         # set execution parameters
         if self._image:
@@ -846,6 +872,19 @@ class BatchStep(Step):
             self._handle_input_transfer_using_cloudfuse(input_spec)
         elif input_spec.localize_by == Localize.HAIL_HADOOP_COPY:
             self._add_commands_for_hail_hadoop_copy(input_spec.source_path, input_spec.local_dir)
+
+    def _get_size_of_all_inputs_localized_by_copy(self):
+        """Returns the total size of all the Step's inputs"""
+
+        total_size_bytes = 0
+        for input_spec in self._input_specs:
+            if input_spec.localize_by not in (Localize.GSUTIL_COPY, Localize.COPY):
+                continue
+            input_path = input_spec.source_path
+            for stat in self._pipeline.check_input_glob(input_path):
+                total_size_bytes += stat["size_bytes"]
+
+        return total_size_bytes
 
     def _generate_gsutil_copy_command(self, source_path, output_dir=None, output_path=None):
         """Utility method that puts together the gsutil command for copying the given source path to an output path
