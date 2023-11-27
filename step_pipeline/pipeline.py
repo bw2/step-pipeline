@@ -414,6 +414,9 @@ class Pipeline(ABC):
 
             current_steps = next_steps
 
+        # clear all steps that have been transferred
+        self._all_steps = []
+
         return num_steps_transferred
 
     def _generate_post_to_slack_command(self, message, channel=None, slack_token=None):
@@ -447,7 +450,6 @@ EOF"""
         """This method is an alias for the check_input_glob(..) method"""
 
         return self.check_input_glob(glob_path)
-
 
     def check_input_glob(self, glob_path):
         """This method is useful for checking the existence of multiple input files and caching the results.
@@ -1009,7 +1011,6 @@ class Step(ABC):
             return
         self.command(f"gcloud auth activate-service-account --key-file /gsa-key/key.json")
         self._switched_gcloud_auth_to_service_account = True
-
 
     def switch_gcloud_auth_to_user_account(self, gcloud_credentials_path=None, gcloud_user_account=None,
                                            gcloud_project=None, debug=False):
