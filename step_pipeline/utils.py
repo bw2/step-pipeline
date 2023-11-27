@@ -268,14 +268,14 @@ def are_any_inputs_missing(step, only_check_the_cache=False, verbose=False):
 
 
 def all_outputs_exist(step, only_check_the_cache=False, verbose=False):
-    """Returns True if all of the Step's output files already exist"""
+    """Returns True if all the Step's output files already exist"""
     paths_to_check = [output_spec.output_path_including_any_wildcards
                       for output_spec in step._output_specs if not output_spec._optional]
     return files_exist(paths_to_check, only_check_the_cache=only_check_the_cache, verbose=verbose)
 
 
 def files_exist(file_paths, only_check_the_cache=False, verbose=False):
-    """Returns True if all of the files exist"""
+    """Returns True if all the files exist"""
     for file_path in file_paths:
         if not _path_exists__cached(file_path, only_check_the_cache=only_check_the_cache, verbose=verbose):
             return False
@@ -284,7 +284,7 @@ def files_exist(file_paths, only_check_the_cache=False, verbose=False):
 
 
 def are_output_files_up_to_date(input_paths, output_paths, only_check_the_cache=False, verbose=False):
-    """Returns True if all of the output files already exist and are newer than all the input files.
+    """Returns True if all the output files already exist and are newer than all the input files.
 
     input_paths (list): gs:// paths of input files
     output_paths (list): gs:// paths of output files
@@ -330,7 +330,7 @@ def are_output_files_up_to_date(input_paths, output_paths, only_check_the_cache=
 
 
 def are_outputs_up_to_date(step, only_check_the_cache=False, verbose=False):
-    """Returns True if all of the Step's outputs already exist and are newer than all inputs"""
+    """Returns True if all the Step's outputs already exist and are newer than all inputs"""
 
     input_paths = [input_spec.original_source_path for input_spec in step._input_specs]
     output_paths = [output_spec.output_path_including_any_wildcards
