@@ -66,8 +66,13 @@ class Pipeline(ABC):
             help="When a Step is ready to run but has missing input file(s), the default behavior is to print an error "
                  "and exit. This arg instead causes the Step to be skipped with a warning.")
 
-        pipeline_group.add_argument("--export-pipeline-graph", action="store_true",
+        graph_group = self.get_config_arg_parser_group("graph")
+        graph_group.add_argument("--export-pipeline-graph", action="store_true",
             help="Export an SVG image with the pipeline flow diagram")
+        graph_group.add_argument("--show-inputs", action="store_true",
+            help="Show step inputs in the pipeline flow diagram")
+        graph_group.add_argument("--show-outputs", action="store_true",
+            help="Show step outputs in the pipeline flow diagram")
 
         notifications_group = self.get_config_arg_parser_group("notifications")
         notifications_group.add_argument("--slack-when-done", action="store_true", help="Post to Slack when execution completes")
@@ -224,7 +229,10 @@ class Pipeline(ABC):
             else:
                 output_filename_prefix = re.sub("[:, ]", "_", self.name)
                 output_svg_path = f"{output_filename_prefix}.pipeline_diagram.svg"
-            self.export_pipeline_graph(output_svg_path=output_svg_path)
+            self.export_pipeline_graph(
+                output_svg_path=output_svg_path,
+                show_inputs=args.show_inputs,
+                show_outputs=args.show_outputs)
             print(f"Generated {output_svg_path}. Exiting..")
             sys.exit(0)
 
@@ -475,7 +483,7 @@ EOF"""
         except FileNotFoundError as e:
             return []
 
-    def export_pipeline_graph(self, output_svg_path=None):
+    def export_pipeline_graph(self, output_svg_path=None, show_inputs=False, show_outputs=False):
         """Renders the pipeline execution graph diagram based on the Steps defined so far.
 
         Args:
@@ -513,9 +521,9 @@ EOF"""
                 <TR><TD ALIGN="LEFT"><B>{step_label}</B></TD></TR>"""
 
                 inputs_and_outputs = (
-                    [("Input", step._input_specs)] if step._input_specs else []
+                    [("Input", step._input_specs)] if step._input_specs and show_inputs else []
                 ) + (
-                    [("Output", step._output_specs)] if step._output_specs else []
+                    [("Output", step._output_specs)] if step._output_specs and show_outputs else []
                 )
                 for input_or_output, spec_list in inputs_and_outputs:
                     for i, spec in enumerate(spec_list):
@@ -526,9 +534,7 @@ EOF"""
                         step_label += f"""<TR><TD ALIGN="LEFT"><FONT POINT-SIZE="11">{prefix}<B>{spec.name or spec.filename}</B></FONT></TD></TR>"""
 
                 step_label += "</TABLE>"
-
-                if step._input_specs or step._output_specs:
-                    step_label = f"<{step_label}>"
+                step_label = f"<{step_label}>"
 
                 G.add_node(f"node_{step._step_id}", label=step_label, shape="none")
 

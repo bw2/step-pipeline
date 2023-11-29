@@ -284,7 +284,7 @@ class BatchPipeline(Pipeline):
 
     def run(self):
         """Batch-specific code for submitting the pipeline to the Hail Batch backend"""
-        print(f"Starting {self.name or ''} pipeline:")
+        print(f"Starting {self.name or ''} pipeline")
 
         super().run()
 
