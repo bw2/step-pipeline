@@ -914,9 +914,9 @@ class BatchStep(Step):
 
         if ignore_nonzero_exit_code:
             gsutil_command_with_error_handling = (
-                f"({gsutil_command}) || (touch {source_path}{MARK_FILE_SUFFIX}; "
-                f"{gsutil_command} -m cp -r '{source_path}{MARK_FILE_SUFFIX}' '{destination}{MARK_FILE_SUFFIX}' "
-                f"|| true)"
+                f"({full_gsutil_command}) || (touch {os.path.basename(source_path)}{MARK_FILE_SUFFIX} && "
+                f"{gsutil_command} -m cp -r '{os.path.basename(source_path)}{MARK_FILE_SUFFIX}' '{destination}{MARK_FILE_SUFFIX}' "
+                f") || true"
             )
             return gsutil_command_with_error_handling
         else:
