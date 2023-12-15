@@ -394,7 +394,7 @@ class Pipeline(ABC):
 
                 finally:
                     if decided_this_step_needs_to_run:
-                        print(("%-120s" % f"==> Running {step}") + (
+                        print(("%-120s" % f"==> {step}") + (
                             f"[#{i+1}]" if len(current_steps) > 1 else ""))
                         step._is_being_skipped = False
                         try:

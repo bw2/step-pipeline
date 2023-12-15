@@ -397,3 +397,7 @@ class OutputSpec:
     @property
     def delocalize_by(self):
         return self._delocalize_by
+
+    @property
+    def optional(self):
+        return self._optional

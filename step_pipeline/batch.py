@@ -11,7 +11,7 @@ import hailtop.fs as hfs
 from .constants import Backend
 from .io import InputSpec, InputValueSpec, InputType
 from .pipeline import Pipeline, Step, Localize, Delocalize
-from .utils import check_gcloud_storage_region
+from .utils import check_gcloud_storage_region, MARK_FILE_SUFFIX
 
 # TODO get latest tag via https://hub.docker.com/v2/repositories/hailgenetics/genetics/tags/ ?
 DEFAULT_BASH_IMAGE = DEFAULT_PYTHON_IMAGE = "hailgenetics/hail:0.2.77"
@@ -583,7 +583,6 @@ class BatchStep(Step):
 
         return self
 
-
     def always_run(self, always_run):
         """Set the always_run parameter for this Step.
 
@@ -886,7 +885,7 @@ class BatchStep(Step):
 
         return total_size_bytes
 
-    def _generate_gsutil_copy_command(self, source_path, output_dir=None, output_path=None):
+    def _generate_gsutil_copy_command(self, source_path, output_dir=None, output_path=None, ignore_nonzero_exit_code=False):
         """Utility method that puts together the gsutil command for copying the given source path to an output path
         or directory. Either the output path or the output directory must be provided.
 
@@ -894,6 +893,8 @@ class BatchStep(Step):
             source_path (str): The source path.
             output_dir (str): Output directory.
             output_path (str): Output file path.
+            ignore_nonzero_exit_code (bool): If true, any non-zero exit codes from the gsutil command will be ignored.
+
         Return:
             str: gsutil command string
         """
@@ -909,7 +910,17 @@ class BatchStep(Step):
         else:
             raise ValueError("Neither output_path nor output_dir arg was specified")
 
-        return f"time {gsutil_command} -m cp -r '{source_path}' '{destination}'"
+        full_gsutil_command = f"time {gsutil_command} -m cp -r '{source_path}' '{destination}'"
+
+        if ignore_nonzero_exit_code:
+            gsutil_command_with_error_handling = (
+                f"({gsutil_command}) || (touch {source_path}{MARK_FILE_SUFFIX}; "
+                f"{gsutil_command} -m cp -r '{source_path}{MARK_FILE_SUFFIX}' '{destination}{MARK_FILE_SUFFIX}' "
+                f"|| true)"
+            )
+            return gsutil_command_with_error_handling
+        else:
+            return full_gsutil_command
 
     def _handle_input_transfer_using_cloudfuse(self, input_spec):
         """Utility method that implements localizing an input via cloudfuse.
@@ -957,6 +968,10 @@ EOF""")
             raise ValueError(f"Unexpected output_spec.delocalize_by value: {output_spec.delocalize_by}")
 
         super()._preprocess_output_spec(output_spec)
+
+        if output_spec.optional and output_spec.delocalize_by in (Delocalize.COPY, Delocalize.HAIL_HADOOP_COPY):
+            raise ValueError(f"Delocalize.{output_spec.delocalize_by} isn't supported for optional output: {output_spec}")
+
         if output_spec.delocalize_by == Delocalize.COPY:
             # validate path since Batch delocalization doesn't work for gs:// paths with a Local backend.
             if self._pipeline.backend == Backend.HAIL_BATCH_LOCAL and any(
@@ -970,7 +985,10 @@ EOF""")
                 raise ValueError(f"{output_spec.output_path} Destination path must start with gs://")
 
             self.gcloud_auth_activate_service_account()
-            self.command(self._generate_gsutil_copy_command(output_spec.local_path, output_path=output_spec.output_path))
+            self.command(self._generate_gsutil_copy_command(
+                            output_spec.local_path,
+                            output_path=output_spec.output_path,
+                            ignore_nonzero_exit_code=output_spec.optional))
 
     def _transfer_output_spec(self, output_spec):
         """When a Step isn't skipped and is being transferred to the execution backend, this method is called for

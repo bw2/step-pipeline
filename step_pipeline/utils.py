@@ -26,6 +26,8 @@ LOCAL_TIMEZONE = pytz.timezone("US/Eastern") #datetime.now(timezone.utc).astimez
 
 DATE_STRFTIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
+MARK_FILE_SUFFIX = ".step_pipeline_placeholder"
+
 
 def _get_bucket_name(gs_path):
     """Get the Google bucket name from the given gs_path."""
@@ -269,9 +271,24 @@ def are_any_inputs_missing(step, only_check_the_cache=False, verbose=False):
 
 def all_outputs_exist(step, only_check_the_cache=False, verbose=False):
     """Returns True if all the Step's output files already exist"""
-    paths_to_check = [output_spec.output_path_including_any_wildcards
-                      for output_spec in step._output_specs if not output_spec._optional]
-    return files_exist(paths_to_check, only_check_the_cache=only_check_the_cache, verbose=verbose)
+
+    required_paths = [
+        output_spec.output_path_including_any_wildcards
+        for output_spec in step._output_specs if not output_spec.optional]
+    if not files_exist(required_paths, only_check_the_cache=only_check_the_cache, verbose=verbose):
+        return False
+
+    # handle optional paths
+    optional_paths = [output_spec.output_path_including_any_wildcards
+                      for output_spec in step._output_specs if output_spec.optional]
+    for path in optional_paths:
+        if not (
+            files_exist([path], only_check_the_cache=only_check_the_cache, verbose=verbose) or
+            files_exist([f"{path}{MARK_FILE_SUFFIX}"], only_check_the_cache=only_check_the_cache, verbose=verbose)
+        ):
+            return False
+
+    return True
 
 
 def files_exist(file_paths, only_check_the_cache=False, verbose=False):
@@ -333,10 +350,26 @@ def are_outputs_up_to_date(step, only_check_the_cache=False, verbose=False):
     """Returns True if all the Step's outputs already exist and are newer than all inputs"""
 
     input_paths = [input_spec.original_source_path for input_spec in step._input_specs]
-    output_paths = [output_spec.output_path_including_any_wildcards
-                    for output_spec in step._output_specs if not output_spec._optional]
+    required_output_paths = [
+        output_spec.output_path_including_any_wildcards
+        for output_spec in step._output_specs if not output_spec.optional]
 
-    return are_output_files_up_to_date(input_paths, output_paths, only_check_the_cache=only_check_the_cache, verbose=verbose)
+    # handle optional output paths
+    if not are_output_files_up_to_date(input_paths, required_output_paths, only_check_the_cache=only_check_the_cache, verbose=verbose):
+        return False
+
+    optional_output_paths = [
+        output_spec.output_path_including_any_wildcards
+        for output_spec in step._output_specs if output_spec.optional]
+
+    for path in optional_output_paths:
+        if not (
+            are_output_files_up_to_date(input_paths, [path], only_check_the_cache=only_check_the_cache, verbose=verbose) or
+            are_output_files_up_to_date(input_paths, [f"{path}{MARK_FILE_SUFFIX}"], only_check_the_cache=only_check_the_cache, verbose=verbose)
+        ):
+            return False
+
+    return True
 
 
 class GoogleStorageException(Exception):
