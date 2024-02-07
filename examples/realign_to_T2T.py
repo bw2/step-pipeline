@@ -56,7 +56,7 @@ def main():
         # step 2: convert to fastq
         cpus = 1
         s2 = batch_pipeline.new_step(f"fastq: {prefix}", step_number=2, arg_suffix="step2",
-            image=DOCKER_IMAGE, cpu=cpus, memory="standard", storage="200G", output_dir=args.output_dir)
+            image=DOCKER_IMAGE, cpu=cpus, memory="standard", storage="300G", output_dir=args.output_dir)
         s2.switch_gcloud_auth_to_user_account()
 
         local_bam_or_cram = s2.use_previous_step_outputs_as_inputs(s1)
@@ -77,7 +77,7 @@ def main():
         # step 3: align to T2T
         cpus = 8
         s3 = batch_pipeline.new_step(f"bwa mem: {prefix}", step_number=3, arg_suffix="step3",
-            image=DOCKER_IMAGE, cpu=cpus, memory="standard", storage="200G", output_dir=args.output_dir)
+            image=DOCKER_IMAGE, cpu=cpus, memory="standard", storage="300G", output_dir=args.output_dir)
         s3.switch_gcloud_auth_to_user_account()
         local_r1_fastq, local_r2_fastq = s3.use_previous_step_outputs_as_inputs(s2, localize_by=Localize.COPY)
 
