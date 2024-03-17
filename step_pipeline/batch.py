@@ -788,7 +788,7 @@ class BatchStep(Step):
                 raise ValueError(f"Expected gs:// path but instead found '{input_spec.local_dir}'")
             self.gcloud_auth_activate_service_account()
             self.command(f"mkdir -p '{input_spec.local_dir}'")
-            self.command(self._generate_gsutil_copy_command(
+            self.command(self._generate_gcloud_copy_command(
                 input_spec.original_source_path, output_dir=input_spec.local_dir))
             self.command(f"ls -lh '{input_spec.local_path}'")   # check that file was copied successfully
 
@@ -817,7 +817,7 @@ class BatchStep(Step):
             self._paths_localized_via_temp_bucket.add(temp_file_path)
 
             # copy file to temp bucket
-            gsutil_command = self._generate_gsutil_copy_command(source_path, output_dir=temp_dir)
+            gsutil_command = self._generate_gcloud_copy_command(source_path, output_dir=temp_dir)
             self.command(gsutil_command)
 
             # create an InputSpec with the updated source path
@@ -885,7 +885,7 @@ class BatchStep(Step):
 
         return total_size_bytes
 
-    def _generate_gsutil_copy_command(self, source_path, output_dir=None, output_path=None, ignore_nonzero_exit_code=False):
+    def _generate_gcloud_copy_command(self, source_path, output_dir=None, output_path=None, ignore_nonzero_exit_code=False):
         """Utility method that puts together the gsutil command for copying the given source path to an output path
         or directory. Either the output path or the output directory must be provided.
 
@@ -899,10 +899,10 @@ class BatchStep(Step):
             str: gsutil command string
         """
         args = self._pipeline.parse_known_args()
-        gsutil_command = f"gsutil"
+        gcloud_copy_command = f"gcloud "
         if args.gcloud_project:
-            gsutil_command += f" -u {args.gcloud_project}"
-
+            gcloud_copy_command += f"--project {args.gcloud_project} "
+        gcloud_copy_command += "storage cp "
         if output_path:
             destination = output_path
         elif output_dir:
@@ -910,17 +910,17 @@ class BatchStep(Step):
         else:
             raise ValueError("Neither output_path nor output_dir arg was specified")
 
-        full_gsutil_command = f"time {gsutil_command} -m cp -r '{source_path}' '{destination}'"
+        full_gcloud_copy_command = f"time {gcloud_copy_command} --recursive '{source_path}' '{destination}'"
 
         if ignore_nonzero_exit_code:
             gsutil_command_with_error_handling = (
-                f"({full_gsutil_command}) || (touch {os.path.basename(source_path)}{MARK_FILE_SUFFIX} && "
-                f"{gsutil_command} -m cp -r '{os.path.basename(source_path)}{MARK_FILE_SUFFIX}' '{destination}{MARK_FILE_SUFFIX}' "
+                f"({full_gcloud_copy_command}) || (touch {os.path.basename(source_path)}{MARK_FILE_SUFFIX} && "
+                f"{gcloud_copy_command} cp --recursive '{os.path.basename(source_path)}{MARK_FILE_SUFFIX}' '{destination}{MARK_FILE_SUFFIX}' "
                 f") || true"
             )
             return gsutil_command_with_error_handling
         else:
-            return full_gsutil_command
+            return full_gcloud_copy_command
 
     def _handle_input_transfer_using_cloudfuse(self, input_spec):
         """Utility method that implements localizing an input via cloudfuse.
@@ -985,7 +985,7 @@ EOF""")
                 raise ValueError(f"{output_spec.output_path} Destination path must start with gs://")
 
             self.gcloud_auth_activate_service_account()
-            self.command(self._generate_gsutil_copy_command(
+            self.command(self._generate_gcloud_copy_command(
                             output_spec.local_path,
                             output_path=output_spec.output_path,
                             ignore_nonzero_exit_code=output_spec.optional))

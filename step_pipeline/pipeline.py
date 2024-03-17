@@ -1075,7 +1075,10 @@ class Step(ABC):
             self.command(f"gcloud auth list")
         
         self.gcloud_auth_activate_service_account()
-        self.command(f"gsutil -m cp -r {os.path.join(gcloud_credentials_path, '.config')} /tmp/")
+        self.command("python3 -m pip install -U crcmod")
+        self.command(f"gcloud storage cp --recursive {os.path.join(gcloud_credentials_path, '.config')} /tmp/")
+        self.command("echo done copying .config")
+
         self.command(f"rm -rf ~/.config")
         self.command(f"mv /tmp/.config ~/")
         self.command(f"gcloud config set account {gcloud_user_account}")
