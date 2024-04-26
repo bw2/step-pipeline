@@ -903,6 +903,9 @@ class BatchStep(Step):
         if args.gcloud_project:
             gcloud_copy_command += f"--project {args.gcloud_project} "
         gcloud_copy_command += "storage cp "
+        if args.gcloud_project:
+            gcloud_copy_command += f"--billing-project {args.gcloud_project} "
+
         if output_path:
             destination = output_path
         elif output_dir:

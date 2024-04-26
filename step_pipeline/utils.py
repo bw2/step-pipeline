@@ -20,7 +20,7 @@ PATH_STAT_CACHE = {}
 GSUTIL_PATH_TO_FILE_STAT_CACHE = {}
 BUCKET_LOCATION_CACHE = {}
 _BUCKET_ERROR_COUNTER = collections.defaultdict(int)
-_MAX_ERROR_MESSAGES_TO_PRINT_PER_BUCKET = 1000
+_MAX_ERROR_MESSAGES_TO_PRINT_PER_BUCKET = 5
 
 LOCAL_TIMEZONE = pytz.timezone("US/Eastern") #datetime.now(timezone.utc).astimezone().tzinfo
 
