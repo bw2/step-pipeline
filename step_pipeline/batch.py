@@ -845,7 +845,7 @@ class BatchStep(Step):
         super()._transfer_input_spec(input_spec)
 
         args = self._pipeline.parse_known_args()
-        if args.acceptable_storage_regions:
+        if args.acceptable_storage_regions and input_spec.source_path.startswith("gs:"):
             check_gcloud_storage_region(
                 input_spec.source_path,
                 expected_regions=args.acceptable_storage_regions,
@@ -855,16 +855,21 @@ class BatchStep(Step):
         if input_spec.localize_by == Localize.GSUTIL_COPY:
             pass  # All necessary steps for this option were already handled by self._preprocess_input(..)
         elif input_spec.localize_by == Localize.COPY:
-            input_spec.read_input_obj = self._job._batch.read_input(input_spec.source_path)
-            if self._step_type == BatchStepType.BASH:
-                if not input_spec.local_dir in self._localize_by_copy_already_created_dirs_set:
-                    self._job.command(f"mkdir -p '{input_spec.local_dir}'")
-                self._job.command(f"cp {input_spec.read_input_obj} '{input_spec.local_path}'")   # needed to trigger download
+            if self._step_type == BatchStepType.BASH and input_spec.local_dir not in self._localize_by_copy_already_created_dirs_set:
+                self._job.command(f"mkdir -p '{input_spec.local_dir}'")
+                self._localize_by_copy_already_created_dirs_set.add(input_spec.local_dir)
 
-                echo_done_command = 'echo "Done localizing files via COPY"'
-                if echo_done_command not in self._commands:
-                    self._commands.insert(0, echo_done_command)
-                
+            if input_spec.source_path.startswith("http") or input_spec.source_path.startswith("ftp"):
+                self._job.command(f"curl -L '{input_spec.source_path}' > '{input_spec.local_path}'")
+            else:
+                input_spec.read_input_obj = self._job._batch.read_input(input_spec.source_path)
+                if self._step_type == BatchStepType.BASH:
+                    self._job.command(f"cp {input_spec.read_input_obj} '{input_spec.local_path}'")   # needed to trigger download
+
+                    echo_done_command = 'echo "Done localizing files via COPY"'
+                    if echo_done_command not in self._commands:
+                        self._commands.insert(0, echo_done_command)
+
         elif input_spec.localize_by in (
             Localize.HAIL_BATCH_CLOUDFUSE,
             Localize.HAIL_BATCH_CLOUDFUSE_VIA_TEMP_BUCKET):
