@@ -401,11 +401,28 @@ def check_gcloud_storage_region(gs_path, expected_regions=("US", "US-CENTRAL1"),
 
     if bucket_name in BUCKET_LOCATION_CACHE:
         location = BUCKET_LOCATION_CACHE[bucket_name]
+        
     else:
         try:
-            client = _get_google_storage_client(gcloud_project=gcloud_project)
-            bucket = client.get_bucket(bucket_name)
-            location = bucket.location
+            #client = _get_google_storage_client(gcloud_project=gcloud_project)
+            #bucket = client.get_bucket(bucket_name)
+            #location = bucket.location
+            gsutil_output = subprocess.check_output(
+                f"gsutil ls -Lb gs://{bucket_name}",
+                shell=True,
+                stderr=subprocess.STDOUT,
+                encoding="UTF-8")
+
+            location = None
+            for line in gsutil_output.split("\n"):
+                line = line.strip()
+                if line.startswith("Location constraint"):
+                    location = line.split(":")[-1].strip()
+                    break
+            if location is None:
+                raise GoogleStorageException(f"ERROR: Could not determine gs://{bucket_name} bucket region."
+                                             f"gsutil ls -Lb gs://{bucket_name} returned:\n{gsutil_output}")
+
             BUCKET_LOCATION_CACHE[bucket_name] = location
         except Exception as e:
             if not ignore_access_denied_exception or "access" not in str(e).lower():
