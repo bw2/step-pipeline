@@ -918,7 +918,7 @@ class BatchStep(Step):
         else:
             raise ValueError("Neither output_path nor output_dir arg was specified")
 
-        full_gcloud_copy_command = f"time {gcloud_copy_command} --recursive '{source_path}' '{destination}'"
+        full_gcloud_copy_command = f"time {gcloud_copy_command} --recursive \"{source_path}\" \"{destination}\""
 
         if ignore_nonzero_exit_code:
             gsutil_command_with_error_handling = (
