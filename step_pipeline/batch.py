@@ -683,7 +683,6 @@ class BatchStep(Step):
             self._job._machine_type = self._custom_machine_type or self._pipeline._default_custom_machine_type
 
         if self._preemptible is not None or self._pipeline._default_preemptible is not None:
-            print("Setting preemptible to", self._preemptible if self._preemptible is not None else self._pipeline._default_preemptible)
             self._job._preemptible = self._preemptible if self._preemptible is not None else self._pipeline._default_preemptible
 
         if self._storage:
