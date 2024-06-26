@@ -864,7 +864,7 @@ class BatchStep(Step):
             else:
                 input_spec.read_input_obj = self._job._batch.read_input(input_spec.source_path)
                 if self._step_type == BatchStepType.BASH:
-                    self._job.command(f"cp {input_spec.read_input_obj} '{input_spec.local_path}'")   # needed to trigger download
+                    self._job.command(f"ln -s {input_spec.read_input_obj} '{input_spec.local_path}'")   # needed to trigger download
 
                     echo_done_command = 'echo "Done localizing files via COPY"'
                     if echo_done_command not in self._commands:
