@@ -4,15 +4,16 @@ import collections
 from datetime import datetime, timezone
 from dateutil import parser
 import glob
-import hail as hl
+#import hail as hl
+import hailtop.fs as hfs
 import os
 import pytz
 import subprocess
 import tempfile
 
 
-os.environ["HAIL_LOG_DIR"] = tempfile.gettempdir()
-hl.init(log="/dev/null", quiet=True, idempotent=True)
+#os.environ["HAIL_LOG_DIR"] = tempfile.gettempdir()
+#hl.init(log="/dev/null", quiet=True, idempotent=True)
 
 GOOGLE_STORAGE_CLIENT = None
 PATH_EXISTS_CACHE = {}
@@ -53,7 +54,7 @@ def _get_google_storage_client(gcloud_project):
 def _generate_gs_path_to_file_stat_dict(gs_path_with_wildcards):
     """Takes a gs:// path that contains one or more wildcards ("*") and runs "gsutil ls -l {gs_path_with_wildcards}".
     This method then returns a dictionary that maps each gs:// file to its size in bytes. Running gsutil is currently
-    faster than running hl.hadoop_ls(..) when the path matches many files.
+    faster than running hfs.ls(..) when the path matches many files.
     """
     if not isinstance(gs_path_with_wildcards, str):
         raise ValueError(f"Unexpected argument type {str(type(gs_path_with_wildcards))}: {gs_path_with_wildcards}")
@@ -129,7 +130,7 @@ def _path_exists__cached(path, only_check_the_cache=False, verbose=False):
             for path_without_star in path_dict:
                 PATH_EXISTS_CACHE[path_without_star] = True
         else:
-            PATH_EXISTS_CACHE[path] = hl.hadoop_exists(path)
+            PATH_EXISTS_CACHE[path] = hfs.exists(path)
     else:
         if "*" in path:
             path_dict = glob.glob(path)
@@ -188,7 +189,7 @@ def _file_stat__cached(path, only_check_the_cache=False, verbose=False):
                 PATH_EXISTS_CACHE[path_without_star] = True
         else:
             try:
-                stat_results = hl.hadoop_stat(path)
+                stat_results = hfs.ls(path)
             except Exception as e:
                 if "File not found" in str(e):
                     raise FileNotFoundError(f"File not found: {path}")
@@ -196,7 +197,7 @@ def _file_stat__cached(path, only_check_the_cache=False, verbose=False):
                     raise e
 
 
-            """hl.hadoop_stat returns:
+            """hfs.ls returns:
             {
                 'path': 'gs://bucket/dir/file.bam.bai',
                 'size_bytes': 2784,
@@ -219,7 +220,7 @@ def _file_stat__cached(path, only_check_the_cache=False, verbose=False):
                 except Exception as e:
                     raise Exception(f"Unable to parse 'modification_time' from {stat_results}: {e}")
             elif stat_results["modification_time"] == None:
-                raise GoogleStorageException(f"hl.stat returned modification_time == None for {path}")
+                raise GoogleStorageException(f"hfs.ls returned modification_time == None for {path}")
             else:
                 raise GoogleStorageException(f"Unexpected modification_time type: {type(stat_results['modification_time'])} in {stat_results}")
 
