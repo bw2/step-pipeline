@@ -23,7 +23,7 @@ across the relevant execution engines.
 
 To install the `step-pipeline` library, run:
 ```
-python3 -m pip install step-pipeline
+python3 -m pip install git+https://github.com/bw2/step-pipeline.git
 ```
 
 ---
