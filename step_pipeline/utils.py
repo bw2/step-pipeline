@@ -118,7 +118,7 @@ def _path_exists__cached(path, only_check_the_cache=False, verbose=False):
         raise ValueError(f"Unexpected path type {type(path)}: {path}")
 
     if path in PATH_EXISTS_CACHE:
-        if args.verbose:
+        if verbose:
             if PATH_EXISTS_CACHE[path]:
                 print(f"Path exists (cached): {path}")
             else:
@@ -127,7 +127,7 @@ def _path_exists__cached(path, only_check_the_cache=False, verbose=False):
         return PATH_EXISTS_CACHE[path]
 
     elif only_check_the_cache:
-        if args.verbose:
+        if verbose:
             print(f"Missing path (only-checked-in-cache): {path}")
         # if we're only checking the cache and the path isn't in the cache, then we can return False
         return False
