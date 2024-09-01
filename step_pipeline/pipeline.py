@@ -955,6 +955,12 @@ class Step(ABC):
         else:
             return output_specs
 
+    def get_inputs(self):
+        return list(self._input_specs)
+
+    def get_outputs(self):
+        return list(self._output_specs)
+
     def depends_on(self, upstream_step):
         """Marks this Step as being downstream of another Step in the pipeline, meaning that this Step can only run
         after the upstream_step has completed successfully.
