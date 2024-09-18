@@ -46,7 +46,7 @@ def pipeline(name=None, backend=Backend.HAIL_BATCH_SERVICE, config_file_path="~/
     config_arg_parser = configargparse.ArgumentParser(
         add_config_file_help=True,
         add_env_var_help=True,
-        formatter_class=configargparse.HelpFormatter,
+        formatter_class=configargparse.ArgumentDefaultsHelpFormatter,
         default_config_files=[config_file_path],
         ignore_unknown_config_file_keys=True,
         config_file_parser_class=configargparse.YAMLConfigFileParser,
