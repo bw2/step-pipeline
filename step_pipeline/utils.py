@@ -417,8 +417,9 @@ def check_gcloud_storage_region(gs_path, expected_regions=("US", "US-CENTRAL1"),
             #client = _get_google_storage_client(gcloud_project=gcloud_project)
             #bucket = client.get_bucket(bucket_name)
             #location = bucket.location
+            gcloud_project_arg = f"-u {gcloud_project}" if gcloud_project else ""
             gsutil_output = subprocess.check_output(
-                f"gsutil ls -Lb gs://{bucket_name}",
+                f"gsutil {gcloud_project_arg} ls -Lb gs://{bucket_name}",
                 shell=True,
                 stderr=subprocess.STDOUT,
                 encoding="UTF-8")
@@ -431,7 +432,7 @@ def check_gcloud_storage_region(gs_path, expected_regions=("US", "US-CENTRAL1"),
                     break
             if location is None:
                 raise GoogleStorageException(f"ERROR: Could not determine gs://{bucket_name} bucket region."
-                                             f"gsutil ls -Lb gs://{bucket_name} returned:\n{gsutil_output}")
+                                             f"gsutil {gcloud_project_arg} ls -Lb gs://{bucket_name} returned:\n{gsutil_output}")
 
             BUCKET_LOCATION_CACHE[bucket_name] = location
         except Exception as e:
