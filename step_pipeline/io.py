@@ -307,6 +307,7 @@ class OutputSpec:
         name=None,
         delocalize_by=None,
         optional=False,
+        download_to_dir=None,
     ):
         """OutputSpec constructor
 
@@ -318,12 +319,14 @@ class OutputSpec:
             name (str): Optional name for this output.
             delocalize_by (Delocalize): Approach to use to delocalize this path.
             optional (bool): Whether this output is optional.
+            download_to_dir (str): Optional directory to download the output to.
         """
         self._local_path = local_path
         self._local_dir = os.path.dirname(local_path)
         self._name = name
         self._delocalize_by = delocalize_by
         self._optional = optional
+        self._download_to_dir = download_to_dir
 
         if delocalize_by and not isinstance(delocalize_by, Delocalize):
             raise ValueError(f"localize_by arg: {delocalize_by} is not an instance of the Delocalize enum")
@@ -401,3 +404,7 @@ class OutputSpec:
     @property
     def optional(self):
         return self._optional
+
+    @property
+    def download_to_dir(self):
+        return self._download_to_dir
