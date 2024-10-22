@@ -293,11 +293,14 @@ class BatchPipeline(Pipeline):
 
             num_steps_transferred = self._transfer_all_steps()
 
-            if num_steps_transferred == 0:
-                print("No steps to run. Exiting..")
-                return
+            if num_steps_transferred > 0:
+                result = self._run_batch_obj()
+            else:
+                result = None
+                print("No steps to run.")
 
-            result = self._run_batch_obj()
+            self._download_output_files()
+
             return result
         finally:
             if isinstance(self._backend_obj, hb.ServiceBackend):
