@@ -436,7 +436,7 @@ def check_gcloud_storage_region(gs_path, expected_regions=("US", "US-CENTRAL1"),
 
             BUCKET_LOCATION_CACHE[bucket_name] = location
         except Exception as e:
-            if not ignore_access_denied_exception or "access" not in str(e).lower():
+            if not ignore_access_denied_exception or ("access" not in str(e).lower() and "returned non-zero exit status" not in str(e)):
                 raise GoogleStorageException(f"ERROR: Could not determine gs://{bucket_name} bucket region: {e}")
 
             _BUCKET_ERROR_COUNTER[bucket_name] += 1
