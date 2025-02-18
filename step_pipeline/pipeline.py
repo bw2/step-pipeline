@@ -463,20 +463,19 @@ EOF"""
 
     def _download_output_files(self):
         if self._output_paths_to_download_when_done:
-            for output_path, download_to_dir in self._output_paths_to_download_when_done:
+            for remote_output_path, download_to_dir in self._output_paths_to_download_when_done:
                 os.makedirs(download_to_dir, exist_ok=True)
-                local_path = os.path.join(download_to_dir, os.path.basename(output_path))
-                if not os.path.isfile(local_path):
-                    try:
-                        stats = hfs.stat(output_path)
-                    except FileNotFoundError as e:
-                        print(f"WARNING: Output file not found: {output_path}. Skipping..")
-                        continue
+                local_path = os.path.join(download_to_dir, os.path.basename(remote_output_path))
+                try:
+                    stats = hfs.stat(remote_output_path)
+                except FileNotFoundError as e:
+                    print(f"WARNING: Output file not found: {remote_output_path}. Skipping..")
+                    continue
 
-                    size_in_mb = stats.size/10**6
-                    print(f"Downloading {size_in_mb:0,.2f} Mb file to {local_path}: {output_path}")
-                    hfs.copy(output_path, f"{local_path}.unfinished")
-                    os.system(f"mv {local_path}.unfinished {local_path}")
+                size_in_mb = stats.size/10**6
+                print(f"Downloading {size_in_mb:0,.2f} Mb file to {local_path}: {remote_output_path}")
+                hfs.copy(remote_output_path, f"{local_path}.unfinished")
+                os.system(f"mv {local_path}.unfinished {local_path}")
 
 
     def precache_file_paths(self, glob_path):
@@ -1239,4 +1238,3 @@ style=DarktStyle
     def skip(self):
         """Alias for self.cancel()"""
         self.cancel()
-
