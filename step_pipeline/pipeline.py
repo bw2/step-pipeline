@@ -474,8 +474,11 @@ EOF"""
 
                 size_in_mb = stats.size/10**6
                 print(f"Downloading {size_in_mb:0,.2f} Mb file to {local_path}: {remote_output_path}")
-                hfs.copy(remote_output_path, f"{local_path}.unfinished")
-                os.system(f"mv {local_path}.unfinished {local_path}")
+                try:
+                    hfs.copy(remote_output_path, f"{local_path}.unfinished")
+                    os.system(f"mv {local_path}.unfinished {local_path}")
+                except Exception as e:
+                    print(f"ERROR: while downloading {remote_output_path} to {local_path}: {e}")
 
 
     def precache_file_paths(self, glob_path):
