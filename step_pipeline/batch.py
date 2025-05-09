@@ -853,6 +853,7 @@ class BatchStep(Step):
                 input_spec.source_path,
                 expected_regions=args.acceptable_storage_regions,
                 gcloud_project=args.gcloud_project,
+                ignore_access_denied_exception=True,
                 verbose=args.verbose)
 
         if input_spec.localize_by == Localize.GSUTIL_COPY:
@@ -867,7 +868,7 @@ class BatchStep(Step):
             else:
                 input_spec.read_input_obj = self._job._batch.read_input(input_spec.source_path)
                 if self._step_type == BatchStepType.BASH:
-                    self._job.command(f"ln -s {input_spec.read_input_obj} '{input_spec.local_path}'")   # needed to trigger download
+                    self._job.command(f"ln -s -f {input_spec.read_input_obj} '{input_spec.local_path}'")   # needed to trigger download
 
                     echo_done_command = 'echo "Done localizing files via COPY"'
                     if echo_done_command not in self._commands:
@@ -1029,4 +1030,3 @@ EOF""")
             pass  # GSUTIL_COPY was already handled in _preprocess_output_spec(..)
         elif output_spec.delocalize_by == Delocalize.HAIL_HADOOP_COPY:
             self.command(self._add_commands_for_hail_hadoop_copy(output_spec.local_path, output_spec.output_dir))
-
