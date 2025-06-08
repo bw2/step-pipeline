@@ -304,7 +304,10 @@ class BatchPipeline(Pipeline):
             return result
         finally:
             if isinstance(self._backend_obj, hb.ServiceBackend):
-                self._backend_obj.close()
+                try:
+                    self._backend_obj.close()
+                except:
+                    pass
 
     def _get_localization_root_dir(self, localize_by):
         """Return the top-level root directory where localized files will be copied"""
@@ -380,7 +383,10 @@ class BatchPipeline(Pipeline):
         else:
             raise Exception(f"Unexpected _backend: {self._backend}")
 
-        self._backend_obj.close()
+        try:
+            self._backend_obj.close()
+        except:
+            pass
 
         # The Batch pipeline returns an undocumented result object which can be used to retrieve the Job's status code
         # and logs
