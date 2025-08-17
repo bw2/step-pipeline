@@ -386,7 +386,7 @@ class GoogleStorageException(Exception):
     pass
 
 
-def check_gcloud_storage_region(gs_path, expected_regions=("US", "US-CENTRAL1"), gcloud_project=None,
+def check_gcloud_storage_region(gs_path, expected_regions=("US-CENTRAL1",), gcloud_project=None,
                                 ignore_access_denied_exception=True, verbose=True):
     """Checks whether the given Google Storage path is located in one of the expected_regions. This is set to
     "US-CENTRAL1" by default since that's the region where the hail Batch cluster is located. Localizing data from
