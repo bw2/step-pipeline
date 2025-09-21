@@ -1,26 +1,24 @@
-
 <!DOCTYPE html>
 
-<html>
+<html lang="en" data-content_root="../">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <title>step_pipeline &#8212; step-pipeline 0.2 documentation</title>
-    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/classic.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../_static/classic.css?v=def86cc0" />
     
-    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
-    <script src="../_static/jquery.js"></script>
-    <script src="../_static/underscore.js"></script>
-    <script src="../_static/doctools.js"></script>
+    <script src="../_static/documentation_options.js?v=10f1778b"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="step_pipeline package" href="step_pipeline.html" />
     <link rel="prev" title="Welcome to step-pipeline’s documentation!" href="../index.html" /> 
   </head><body>
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -46,18 +44,198 @@
           <div class="body" role="main">
             
   <section id="step-pipeline">
-<h1>step_pipeline<a class="headerlink" href="#step-pipeline" title="Permalink to this headline">¶</a></h1>
+<h1>step_pipeline<a class="headerlink" href="#step-pipeline" title="Link to this heading">¶</a></h1>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="step_pipeline.html">step_pipeline package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="step_pipeline.html#submodules">Submodules</a></li>
-<li class="toctree-l2"><a class="reference internal" href="step_pipeline.html#module-step_pipeline.batch">step_pipeline.batch module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="step_pipeline.html#module-step_pipeline.constants">step_pipeline.constants module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="step_pipeline.html#module-step_pipeline.io">step_pipeline.io module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="step_pipeline.html#module-step_pipeline.main">step_pipeline.main module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="step_pipeline.html#module-step_pipeline.pipeline">step_pipeline.pipeline module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="step_pipeline.html#module-step_pipeline.utils">step_pipeline.utils module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="step_pipeline.html#module-step_pipeline.wdl">step_pipeline.wdl module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="step_pipeline.html#module-step_pipeline.batch">step_pipeline.batch module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="step_pipeline.html#step_pipeline.batch.BatchStepType"><code class="docutils literal notranslate"><span class="pre">BatchStepType</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.batch.BatchStepType.PYTHON"><code class="docutils literal notranslate"><span class="pre">BatchStepType.PYTHON</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.batch.BatchStepType.BASH"><code class="docutils literal notranslate"><span class="pre">BatchStepType.BASH</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="step_pipeline.html#step_pipeline.batch.BatchPipeline"><code class="docutils literal notranslate"><span class="pre">BatchPipeline</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.batch.BatchPipeline.backend"><code class="docutils literal notranslate"><span class="pre">BatchPipeline.backend</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.batch.BatchPipeline.new_step"><code class="docutils literal notranslate"><span class="pre">BatchPipeline.new_step()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.batch.BatchPipeline.gcloud_project"><code class="docutils literal notranslate"><span class="pre">BatchPipeline.gcloud_project()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.batch.BatchPipeline.cancel_after_n_failures"><code class="docutils literal notranslate"><span class="pre">BatchPipeline.cancel_after_n_failures()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.batch.BatchPipeline.default_image"><code class="docutils literal notranslate"><span class="pre">BatchPipeline.default_image()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.batch.BatchPipeline.default_python_image"><code class="docutils literal notranslate"><span class="pre">BatchPipeline.default_python_image()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.batch.BatchPipeline.default_memory"><code class="docutils literal notranslate"><span class="pre">BatchPipeline.default_memory()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.batch.BatchPipeline.default_cpu"><code class="docutils literal notranslate"><span class="pre">BatchPipeline.default_cpu()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.batch.BatchPipeline.default_storage"><code class="docutils literal notranslate"><span class="pre">BatchPipeline.default_storage()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.batch.BatchPipeline.default_timeout"><code class="docutils literal notranslate"><span class="pre">BatchPipeline.default_timeout()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.batch.BatchPipeline.default_custom_machine_type"><code class="docutils literal notranslate"><span class="pre">BatchPipeline.default_custom_machine_type()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.batch.BatchPipeline.default_preemptible"><code class="docutils literal notranslate"><span class="pre">BatchPipeline.default_preemptible()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.batch.BatchPipeline.run"><code class="docutils literal notranslate"><span class="pre">BatchPipeline.run()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="step_pipeline.html#step_pipeline.batch.BatchStep"><code class="docutils literal notranslate"><span class="pre">BatchStep</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.batch.BatchStep.regions"><code class="docutils literal notranslate"><span class="pre">BatchStep.regions()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.batch.BatchStep.cpu"><code class="docutils literal notranslate"><span class="pre">BatchStep.cpu()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.batch.BatchStep.memory"><code class="docutils literal notranslate"><span class="pre">BatchStep.memory()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.batch.BatchStep.storage"><code class="docutils literal notranslate"><span class="pre">BatchStep.storage()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.batch.BatchStep.set_storage_to_fit_all_inputs"><code class="docutils literal notranslate"><span class="pre">BatchStep.set_storage_to_fit_all_inputs()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.batch.BatchStep.always_run"><code class="docutils literal notranslate"><span class="pre">BatchStep.always_run()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.batch.BatchStep.timeout"><code class="docutils literal notranslate"><span class="pre">BatchStep.timeout()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.batch.BatchStep.custom_machine_type"><code class="docutils literal notranslate"><span class="pre">BatchStep.custom_machine_type()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.batch.BatchStep.preemptible"><code class="docutils literal notranslate"><span class="pre">BatchStep.preemptible()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="step_pipeline.html#module-step_pipeline.constants">step_pipeline.constants module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="step_pipeline.html#step_pipeline.constants.Backend"><code class="docutils literal notranslate"><span class="pre">Backend</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.constants.Backend.HAIL_BATCH_LOCAL"><code class="docutils literal notranslate"><span class="pre">Backend.HAIL_BATCH_LOCAL</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.constants.Backend.HAIL_BATCH_SERVICE"><code class="docutils literal notranslate"><span class="pre">Backend.HAIL_BATCH_SERVICE</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.constants.Backend.TERRA"><code class="docutils literal notranslate"><span class="pre">Backend.TERRA</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.constants.Backend.CROMWELL"><code class="docutils literal notranslate"><span class="pre">Backend.CROMWELL</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="step_pipeline.html#module-step_pipeline.io">step_pipeline.io module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="step_pipeline.html#step_pipeline.io.Localize"><code class="docutils literal notranslate"><span class="pre">Localize</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.io.Localize.COPY"><code class="docutils literal notranslate"><span class="pre">Localize.COPY</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.io.Localize.GSUTIL_COPY"><code class="docutils literal notranslate"><span class="pre">Localize.GSUTIL_COPY</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.io.Localize.HAIL_HADOOP_COPY"><code class="docutils literal notranslate"><span class="pre">Localize.HAIL_HADOOP_COPY</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.io.Localize.HAIL_BATCH_CLOUDFUSE"><code class="docutils literal notranslate"><span class="pre">Localize.HAIL_BATCH_CLOUDFUSE</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.io.Localize.HAIL_BATCH_CLOUDFUSE_VIA_TEMP_BUCKET"><code class="docutils literal notranslate"><span class="pre">Localize.HAIL_BATCH_CLOUDFUSE_VIA_TEMP_BUCKET</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.io.Localize.get_subdir_name"><code class="docutils literal notranslate"><span class="pre">Localize.get_subdir_name()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="step_pipeline.html#step_pipeline.io.Delocalize"><code class="docutils literal notranslate"><span class="pre">Delocalize</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.io.Delocalize.COPY"><code class="docutils literal notranslate"><span class="pre">Delocalize.COPY</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.io.Delocalize.GSUTIL_COPY"><code class="docutils literal notranslate"><span class="pre">Delocalize.GSUTIL_COPY</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.io.Delocalize.HAIL_HADOOP_COPY"><code class="docutils literal notranslate"><span class="pre">Delocalize.HAIL_HADOOP_COPY</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="step_pipeline.html#step_pipeline.io.InputType"><code class="docutils literal notranslate"><span class="pre">InputType</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.io.InputType.STRING"><code class="docutils literal notranslate"><span class="pre">InputType.STRING</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.io.InputType.FLOAT"><code class="docutils literal notranslate"><span class="pre">InputType.FLOAT</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.io.InputType.INT"><code class="docutils literal notranslate"><span class="pre">InputType.INT</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.io.InputType.BOOL"><code class="docutils literal notranslate"><span class="pre">InputType.BOOL</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="step_pipeline.html#step_pipeline.io.InputSpecBase"><code class="docutils literal notranslate"><span class="pre">InputSpecBase</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.io.InputSpecBase.name"><code class="docutils literal notranslate"><span class="pre">InputSpecBase.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.io.InputSpecBase.uuid"><code class="docutils literal notranslate"><span class="pre">InputSpecBase.uuid</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="step_pipeline.html#step_pipeline.io.InputValueSpec"><code class="docutils literal notranslate"><span class="pre">InputValueSpec</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.io.InputValueSpec.value"><code class="docutils literal notranslate"><span class="pre">InputValueSpec.value</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.io.InputValueSpec.input_type"><code class="docutils literal notranslate"><span class="pre">InputValueSpec.input_type</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="step_pipeline.html#step_pipeline.io.InputSpec"><code class="docutils literal notranslate"><span class="pre">InputSpec</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.io.InputSpec.source_path"><code class="docutils literal notranslate"><span class="pre">InputSpec.source_path</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.io.InputSpec.original_source_path"><code class="docutils literal notranslate"><span class="pre">InputSpec.original_source_path</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.io.InputSpec.source_bucket"><code class="docutils literal notranslate"><span class="pre">InputSpec.source_bucket</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.io.InputSpec.source_path_without_protocol"><code class="docutils literal notranslate"><span class="pre">InputSpec.source_path_without_protocol</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.io.InputSpec.source_dir"><code class="docutils literal notranslate"><span class="pre">InputSpec.source_dir</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.io.InputSpec.filename"><code class="docutils literal notranslate"><span class="pre">InputSpec.filename</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.io.InputSpec.local_path"><code class="docutils literal notranslate"><span class="pre">InputSpec.local_path</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.io.InputSpec.local_dir"><code class="docutils literal notranslate"><span class="pre">InputSpec.local_dir</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.io.InputSpec.localize_by"><code class="docutils literal notranslate"><span class="pre">InputSpec.localize_by</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.io.InputSpec.localization_root_dir"><code class="docutils literal notranslate"><span class="pre">InputSpec.localization_root_dir</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="step_pipeline.html#step_pipeline.io.OutputSpec"><code class="docutils literal notranslate"><span class="pre">OutputSpec</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.io.OutputSpec.output_path"><code class="docutils literal notranslate"><span class="pre">OutputSpec.output_path</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.io.OutputSpec.output_path_including_any_wildcards"><code class="docutils literal notranslate"><span class="pre">OutputSpec.output_path_including_any_wildcards</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.io.OutputSpec.output_dir"><code class="docutils literal notranslate"><span class="pre">OutputSpec.output_dir</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.io.OutputSpec.filename"><code class="docutils literal notranslate"><span class="pre">OutputSpec.filename</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.io.OutputSpec.name"><code class="docutils literal notranslate"><span class="pre">OutputSpec.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.io.OutputSpec.local_path"><code class="docutils literal notranslate"><span class="pre">OutputSpec.local_path</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.io.OutputSpec.local_dir"><code class="docutils literal notranslate"><span class="pre">OutputSpec.local_dir</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.io.OutputSpec.delocalize_by"><code class="docutils literal notranslate"><span class="pre">OutputSpec.delocalize_by</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.io.OutputSpec.optional"><code class="docutils literal notranslate"><span class="pre">OutputSpec.optional</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.io.OutputSpec.download_to_dir"><code class="docutils literal notranslate"><span class="pre">OutputSpec.download_to_dir</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="step_pipeline.html#module-step_pipeline.main">step_pipeline.main module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="step_pipeline.html#step_pipeline.main.pipeline"><code class="docutils literal notranslate"><span class="pre">pipeline()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="step_pipeline.html#module-step_pipeline.pipeline">step_pipeline.pipeline module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="step_pipeline.html#step_pipeline.pipeline.Pipeline"><code class="docutils literal notranslate"><span class="pre">Pipeline</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.pipeline.Pipeline.set_name"><code class="docutils literal notranslate"><span class="pre">Pipeline.set_name()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.pipeline.Pipeline.get_config_arg_parser"><code class="docutils literal notranslate"><span class="pre">Pipeline.get_config_arg_parser()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.pipeline.Pipeline.get_config_arg_parser_group"><code class="docutils literal notranslate"><span class="pre">Pipeline.get_config_arg_parser_group()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.pipeline.Pipeline.parse_args"><code class="docutils literal notranslate"><span class="pre">Pipeline.parse_args()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.pipeline.Pipeline.parse_known_args"><code class="docutils literal notranslate"><span class="pre">Pipeline.parse_known_args()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.pipeline.Pipeline.new_step"><code class="docutils literal notranslate"><span class="pre">Pipeline.new_step()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.pipeline.Pipeline.gcloud_project"><code class="docutils literal notranslate"><span class="pre">Pipeline.gcloud_project()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.pipeline.Pipeline.cancel_after_n_failures"><code class="docutils literal notranslate"><span class="pre">Pipeline.cancel_after_n_failures()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.pipeline.Pipeline.default_image"><code class="docutils literal notranslate"><span class="pre">Pipeline.default_image()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.pipeline.Pipeline.default_python_image"><code class="docutils literal notranslate"><span class="pre">Pipeline.default_python_image()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.pipeline.Pipeline.default_memory"><code class="docutils literal notranslate"><span class="pre">Pipeline.default_memory()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.pipeline.Pipeline.default_cpu"><code class="docutils literal notranslate"><span class="pre">Pipeline.default_cpu()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.pipeline.Pipeline.default_storage"><code class="docutils literal notranslate"><span class="pre">Pipeline.default_storage()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.pipeline.Pipeline.default_timeout"><code class="docutils literal notranslate"><span class="pre">Pipeline.default_timeout()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.pipeline.Pipeline.default_output_dir"><code class="docutils literal notranslate"><span class="pre">Pipeline.default_output_dir()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.pipeline.Pipeline.run"><code class="docutils literal notranslate"><span class="pre">Pipeline.run()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.pipeline.Pipeline.precache_file_paths"><code class="docutils literal notranslate"><span class="pre">Pipeline.precache_file_paths()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.pipeline.Pipeline.check_input_glob"><code class="docutils literal notranslate"><span class="pre">Pipeline.check_input_glob()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.pipeline.Pipeline.export_pipeline_graph"><code class="docutils literal notranslate"><span class="pre">Pipeline.export_pipeline_graph()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="step_pipeline.html#step_pipeline.pipeline.Step"><code class="docutils literal notranslate"><span class="pre">Step</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.pipeline.Step.name"><code class="docutils literal notranslate"><span class="pre">Step.name()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.pipeline.Step.command"><code class="docutils literal notranslate"><span class="pre">Step.command()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.pipeline.Step.input_glob"><code class="docutils literal notranslate"><span class="pre">Step.input_glob()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.pipeline.Step.input_value"><code class="docutils literal notranslate"><span class="pre">Step.input_value()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.pipeline.Step.input"><code class="docutils literal notranslate"><span class="pre">Step.input()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.pipeline.Step.inputs"><code class="docutils literal notranslate"><span class="pre">Step.inputs()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.pipeline.Step.use_the_same_inputs_as"><code class="docutils literal notranslate"><span class="pre">Step.use_the_same_inputs_as()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.pipeline.Step.use_previous_step_outputs_as_inputs"><code class="docutils literal notranslate"><span class="pre">Step.use_previous_step_outputs_as_inputs()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.pipeline.Step.output_dir"><code class="docutils literal notranslate"><span class="pre">Step.output_dir()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.pipeline.Step.output"><code class="docutils literal notranslate"><span class="pre">Step.output()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.pipeline.Step.outputs"><code class="docutils literal notranslate"><span class="pre">Step.outputs()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.pipeline.Step.get_inputs"><code class="docutils literal notranslate"><span class="pre">Step.get_inputs()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.pipeline.Step.get_outputs"><code class="docutils literal notranslate"><span class="pre">Step.get_outputs()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.pipeline.Step.get_output_paths_to_download_when_done"><code class="docutils literal notranslate"><span class="pre">Step.get_output_paths_to_download_when_done()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.pipeline.Step.depends_on"><code class="docutils literal notranslate"><span class="pre">Step.depends_on()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.pipeline.Step.has_upstream_steps"><code class="docutils literal notranslate"><span class="pre">Step.has_upstream_steps()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.pipeline.Step.post_to_slack"><code class="docutils literal notranslate"><span class="pre">Step.post_to_slack()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.pipeline.Step.gcloud_auth_activate_service_account"><code class="docutils literal notranslate"><span class="pre">Step.gcloud_auth_activate_service_account()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.pipeline.Step.switch_gcloud_auth_to_user_account"><code class="docutils literal notranslate"><span class="pre">Step.switch_gcloud_auth_to_user_account()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.pipeline.Step.record_memory_cpu_and_disk_usage"><code class="docutils literal notranslate"><span class="pre">Step.record_memory_cpu_and_disk_usage()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.pipeline.Step.cancel"><code class="docutils literal notranslate"><span class="pre">Step.cancel()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.pipeline.Step.skip"><code class="docutils literal notranslate"><span class="pre">Step.skip()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="step_pipeline.html#module-step_pipeline.utils">step_pipeline.utils module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="step_pipeline.html#step_pipeline.utils.are_any_inputs_missing"><code class="docutils literal notranslate"><span class="pre">are_any_inputs_missing()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="step_pipeline.html#step_pipeline.utils.all_outputs_exist"><code class="docutils literal notranslate"><span class="pre">all_outputs_exist()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="step_pipeline.html#step_pipeline.utils.files_exist"><code class="docutils literal notranslate"><span class="pre">files_exist()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="step_pipeline.html#step_pipeline.utils.are_output_files_up_to_date"><code class="docutils literal notranslate"><span class="pre">are_output_files_up_to_date()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="step_pipeline.html#step_pipeline.utils.are_outputs_up_to_date"><code class="docutils literal notranslate"><span class="pre">are_outputs_up_to_date()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="step_pipeline.html#step_pipeline.utils.GoogleStorageException"><code class="docutils literal notranslate"><span class="pre">GoogleStorageException</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="step_pipeline.html#step_pipeline.utils.check_gcloud_storage_region"><code class="docutils literal notranslate"><span class="pre">check_gcloud_storage_region()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="step_pipeline.html#module-step_pipeline.wdl">step_pipeline.wdl module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="step_pipeline.html#step_pipeline.wdl.WdlPipeline"><code class="docutils literal notranslate"><span class="pre">WdlPipeline</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.wdl.WdlPipeline.backend"><code class="docutils literal notranslate"><span class="pre">WdlPipeline.backend</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.wdl.WdlPipeline.new_step"><code class="docutils literal notranslate"><span class="pre">WdlPipeline.new_step()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.wdl.WdlPipeline.run_for_each_row"><code class="docutils literal notranslate"><span class="pre">WdlPipeline.run_for_each_row()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.wdl.WdlPipeline.run"><code class="docutils literal notranslate"><span class="pre">WdlPipeline.run()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="step_pipeline.html#step_pipeline.wdl.WdlStep"><code class="docutils literal notranslate"><span class="pre">WdlStep</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.wdl.WdlStep.cpu"><code class="docutils literal notranslate"><span class="pre">WdlStep.cpu()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.wdl.WdlStep.memory"><code class="docutils literal notranslate"><span class="pre">WdlStep.memory()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="step_pipeline.html#step_pipeline.wdl.WdlStep.storage"><code class="docutils literal notranslate"><span class="pre">WdlStep.storage()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="step_pipeline.html#module-step_pipeline">Module contents</a></li>
 </ul>
 </li>
@@ -70,7 +248,7 @@
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
   <div>
     <h4>Previous topic</h4>
@@ -89,7 +267,7 @@
             rel="nofollow">Show Source</a></li>
     </ul>
    </div>
-<div id="searchbox" style="display: none" role="search">
+<search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../search.html" method="get">
@@ -97,13 +275,13 @@
       <input type="submit" value="Go" />
     </form>
     </div>
-</div>
-<script>$('#searchbox').show(0);</script>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
         </div>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -123,8 +301,8 @@
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-        &#169; Copyright 2022, Ben.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 4.4.0.
+    &#169; Copyright 2022, Ben.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.4.7.
     </div>
   </body>
 </html>
