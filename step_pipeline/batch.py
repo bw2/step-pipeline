@@ -918,8 +918,6 @@ class BatchStep(Step):
         if args.gcloud_project:
             gcloud_copy_command += f"--project {args.gcloud_project} "
         gcloud_copy_command += "storage cp "
-        if args.gcloud_project:
-            gcloud_copy_command += f"--billing-project {args.gcloud_project} "
 
         if output_path:
             destination = output_path
@@ -928,12 +926,24 @@ class BatchStep(Step):
         else:
             raise ValueError("Neither output_path nor output_dir arg was specified")
 
-        full_gcloud_copy_command = f"time {gcloud_copy_command} --recursive \"{source_path}\" \"{destination}\""
+        full_gcloud_copy_command = f"{gcloud_copy_command} --recursive \"{source_path}\" \"{destination}\""
+
+        if args.gcloud_project and not "gs://gcp-public-data" in source_path:
+            # try again, this time specifying the billing project for requester-pays buckets
+            full_gcloud_copy_command = f"({full_gcloud_copy_command} || true) && "
+
+            # if the first copy failed, try again with --billing-project and --no-clobber
+            full_gcloud_copy_command += f"{gcloud_copy_command} "
+            full_gcloud_copy_command += f"--no-clobber "
+            full_gcloud_copy_command += f"--billing-project {args.gcloud_project} "
+            full_gcloud_copy_command += f"--recursive \"{source_path}\" \"{destination}\""
 
         if ignore_nonzero_exit_code:
+            # try uploading the file. Regardless of whether the upload succeeds or fails, create a .MARK file in the
+            # destination to indicate that the upload was attempted, and therefore the step can be considered done.
             gsutil_command_with_error_handling = (
                 f"({full_gcloud_copy_command}) || (touch {os.path.basename(source_path)}{MARK_FILE_SUFFIX} && "
-                f"{gcloud_copy_command} cp --recursive '{os.path.basename(source_path)}{MARK_FILE_SUFFIX}' '{destination}{MARK_FILE_SUFFIX}' "
+                f"{gcloud_copy_command} cp '{os.path.basename(source_path)}{MARK_FILE_SUFFIX}' '{destination}{MARK_FILE_SUFFIX}' "
                 f") || true"
             )
             return gsutil_command_with_error_handling

@@ -191,7 +191,7 @@ class Test(unittest.TestCase):
                 k: v for k, v in input_spec.__dict__.items() if k != "_uuid"
             },
             {
-                '_source_path': source_path,
+                #'_original_source_path': source_path,
                 '_source_bucket': None,
                 '_localize_by': Localize.COPY,
                 '_source_path_without_protocol': source_path,
@@ -199,6 +199,7 @@ class Test(unittest.TestCase):
                 '_source_dir': os.path.dirname(source_path),
                 '_local_dir': '/local_copy' + os.path.dirname(source_path),
                 '_local_path': '/local_copy' + source_path,
+                '_localization_root_dir': '/',
                 '_name': 'test_input_name',
             })
 
@@ -217,7 +218,7 @@ class Test(unittest.TestCase):
         test_step = StepWithSupportForCopy(self._pipeline, "test_step")
         test_step.input("gs://missing-bucket/test", localize_by=Localize.COPY)
         test_step.output(HG38_PATH, HG38_PATH, delocalize_by=Delocalize.COPY)
-        self.assertRaisesRegex(ValueError, "missing", are_outputs_up_to_date,
+        self.assertRaisesRegex(ValueError, "denied", are_outputs_up_to_date,
             test_step, verbose=True)
 
         # test missing output path
@@ -251,7 +252,7 @@ class Test(unittest.TestCase):
     def test_check_gcloud_storage_region(self):
         self.assertRaisesRegex(
             GoogleStorageException,
-            "does not have .* access",
+            "Could not determine",
             check_gcloud_storage_region,
             "gs://test/access-denied",
             expected_regions=("US", ),

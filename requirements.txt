@@ -5,4 +5,5 @@ google-cloud-storage
 mock
 tox
 tox-venv   # work around tox virtualenv issues
+sphinx
 sphinxcontrib-napoleon
