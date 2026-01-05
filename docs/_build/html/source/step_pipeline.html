@@ -393,25 +393,49 @@ All values are rounded up to the nearest Gi.</p>
 <dt class="sig sig-object py" id="step_pipeline.constants.Backend">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">step_pipeline.constants.</span></span><span class="sig-name descname"><span class="pre">Backend</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.constants.Backend" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Enum</span></code></p>
-<p>Constants that represent possible pipeline execution backends</p>
+<p>Constants that represent possible pipeline execution backends.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="step_pipeline.constants.Backend.HAIL_BATCH_LOCAL">
-<span class="sig-name descname"><span class="pre">HAIL_BATCH_LOCAL</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'hbl'</span></em><a class="headerlink" href="#step_pipeline.constants.Backend.HAIL_BATCH_LOCAL" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">HAIL_BATCH_LOCAL</span></span><a class="headerlink" href="#step_pipeline.constants.Backend.HAIL_BATCH_LOCAL" title="Link to this definition">¶</a></dt>
+<dd><p>Run pipeline locally using Hail Batch LocalBackend.</p>
+</dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="step_pipeline.constants.Backend.HAIL_BATCH_SERVICE">
-<span class="sig-name descname"><span class="pre">HAIL_BATCH_SERVICE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'hbs'</span></em><a class="headerlink" href="#step_pipeline.constants.Backend.HAIL_BATCH_SERVICE" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">HAIL_BATCH_SERVICE</span></span><a class="headerlink" href="#step_pipeline.constants.Backend.HAIL_BATCH_SERVICE" title="Link to this definition">¶</a></dt>
+<dd><p>Run pipeline on the Hail Batch cloud service.</p>
+</dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="step_pipeline.constants.Backend.TERRA">
-<span class="sig-name descname"><span class="pre">TERRA</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'terra'</span></em><a class="headerlink" href="#step_pipeline.constants.Backend.TERRA" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">TERRA</span></span><a class="headerlink" href="#step_pipeline.constants.Backend.TERRA" title="Link to this definition">¶</a></dt>
+<dd><p>Generate WDL for execution on Terra platform.</p>
+</dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="step_pipeline.constants.Backend.CROMWELL">
-<span class="sig-name descname"><span class="pre">CROMWELL</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'cromwell'</span></em><a class="headerlink" href="#step_pipeline.constants.Backend.CROMWELL" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">CROMWELL</span></span><a class="headerlink" href="#step_pipeline.constants.Backend.CROMWELL" title="Link to this definition">¶</a></dt>
+<dd><p>Generate WDL for execution on Cromwell.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id0">
+<span class="sig-name descname"><span class="pre">HAIL_BATCH_LOCAL</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'hbl'</span></em><a class="headerlink" href="#id0" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id1">
+<span class="sig-name descname"><span class="pre">HAIL_BATCH_SERVICE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'hbs'</span></em><a class="headerlink" href="#id1" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id2">
+<span class="sig-name descname"><span class="pre">TERRA</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'terra'</span></em><a class="headerlink" href="#id2" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id3">
+<span class="sig-name descname"><span class="pre">CROMWELL</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'cromwell'</span></em><a class="headerlink" href="#id3" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -759,7 +783,19 @@ args = pipeline.parse_args()</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="step_pipeline.pipeline.Pipeline.get_config_arg_parser_group">
 <span class="sig-name descname"><span class="pre">get_config_arg_parser_group</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">group_name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.pipeline.Pipeline.get_config_arg_parser_group" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Get or create an argument group for the config argument parser.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>group_name</strong> (<em>str</em>) – The name of the argument group.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The argument group for adding related command-line arguments.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>argparse._ArgumentGroup</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="step_pipeline.pipeline.Pipeline.parse_args">
@@ -859,29 +895,48 @@ self._transfer_all_steps(..).</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="step_pipeline.pipeline.Pipeline.precache_file_paths">
 <span class="sig-name descname"><span class="pre">precache_file_paths</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">glob_path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.pipeline.Pipeline.precache_file_paths" title="Link to this definition">¶</a></dt>
-<dd><p>This method is an alias for the check_input_glob(..) method</p>
+<dd><p>Pre-cache file metadata for the given glob path.</p>
+<p>This method is an alias for check_input_glob(). It allows checking the existence of
+multiple input files and caching the results for faster subsequent lookups.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>glob_path</strong> (<em>str</em>) – Local file path or gs:// Google Storage path. The path can contain wildcards (*).</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of metadata dicts for matching files.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="step_pipeline.pipeline.Pipeline.check_input_glob">
 <span class="sig-name descname"><span class="pre">check_input_glob</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">glob_path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.pipeline.Pipeline.check_input_glob" title="Link to this definition">¶</a></dt>
-<dd><p>This method is useful for checking the existence of multiple input files and caching the results.
-Input file(s) to this Step using glob syntax (ie. using wildcards as in <cite>gs://bucket/**/sample*.cram</cite>)</p>
+<dd><p>Check the existence of multiple input files and cache the results.</p>
+<p>This method is useful for pre-caching file metadata using glob syntax
+(e.g., using wildcards as in <cite>gs://bucket/**/sample*.cram</cite>).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>path</strong> (<em>str</em>) – local file path or gs:// Google Storage path. The path can contain wildcards (*).</p>
+<dd class="field-odd"><p><strong>glob_path</strong> (<em>str</em>) – Local file path or gs:// Google Storage path. The path can contain wildcards (*).</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><p>List of metadata dicts like:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span>
-    <span class="p">{</span>
-        <span class="s1">&#39;path&#39;</span><span class="p">:</span> <span class="s1">&#39;gs://bucket/dir/file.bam.bai&#39;</span><span class="p">,</span>
-        <span class="s1">&#39;size_bytes&#39;</span><span class="p">:</span> <span class="mi">2784</span><span class="p">,</span>
-        <span class="s1">&#39;modification_time&#39;</span><span class="p">:</span> <span class="s1">&#39;Wed May 20 12:52:01 EDT 2020&#39;</span><span class="p">,</span>
-    <span class="p">},</span>
-<span class="p">]</span>
-</pre></div>
-</div>
+<dd class="field-even"><p><dl>
+<dt>List of metadata dicts like:</dt><dd><dl>
+<dt>[</dt><dd><dl class="simple">
+<dt>{</dt><dd><p>‘path’: ‘gs://bucket/dir/file.bam.bai’,
+‘size_bytes’: 2784,
+‘modification_time’: datetime object,</p>
+</dd>
+</dl>
+<p>},</p>
+</dd>
+</dl>
+<p>]</p>
+</dd>
+</dl>
+<p>Returns an empty list if the path doesn’t exist or matches no files.</p>
 </p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
@@ -1284,7 +1339,22 @@ Step has already been created, but before the pipeline is executed.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="step_pipeline.utils.files_exist">
 <span class="sig-prename descclassname"><span class="pre">step_pipeline.utils.</span></span><span class="sig-name descname"><span class="pre">files_exist</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_paths</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">only_check_the_cache</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.utils.files_exist" title="Link to this definition">¶</a></dt>
-<dd><p>Returns True if all the files exist</p>
+<dd><p>Check whether all specified files exist.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>file_paths</strong> (<em>list</em>) – List of file paths to check. Can be local or gs:// paths.</p></li>
+<li><p><strong>only_check_the_cache</strong> (<em>bool</em>) – If True, only check the cache and don’t run any file system commands.</p></li>
+<li><p><strong>verbose</strong> (<em>bool</em>) – If True, print status messages about path existence.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if all the files exist.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
@@ -1411,7 +1481,7 @@ bytes.</p></li>
 <dt class="sig sig-object py" id="step_pipeline.wdl.WdlStep">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">step_pipeline.wdl.</span></span><span class="sig-name descname"><span class="pre">WdlStep</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pipeline</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">step_number</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">image</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cpu</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">memory</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">storage</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">localize_by</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">copy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delocalize_by</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">copy</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.wdl.WdlStep" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#step_pipeline.pipeline.Step" title="step_pipeline.pipeline.Step"><code class="xref py py-class docutils literal notranslate"><span class="pre">Step</span></code></a></p>
-<p>This class contains Hail Batch-specific extensions of the Step class</p>
+<p>This class contains WDL/Terra/Cromwell-specific extensions of the Step class.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="step_pipeline.wdl.WdlStep.cpu">
 <span class="sig-name descname"><span class="pre">cpu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cpu</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#step_pipeline.wdl.WdlStep.cpu" title="Link to this definition">¶</a></dt>
@@ -1513,6 +1583,10 @@ optional suffixes are K, Ki, M, Mi, G, Gi, T, Ti, P, and Pi.</p>
 <li><a class="reference internal" href="#step_pipeline.constants.Backend.HAIL_BATCH_SERVICE"><code class="docutils literal notranslate"><span class="pre">Backend.HAIL_BATCH_SERVICE</span></code></a></li>
 <li><a class="reference internal" href="#step_pipeline.constants.Backend.TERRA"><code class="docutils literal notranslate"><span class="pre">Backend.TERRA</span></code></a></li>
 <li><a class="reference internal" href="#step_pipeline.constants.Backend.CROMWELL"><code class="docutils literal notranslate"><span class="pre">Backend.CROMWELL</span></code></a></li>
+<li><a class="reference internal" href="#id0"><code class="docutils literal notranslate"><span class="pre">Backend.HAIL_BATCH_LOCAL</span></code></a></li>
+<li><a class="reference internal" href="#id1"><code class="docutils literal notranslate"><span class="pre">Backend.HAIL_BATCH_SERVICE</span></code></a></li>
+<li><a class="reference internal" href="#id2"><code class="docutils literal notranslate"><span class="pre">Backend.TERRA</span></code></a></li>
+<li><a class="reference internal" href="#id3"><code class="docutils literal notranslate"><span class="pre">Backend.CROMWELL</span></code></a></li>
 </ul>
 </li>
 </ul>
