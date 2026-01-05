@@ -254,7 +254,7 @@ def _file_stat__cached(path, only_check_the_cache=False, verbose=False):
             stat_results = {
                 "path": local_path,
                 "size_bytes": stat.st_size,
-                "modification_time": datetime.fromtimestamp(stat.st_ctime).replace(tzinfo=LOCAL_TIMEZONE),
+                "modification_time": datetime.fromtimestamp(stat.st_mtime).replace(tzinfo=LOCAL_TIMEZONE),
             }
             PATH_STAT_CACHE[path].append(stat_results)
             PATH_STAT_CACHE[local_path] = [stat_results]
