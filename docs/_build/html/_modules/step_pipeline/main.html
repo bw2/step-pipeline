@@ -1,13 +1,14 @@
 <!doctype html>
-<html class="no-js" lang="en" data-content_root="./">
+<html class="no-js" lang="en" data-content_root="../../">
   <head><meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <meta name="color-scheme" content="light dark"><link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html">
+    <meta name="color-scheme" content="light dark"><link rel="index" title="Index" href="../../genindex.html"><link rel="search" title="Search" href="../../search.html">
 
-    <!-- Generated with Sphinx 9.0.4 and Furo 2025.12.19 --><title>Python Module Index - step-pipeline 0.2 documentation</title>
-<link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
-    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=7bdb33bb" />
-    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
+    <!-- Generated with Sphinx 9.0.4 and Furo 2025.12.19 -->
+        <title>step_pipeline.main - step-pipeline 0.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=7bdb33bb" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/furo-extensions.css?v=8dab3a3b" />
     
     
 
@@ -165,7 +166,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="index.html"><div class="brand">step-pipeline 0.2 documentation</div></a>
+      <a href="../../index.html"><div class="brand">step-pipeline 0.2 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -184,18 +185,18 @@
   <aside class="sidebar-drawer">
     <div class="sidebar-container">
       
-      <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../../index.html">
   
   <span class="sidebar-brand-text">step-pipeline 0.2 documentation</span>
   
-</a><form class="sidebar-search-container" method="get" action="search.html" role="search">
+</a><form class="sidebar-search-container" method="get" action="../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
   <input type="hidden" name="check_keywords" value="yes">
   <input type="hidden" name="area" value="default">
 </form>
 <div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
   <ul>
-<li class="toctree-l1"><a class="reference internal" href="source/step_pipeline.html">step_pipeline package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../source/step_pipeline.html">step_pipeline package</a></li>
 </ul>
 
 </div>
@@ -228,69 +229,81 @@
           </label>
         </div>
         <article role="main" id="furo-main-content">
-          
-<section class="domainindex-section">
-  <h1>Python Module Index</h1>
-  <div class="domainindex-jumpbox"><a href="#cap-s"><strong>s</strong></a></div>
-</section>
-<table class="domainindex-table">
-  <tr class="pcap">
-    <td></td><td>&#160;</td><td></td>
-  </tr>
-  <tr class="cap" id="cap-s">
-    <td></td><td><strong>s</strong></td><td></td>
-  </tr>
-  <tr>
-    <td><img src="_static/minus.png" class="toggler"
-              id="toggle-1" style="display: none" alt="-" /></td>
-    <td>
-        <a href="source/step_pipeline.html#module-step_pipeline"><code class="xref">step_pipeline</code></a></td><td>
-    <em></em></td>
-  </tr>
-  <tr class="cg-1">
-    <td></td>
-    <td>&#160;&#160;&#160;
-        <a href="source/step_pipeline.html#module-step_pipeline.batch"><code class="xref">step_pipeline.batch</code></a></td><td>
-    <em></em></td>
-  </tr>
-  <tr class="cg-1">
-    <td></td>
-    <td>&#160;&#160;&#160;
-        <a href="source/step_pipeline.html#module-step_pipeline.constants"><code class="xref">step_pipeline.constants</code></a></td><td>
-    <em></em></td>
-  </tr>
-  <tr class="cg-1">
-    <td></td>
-    <td>&#160;&#160;&#160;
-        <a href="source/step_pipeline.html#module-step_pipeline.io"><code class="xref">step_pipeline.io</code></a></td><td>
-    <em></em></td>
-  </tr>
-  <tr class="cg-1">
-    <td></td>
-    <td>&#160;&#160;&#160;
-        <a href="source/step_pipeline.html#module-step_pipeline.main"><code class="xref">step_pipeline.main</code></a></td><td>
-    <em></em></td>
-  </tr>
-  <tr class="cg-1">
-    <td></td>
-    <td>&#160;&#160;&#160;
-        <a href="source/step_pipeline.html#module-step_pipeline.pipeline"><code class="xref">step_pipeline.pipeline</code></a></td><td>
-    <em></em></td>
-  </tr>
-  <tr class="cg-1">
-    <td></td>
-    <td>&#160;&#160;&#160;
-        <a href="source/step_pipeline.html#module-step_pipeline.utils"><code class="xref">step_pipeline.utils</code></a></td><td>
-    <em></em></td>
-  </tr>
-  <tr class="cg-1">
-    <td></td>
-    <td>&#160;&#160;&#160;
-        <a href="source/step_pipeline.html#module-step_pipeline.wdl"><code class="xref">step_pipeline.wdl</code></a></td><td>
-    <em></em></td>
-  </tr>
-</table>
+          <h1>Source code for step_pipeline.main</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;This module contains the pipeline(..) function which is the main gateway for users to access the functionality in the</span>
+<span class="sd">step_pipeline library&quot;&quot;&quot;</span>
 
+<span class="kn">import</span><span class="w"> </span><span class="nn">configargparse</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.constants</span><span class="w"> </span><span class="kn">import</span> <span class="n">Backend</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.batch</span><span class="w"> </span><span class="kn">import</span> <span class="n">BatchPipeline</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.wdl</span><span class="w"> </span><span class="kn">import</span> <span class="n">WdlPipeline</span>
+
+<span class="c1"># for debugging (from https://stackoverflow.com/questions/132058/showing-the-stack-trace-from-a-running-python-application)</span>
+<span class="c1">#   pkill -SIGHUP -f mypythonapp to print stack trace</span>
+<span class="c1">#   pkill -SIGUSR1 -f mypythonapp to print stack trace</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">signal</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">traceback</span>
+<span class="c1">#import faulthandler</span>
+<span class="k">for</span> <span class="n">sig</span> <span class="ow">in</span> <span class="n">signal</span><span class="o">.</span><span class="n">SIGUSR1</span><span class="p">,</span> <span class="n">signal</span><span class="o">.</span><span class="n">SIGHUP</span><span class="p">:</span>
+    <span class="n">signal</span><span class="o">.</span><span class="n">signal</span><span class="p">(</span><span class="n">sig</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">_</span><span class="p">,</span> <span class="n">stack</span><span class="p">:</span> <span class="n">traceback</span><span class="o">.</span><span class="n">print_stack</span><span class="p">(</span><span class="n">stack</span><span class="p">))</span>
+
+
+<div class="viewcode-block" id="pipeline">
+<a class="viewcode-back" href="../../source/step_pipeline.html#step_pipeline.main.pipeline">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">pipeline</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="n">Backend</span><span class="o">.</span><span class="n">HAIL_BATCH_SERVICE</span><span class="p">,</span> <span class="n">config_file_path</span><span class="o">=</span><span class="s2">&quot;~/.step_pipeline&quot;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Creates a pipeline object.</span>
+
+<span class="sd">    Usage::</span>
+
+<span class="sd">        with step_pipeline(&quot;my pipeline&quot;) as sp:</span>
+<span class="sd">            s = sp.new_step(..)</span>
+<span class="sd">            ... step definitions ...</span>
+
+<span class="sd">        # or alternatively:</span>
+
+<span class="sd">        sp = step_pipeline(&quot;my pipeline&quot;)</span>
+<span class="sd">        s = sp.new_step(..)</span>
+<span class="sd">        ... step definitions ...</span>
+<span class="sd">        sp.run()</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        name (str): Pipeline name.</span>
+<span class="sd">        backend (Backend): The backend to use for executing the pipeline.</span>
+<span class="sd">        config_file_path (str): path of a configargparse config file.</span>
+
+<span class="sd">    Return:</span>
+<span class="sd">        Pipeline: An object that you can use to create Steps by calling `.new_step(..)` and then execute the pipeline by</span>
+<span class="sd">            calling `.run()`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">config_arg_parser</span> <span class="o">=</span> <span class="n">configargparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span>
+        <span class="n">add_config_file_help</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">add_env_var_help</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">formatter_class</span><span class="o">=</span><span class="n">configargparse</span><span class="o">.</span><span class="n">ArgumentDefaultsHelpFormatter</span><span class="p">,</span>
+        <span class="n">default_config_files</span><span class="o">=</span><span class="p">[</span><span class="n">config_file_path</span><span class="p">],</span>
+        <span class="n">ignore_unknown_config_file_keys</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">config_file_parser_class</span><span class="o">=</span><span class="n">configargparse</span><span class="o">.</span><span class="n">YAMLConfigFileParser</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">config_arg_parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--backend&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;The backend system to use for executing the pipeline.&quot;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="n">Backend</span><span class="o">.</span><span class="n">HAIL_BATCH_SERVICE</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">choices</span><span class="o">=</span><span class="p">[</span><span class="n">e</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">Backend</span><span class="p">])</span>
+
+    <span class="n">args</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">config_arg_parser</span><span class="o">.</span><span class="n">parse_known_args</span><span class="p">(</span><span class="n">ignore_help_args</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="c1"># create and yield the pipeline</span>
+    <span class="n">backend</span> <span class="o">=</span> <span class="n">Backend</span><span class="p">[</span><span class="n">args</span><span class="o">.</span><span class="n">backend</span><span class="p">]</span> <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">backend</span> <span class="k">else</span> <span class="n">backend</span>
+    <span class="k">if</span> <span class="n">backend</span> <span class="ow">in</span> <span class="p">(</span><span class="n">Backend</span><span class="o">.</span><span class="n">HAIL_BATCH_SERVICE</span><span class="p">,</span> <span class="n">Backend</span><span class="o">.</span><span class="n">HAIL_BATCH_LOCAL</span><span class="p">):</span>
+        <span class="n">pipeline</span> <span class="o">=</span> <span class="n">BatchPipeline</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">config_arg_parser</span><span class="o">=</span><span class="n">config_arg_parser</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="n">backend</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">backend</span> <span class="ow">in</span> <span class="p">(</span><span class="n">Backend</span><span class="o">.</span><span class="n">TERRA</span><span class="p">,</span> <span class="n">Backend</span><span class="o">.</span><span class="n">CROMWELL</span><span class="p">):</span>
+        <span class="n">pipeline</span> <span class="o">=</span> <span class="n">WdlPipeline</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">config_arg_parser</span><span class="o">=</span><span class="n">config_arg_parser</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="n">backend</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown backend: </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">backend</span><span class="si">}</span><span class="s2">. Valid options are </span><span class="si">{</span><span class="n">Backend</span><span class="o">.</span><span class="n">HAIL_BATCH_SERVICE</span><span class="si">}</span><span class="s2"> or &quot;</span>
+                         <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">Backend</span><span class="o">.</span><span class="n">HAIL_BATCH_LOCAL</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">pipeline</span></div>
+
+</pre></div>
         </article>
       </div>
       <footer>
@@ -322,9 +335,9 @@
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=3b889da3"></script>
-    <script src="_static/doctools.js?v=fd6eb6e6"></script>
-    <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
-    <script src="_static/scripts/furo.js?v=46bd48cc"></script>
+</div><script src="../../_static/documentation_options.js?v=3b889da3"></script>
+    <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../_static/scripts/furo.js?v=46bd48cc"></script>
     </body>
 </html>
