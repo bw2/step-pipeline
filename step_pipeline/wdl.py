@@ -5,16 +5,46 @@ from .pipeline import Pipeline, Step, Localize, Delocalize
 
 
 def _remove_special_chars(name):
-    return re.sub("[\W]", name, " ").replace(".", " ").replace("-", " ").replace(":", " ").replace("_", " ")
+    """Remove special characters from a name, replacing them with spaces.
+
+    Args:
+        name: The string to process.
+
+    Returns:
+        The string with special characters replaced by spaces.
+    """
+    return re.sub(r"[\W]", " ", name).replace(".", " ").replace("-", " ").replace(":", " ").replace("_", " ")
 
 
 def _to_pascal_case(s):
+    """Convert a string to PascalCase.
+
+    Args:
+        s: The string to convert.
+
+    Returns:
+        The string in PascalCase format.
+
+    Raises:
+        ValueError: If the input is None.
+    """
     if s is None:
         raise ValueError("_to_pascal_case input is None")
     return _remove_special_chars(s).title().replace(" ", "")
 
 
 def _to_camel_case(s):
+    """Convert a string to camelCase.
+
+    Args:
+        s: The string to convert.
+
+    Returns:
+        The string in camelCase format.
+
+    Raises:
+        ValueError: If the input is None.
+    """
     if s is None:
         raise ValueError("_to_camel_case input is None")
     s = _to_pascal_case(s)
@@ -128,13 +158,13 @@ class WdlPipeline(Pipeline):
         inputs = []
         for input_spec in step._input_specs:
             if not input_spec.name:
-                raise ValueError(f"Input name not specified for: {input_spec}. All inputs to {self._pipeline._backend} Steps must have a name.")
+                raise ValueError(f"Input name not specified for: {input_spec}. All inputs to {self._backend} Steps must have a name.")
             inputs.append(f"File {_to_camel_case(input_spec.name)}")
 
         for input_value_spec in step._input_value_specs:
-            if not input_spec.name:
-                raise ValueError(f"Input name not specified for: {input_spec}. All inputs to {self._pipeline._backend} Steps must have a name.")
-            inputs += f"{input_value_spec.input_type} {_to_camel_case(input_value_spec.name)}\n"
+            if not input_value_spec.name:
+                raise ValueError(f"Input name not specified for: {input_value_spec}. All inputs to {self._backend} Steps must have a name.")
+            inputs.append(f"{input_value_spec.input_type} {_to_camel_case(input_value_spec.name)}")
 
         outputs = []
         for output_spec in step._output_specs:
@@ -227,7 +257,7 @@ workflow %(workflow_name)s {
 
 
 class WdlStep(Step):
-    """This class contains Hail Batch-specific extensions of the Step class"""
+    """This class contains WDL/Terra/Cromwell-specific extensions of the Step class."""
 
     def __init__(
         self,
@@ -242,22 +272,17 @@ class WdlStep(Step):
         localize_by=Localize.COPY,
         delocalize_by=Delocalize.COPY,
     ):
-        """Step constructor.
+        """WdlStep constructor.
 
         Args:
             pipeline (WdlPipeline): The pipeline that this Step is a part of.
-            name (str): Step name
-            step_number (int): optional Step number which serves as another alias for this step in addition to name.
-            arg_suffix (str): optional suffix for the command-line args that will be created for forcing or skipping
-                execution of this Step.
-            image (str): Docker image to use for this Step
+            name (str): Step name.
+            step_number (int): Optional Step number which serves as another alias for this step in addition to name.
+            image (str): Docker image to use for this Step.
             cpu (str, float, int): CPU requirements. Units are in cpu if cores is numeric.
-            memory (str, float int): Memory requirements. The memory expression must be of the form {number}{suffix}
+            memory (str, float, int): Memory requirements. The memory expression must be of the form {number}{suffix}
                 where valid optional suffixes are K, Ki, M, Mi, G, Gi, T, Ti, P, and Pi. Omitting a suffix means
-                the value is in bytes. For the ServiceBackend, the values ‘lowmem’, ‘standard’, and ‘highmem’ are also
-                valid arguments. ‘lowmem’ corresponds to approximately 1 Gi/core, ‘standard’ corresponds to
-                approximately 4 Gi/core, and ‘highmem’ corresponds to approximately 7 Gi/core. The default value
-                is ‘standard’.
+                the value is in bytes.
             storage (str, int): Disk size. The storage expression must be of the form {number}{suffix} where valid
                 optional suffixes are K, Ki, M, Mi, G, Gi, T, Ti, P, and Pi. Omitting a suffix means the value is in
                 bytes.

@@ -129,6 +129,14 @@ class Pipeline(ABC):
         return self._config_arg_parser
 
     def get_config_arg_parser_group(self, group_name):
+        """Get or create an argument group for the config argument parser.
+
+        Args:
+            group_name (str): The name of the argument group.
+
+        Returns:
+            argparse._ArgumentGroup: The argument group for adding related command-line arguments.
+        """
         if group_name not in self._config_arg_parser_groups:
             self._config_arg_parser_groups[group_name] = self.get_config_arg_parser().add_argument_group(group_name)
         return self._config_arg_parser_groups[group_name]
@@ -276,7 +284,7 @@ class Pipeline(ABC):
         for step in steps:
             step.dag_traversal_step_visit_count += 1
             if not step.dag_traversal_all_descendents_already_visited and step.dag_traversal_step_visit_count > 1:
-                raise ValueError(f"Cycle detected. {next_step} was already visited")
+                raise ValueError(f"Cycle detected. {step} was already visited")
 
             # push child steps
             for next_step in step._downstream_steps:
@@ -487,28 +495,38 @@ EOF"""
 
 
     def precache_file_paths(self, glob_path):
-        """This method is an alias for the check_input_glob(..) method"""
+        """Pre-cache file metadata for the given glob path.
 
+        This method is an alias for check_input_glob(). It allows checking the existence of
+        multiple input files and caching the results for faster subsequent lookups.
+
+        Args:
+            glob_path (str): Local file path or gs:// Google Storage path. The path can contain wildcards (*).
+
+        Returns:
+            list: List of metadata dicts for matching files.
+        """
         return self.check_input_glob(glob_path)
 
     def check_input_glob(self, glob_path):
-        """This method is useful for checking the existence of multiple input files and caching the results.
-        Input file(s) to this Step using glob syntax (ie. using wildcards as in `gs://bucket/**/sample*.cram`)
+        """Check the existence of multiple input files and cache the results.
+
+        This method is useful for pre-caching file metadata using glob syntax
+        (e.g., using wildcards as in `gs://bucket/**/sample*.cram`).
 
         Args:
-            path (str): local file path or gs:// Google Storage path. The path can contain wildcards (*).
+            glob_path (str): Local file path or gs:// Google Storage path. The path can contain wildcards (*).
 
-        Return:
-            list: List of metadata dicts like::
-
-            [
-                {
-                    'path': 'gs://bucket/dir/file.bam.bai',
-                    'size_bytes': 2784,
-                    'modification_time': 'Wed May 20 12:52:01 EDT 2020',
-                },
-            ]
-
+        Returns:
+            list: List of metadata dicts like:
+                [
+                    {
+                        'path': 'gs://bucket/dir/file.bam.bai',
+                        'size_bytes': 2784,
+                        'modification_time': datetime object,
+                    },
+                ]
+            Returns an empty list if the path doesn't exist or matches no files.
         """
         try:
             return _file_stat__cached(glob_path)

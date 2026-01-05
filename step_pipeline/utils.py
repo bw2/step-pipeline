@@ -108,10 +108,12 @@ def _path_exists__cached(path, only_check_the_cache=False, verbose=False):
     exists.
 
     Args:
-        path (str): local path or gs:// Google Storage path. The path can contain wildcards (*).
-        only_check_the_cache (bool): if True, only check the cache and don't run any file system commands.
-        verbose (bool):
-    Return:
+        path (str): Local path or gs:// Google Storage path. The path can contain wildcards (*).
+        only_check_the_cache (bool): If True, only check the cache and don't run any file system commands.
+            Returns False if the path isn't in the cache.
+        verbose (bool): If True, print status messages about path existence.
+
+    Returns:
         bool: True if the path exists.
     """
     if not isinstance(path, str):
@@ -164,18 +166,21 @@ def _file_stat__cached(path, only_check_the_cache=False, verbose=False):
 
     Args:
         path (str): local file path or gs:// Google Storage path. The path can contain wildcards (*).
-        only_check_the_cache (bool): if True, only check the cache and don't run any file system commands.
-        verbose (bool): print more detailed log output
+        only_check_the_cache (bool): If True, only check the cache and don't run any file system commands.
+            Returns False if the path isn't in the cache.
+        verbose (bool): If True, print more detailed log output.
 
-    Return:
-        list: List of metadata dicts like: [
-        {
-            'path': 'gs://bucket/dir/file.bam.bai',
-            'size_bytes': 2784,
-            'modification_time': 'Wed May 20 12:52:01 EDT 2020',
-        },
-        ...
-    ]
+    Returns:
+        list or bool: List of metadata dicts like:
+            [
+                {
+                    'path': 'gs://bucket/dir/file.bam.bai',
+                    'size_bytes': 2784,
+                    'modification_time': datetime object,
+                },
+                ...
+            ]
+            Returns False if only_check_the_cache is True and the path is not in the cache.
     """
     if path in PATH_STAT_CACHE:
         return PATH_STAT_CACHE[path]
@@ -302,7 +307,16 @@ def all_outputs_exist(step, only_check_the_cache=False, verbose=False):
 
 
 def files_exist(file_paths, only_check_the_cache=False, verbose=False):
-    """Returns True if all the files exist"""
+    """Check whether all specified files exist.
+
+    Args:
+        file_paths (list): List of file paths to check. Can be local or gs:// paths.
+        only_check_the_cache (bool): If True, only check the cache and don't run any file system commands.
+        verbose (bool): If True, print status messages about path existence.
+
+    Returns:
+        bool: True if all the files exist.
+    """
     for file_path in file_paths:
         if not _path_exists__cached(file_path, only_check_the_cache=only_check_the_cache, verbose=verbose):
             return False

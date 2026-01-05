@@ -1,4 +1,4 @@
-"""Exapmle step pipeline that converts CRAM/BAM file(s) to FASTQ format."""
+"""Example step pipeline that aligns paired FASTQ files to a reference genome."""
 
 import os
 import re
