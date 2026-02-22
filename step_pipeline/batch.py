@@ -52,7 +52,8 @@ class BatchPipeline(Pipeline):
             help="Batch requires a temp cloud storage path that it can use to store intermediate files. The Batch "
                  "service account must have Admin access to this directory. To get the name of your Batch "
                  "service account, go to https://auth.hail.is/user. Then, to grant Admin permissions, run "
-                 "gsutil iam ch serviceAccount:[SERVICE_ACCOUNT_NAME]:objectAdmin gs://[BUCKET_NAME]"
+                 "gcloud storage buckets add-iam-policy-binding gs://[BUCKET_NAME] "
+                 "--member=serviceAccount:[SERVICE_ACCOUNT_NAME] --role=roles/storage.objectAdmin"
         )
 
         args = self.parse_known_args()
@@ -760,7 +761,7 @@ class BatchStep(Step):
             cleanup_job.command("set -x")
             cleanup_job.command(f"gcloud auth activate-service-account --key-file /gsa-key/key.json")
             for temp_file_path in self._paths_localized_via_temp_bucket:
-                cleanup_job.command(f"gsutil -m rm -r {temp_file_path}")
+                cleanup_job.command(f"gcloud storage rm --recursive {temp_file_path}")
             self._paths_localized_via_temp_bucket = set()
 
     def _get_supported_localize_by_choices(self):
@@ -826,8 +827,7 @@ class BatchStep(Step):
             self._paths_localized_via_temp_bucket.add(temp_file_path)
 
             # copy file to temp bucket
-            gsutil_command = self._generate_gcloud_copy_command(source_path, output_dir=temp_dir)
-            self.command(gsutil_command)
+            self.command(self._generate_gcloud_copy_command(source_path, output_dir=temp_dir))
 
             # create an InputSpec with the updated source path
             input_spec = InputSpec(
@@ -901,17 +901,17 @@ class BatchStep(Step):
         return total_size_bytes
 
     def _generate_gcloud_copy_command(self, source_path, output_dir=None, output_path=None, ignore_nonzero_exit_code=False):
-        """Utility method that puts together the gsutil command for copying the given source path to an output path
-        or directory. Either the output path or the output directory must be provided.
+        """Utility method that puts together the gcloud storage cp command for copying the given source path to an
+        output path or directory. Either the output path or the output directory must be provided.
 
         Args:
             source_path (str): The source path.
             output_dir (str): Output directory.
             output_path (str): Output file path.
-            ignore_nonzero_exit_code (bool): If true, any non-zero exit codes from the gsutil command will be ignored.
+            ignore_nonzero_exit_code (bool): If true, any non-zero exit codes from the command will be ignored.
 
         Return:
-            str: gsutil command string
+            str: gcloud storage cp command string
         """
         args = self._pipeline.parse_known_args()
         gcloud_copy_command = f"gcloud "
@@ -941,12 +941,11 @@ class BatchStep(Step):
         if ignore_nonzero_exit_code:
             # try uploading the file. Regardless of whether the upload succeeds or fails, create a .MARK file in the
             # destination to indicate that the upload was attempted, and therefore the step can be considered done.
-            gsutil_command_with_error_handling = (
+            return (
                 f"({full_gcloud_copy_command}) || (touch {os.path.basename(source_path)}{MARK_FILE_SUFFIX} && "
                 f"{gcloud_copy_command} cp '{os.path.basename(source_path)}{MARK_FILE_SUFFIX}' '{destination}{MARK_FILE_SUFFIX}' "
                 f") || true"
             )
-            return gsutil_command_with_error_handling
         else:
             return full_gcloud_copy_command
 

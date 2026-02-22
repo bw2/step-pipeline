@@ -17,8 +17,8 @@ class Localize(Enum):
     """COPY uses the execution backend's default approach to localizing files"""
 
     GSUTIL_COPY = ("gsutil_copy", "local_copy")
-    """GSUTIL_COPY runs 'gsutil cp' to localize file(s) from a google bucket path. This requires gsutil to be available 
-    inside the execution container.
+    """GSUTIL_COPY runs 'gcloud storage cp' to localize file(s) from a google bucket path. This requires gcloud to be
+    available inside the execution container.
     """
 
     HAIL_HADOOP_COPY = ("hail_hadoop_copy", "local_copy")
@@ -32,21 +32,21 @@ class Localize(Enum):
     """
 
     HAIL_BATCH_CLOUDFUSE_VIA_TEMP_BUCKET = ("hail_batch_cloudfuse_via_temp_bucket", "cloudfuse")
-    """HAIL_BATCH_CLOUDFUSE_VIA_TEMP_BUCKET is useful for situations where you'd like to use cloudfuse to localize files and 
-    your personal gcloud account has read access to the source bucket, but the Hail Batch service account cannot be 
-    granted read access to that bucket. Since it's possible to run 'gsutil cp' under your personal credentials within
-    the execution container, but Hail Batch cloudfuse always runs under the Hail Batch service account credentials, this 
-    workaround 1) runs 'gsutil cp' under your personal credentials to copy the source files to a temporary bucket that 
-    you control, and where you have granted read access to the Hail Batch service account 2) uses cloudfuse to mount the 
-    temporary bucket 3) performs computational steps on the mounted data 4) deletes the source files from the temporary 
-    bucket when the Batch job completes.
-    
-    This localization approach may be useful for situations where you need a large number of jobs and each job processes 
-    a very small piece of a large data file (eg. a few loci in a cram file). 
-    
-    Copying the large file(s) from the source bucket to a temp bucket in the same region is fast and inexpensive, and 
-    only needs to happen once before the jobs run. Each job can then avoid allocating a large disk, and waiting for the 
-    large file to be copied into the container. This approach requires gsutil to be available inside the execution 
+    """HAIL_BATCH_CLOUDFUSE_VIA_TEMP_BUCKET is useful for situations where you'd like to use cloudfuse to localize files and
+    your personal gcloud account has read access to the source bucket, but the Hail Batch service account cannot be
+    granted read access to that bucket. Since it's possible to run 'gcloud storage cp' under your personal credentials
+    within the execution container, but Hail Batch cloudfuse always runs under the Hail Batch service account
+    credentials, this workaround 1) runs 'gcloud storage cp' under your personal credentials to copy the source files
+    to a temporary bucket that you control, and where you have granted read access to the Hail Batch service account
+    2) uses cloudfuse to mount the temporary bucket 3) performs computational steps on the mounted data 4) deletes the
+    source files from the temporary bucket when the Batch job completes.
+
+    This localization approach may be useful for situations where you need a large number of jobs and each job processes
+    a very small piece of a large data file (eg. a few loci in a cram file).
+
+    Copying the large file(s) from the source bucket to a temp bucket in the same region is fast and inexpensive, and
+    only needs to happen once before the jobs run. Each job can then avoid allocating a large disk, and waiting for the
+    large file to be copied into the container. This approach requires gcloud to be available inside the execution
     container.
     """
 
@@ -79,7 +79,7 @@ class Delocalize(Enum):
     """COPY uses the execution backend's default approach to delocalizing files"""
 
     GSUTIL_COPY = "gsutil_copy"
-    """GSUTIL_COPY runs 'gsutil cp' to copy the path to a google bucket destination. This requires gsutil to be 
+    """GSUTIL_COPY runs 'gcloud storage cp' to copy the path to a google bucket destination. This requires gcloud to be
     available inside the execution container.
     """
 

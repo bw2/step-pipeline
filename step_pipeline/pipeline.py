@@ -1102,11 +1102,11 @@ class Step(ABC):
 
         3) copy your local ~/.config directory (which caches your gcloud auth credentials) to the secrets bucket from step 1::
 
-           gsutil -m cp -r ~/.config/  gs://weisburd-gcloud-secrets/
+           gcloud storage cp --recursive ~/.config/  gs://weisburd-gcloud-secrets/
 
         4) grant your default Batch service-account read access to your secrets bucket so it can download these credentials
            into each docker container.
-        5) make sure gcloud & gsutil are installed inside the docker images you use for your Batch jobs
+        5) make sure gcloud is installed inside the docker images you use for your Batch jobs
         6) call this method at the beginning of your batch job:
 
         Example:

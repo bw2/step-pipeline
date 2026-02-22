@@ -18,7 +18,7 @@ import tempfile
 GOOGLE_STORAGE_CLIENT = None
 PATH_EXISTS_CACHE = {}
 PATH_STAT_CACHE = {}
-GSUTIL_PATH_TO_FILE_STAT_CACHE = {}
+GCLOUD_STORAGE_PATH_TO_FILE_STAT_CACHE = {}
 BUCKET_LOCATION_CACHE = {}
 _BUCKET_ERROR_COUNTER = collections.defaultdict(int)
 _MAX_ERROR_MESSAGES_TO_PRINT_PER_BUCKET = 5
@@ -52,9 +52,8 @@ def _get_google_storage_client(gcloud_project):
 
 
 def _generate_gs_path_to_file_stat_dict(gs_path_with_wildcards):
-    """Takes a gs:// path that contains one or more wildcards ("*") and runs "gsutil ls -l {gs_path_with_wildcards}".
-    This method then returns a dictionary that maps each gs:// file to its size in bytes. Running gsutil is currently
-    faster than running hfs.ls(..) when the path matches many files.
+    """Takes a gs:// path that contains one or more wildcards ("*") and runs "gcloud storage ls -l" to list matching
+    files. This method then returns a dictionary that maps each gs:// file to its size in bytes.
     """
     if not isinstance(gs_path_with_wildcards, str):
         raise ValueError(f"Unexpected argument type {str(type(gs_path_with_wildcards))}: {gs_path_with_wildcards}")
@@ -62,13 +61,13 @@ def _generate_gs_path_to_file_stat_dict(gs_path_with_wildcards):
     if not gs_path_with_wildcards.startswith("gs://"):
         raise ValueError(f"{gs_path_with_wildcards} path doesn't start with gs://")
 
-    if gs_path_with_wildcards in GSUTIL_PATH_TO_FILE_STAT_CACHE:
-        return GSUTIL_PATH_TO_FILE_STAT_CACHE[gs_path_with_wildcards]
+    if gs_path_with_wildcards in GCLOUD_STORAGE_PATH_TO_FILE_STAT_CACHE:
+        return GCLOUD_STORAGE_PATH_TO_FILE_STAT_CACHE[gs_path_with_wildcards]
 
     print(f"Listing {gs_path_with_wildcards}")
     try:
-        gsutil_output = subprocess.check_output(
-            f"gsutil -m ls -l {gs_path_with_wildcards}",
+        gcloud_output = subprocess.check_output(
+            f"gcloud storage ls -l {gs_path_with_wildcards}",
             shell=True,
             stderr=subprocess.STDOUT,
             encoding="UTF-8")
@@ -76,28 +75,29 @@ def _generate_gs_path_to_file_stat_dict(gs_path_with_wildcards):
         if any(phrase in e.output for phrase in (
             "One or more URLs matched no objects",
             "bucket does not exist.",
+            "The following URLs matched no objects or files",
+            "it may not exist",
         )):
             return {}
         else:
             raise GoogleStorageException(e.output)
 
     # map path to file size in bytes and its last-modified date (eg. "2020-05-20T16:52:01Z")
-    def parse_gsutil_date_string(date_string):
-        #utc_date = datetime.strptime(date_string, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+    def parse_date_string(date_string):
         utc_date = parser.parse(date_string).replace(tzinfo=timezone.utc)
         return utc_date.astimezone(LOCAL_TIMEZONE)
 
-    records = [r.strip().split("  ") for r in gsutil_output.strip().split("\n") if "gs://" in r]
+    records = [r.strip().split("  ") for r in gcloud_output.strip().split("\n") if "gs://" in r]
     try:
         path_to_file_stat_dict = {
-            r[2]: (int(r[0]), parse_gsutil_date_string(r[1])) for r in records
+            r[2]: (int(r[0]), parse_date_string(r[1])) for r in records
         }
     except Exception as e:
-        raise GoogleStorageException(f"Unable to parse gsutil output for {gs_path_with_wildcards}: {e}\n{gsutil_output}")
+        raise GoogleStorageException(f"Unable to parse gcloud storage ls output for {gs_path_with_wildcards}: {e}\n{gcloud_output}")
 
     print(f"Found {len(path_to_file_stat_dict):,d} matching paths in {gs_path_with_wildcards}")
 
-    GSUTIL_PATH_TO_FILE_STAT_CACHE[gs_path_with_wildcards] = path_to_file_stat_dict
+    GCLOUD_STORAGE_PATH_TO_FILE_STAT_CACHE[gs_path_with_wildcards] = path_to_file_stat_dict
 
     return path_to_file_stat_dict
 
@@ -411,7 +411,7 @@ def check_gcloud_storage_region(gs_path, expected_regions=("US-CENTRAL1",), gclo
             parts of the path can contain wildcards (*), etc.
         expected_regions (tuple): a set of acceptable storage regions. If gs_path is not in one of these regions, this
             method will raise a StorageRegionException.
-        gcloud_project (str): (optional) if specified, it will be added to the gsutil command with the -u arg.
+        gcloud_project (str): (optional) if specified, it will be passed as --billing-project to gcloud.
         ignore_access_denied_exception (bool): if True, this method return silently if it encounters an AccessDenied
             error.
         verbose (bool): print more detailed log output
@@ -428,25 +428,28 @@ def check_gcloud_storage_region(gs_path, expected_regions=("US-CENTRAL1",), gclo
         
     else:
         try:
-            #client = _get_google_storage_client(gcloud_project=gcloud_project)
-            #bucket = client.get_bucket(bucket_name)
-            #location = bucket.location
-            gcloud_project_arg = f"-u {gcloud_project}" if gcloud_project else ""
-            gsutil_output = subprocess.check_output(
-                f"gsutil {gcloud_project_arg} ls -Lb gs://{bucket_name}",
-                shell=True,
-                stderr=subprocess.STDOUT,
-                encoding="UTF-8")
+            gcloud_command = f"gcloud storage buckets describe gs://{bucket_name} '--format=value(location)'"
+            if gcloud_project:
+                gcloud_command += f" --billing-project={gcloud_project}"
+            try:
+                location = subprocess.check_output(
+                    gcloud_command, shell=True, stderr=subprocess.STDOUT, encoding="UTF-8").strip()
+            except subprocess.CalledProcessError:
+                if gcloud_project:
+                    raise
+                # retry with the default project as billing project for requester-pays buckets
+                default_project = subprocess.check_output(
+                    "gcloud config get-value project", shell=True, stderr=subprocess.STDOUT, encoding="UTF-8").strip()
+                if default_project:
+                    gcloud_command += f" --billing-project={default_project}"
+                    location = subprocess.check_output(
+                        gcloud_command, shell=True, stderr=subprocess.STDOUT, encoding="UTF-8").strip()
+                else:
+                    raise
 
-            location = None
-            for line in gsutil_output.split("\n"):
-                line = line.strip()
-                if line.startswith("Location constraint"):
-                    location = line.split(":")[-1].strip()
-                    break
-            if location is None:
-                raise GoogleStorageException(f"ERROR: Could not determine gs://{bucket_name} bucket region."
-                                             f"gsutil {gcloud_project_arg} ls -Lb gs://{bucket_name} returned:\n{gsutil_output}")
+            if not location:
+                raise GoogleStorageException(f"ERROR: Could not determine gs://{bucket_name} bucket region. "
+                                             f"{gcloud_command} returned empty output.")
 
             BUCKET_LOCATION_CACHE[bucket_name] = location
         except Exception as e:
