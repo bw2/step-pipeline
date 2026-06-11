@@ -2,6 +2,7 @@
 
 import os
 import stat
+import sys
 import tempfile
 from enum import Enum
 
@@ -54,6 +55,14 @@ class BatchPipeline(Pipeline):
                  "service account, go to https://auth.hail.is/user. Then, to grant Admin permissions, run "
                  "gcloud storage buckets add-iam-policy-binding gs://[BUCKET_NAME] "
                  "--member=serviceAccount:[SERVICE_ACCOUNT_NAME] --role=roles/storage.objectAdmin"
+        )
+
+        batch_args.add_argument(
+            "--no-wait",
+            action="store_true",
+            help="Submit the Batch and return immediately instead of waiting for it to finish. The batch URL is "
+                 "printed so it can be monitored separately. Useful for long-running pipelines and for "
+                 "non-interactive/automated runs."
         )
 
         args = self.parse_known_args()
@@ -300,7 +309,9 @@ class BatchPipeline(Pipeline):
                 result = None
                 print("No steps to run.")
 
-            self._download_output_files()
+            # output files only exist once the batch has finished, so skip the download when not waiting
+            if not self.parse_args().no_wait:
+                self._download_output_files()
 
             return result
         finally:
@@ -372,15 +383,24 @@ class BatchPipeline(Pipeline):
             # Hail Batch LocalBackend mode doesn't support some of the args suported by ServiceBackend
             result = self._batch.run(dry_run=args.dry_run, verbose=args.verbose)
         elif self._backend == Backend.HAIL_BATCH_SERVICE:
+            # Submit without blocking so the batch URL can be printed right away, then wait separately
+            # (unless --no-wait). Otherwise, when stdout isn't a TTY, hail's progress bar prints nothing
+            # until the batch completes, so a long-running submission shows no URL and looks like it hung.
             result = self._batch.run(
                 dry_run=args.dry_run,
                 verbose=False,  # always set to False since hail verbose output is too detailed
                 delete_scratch_on_exit=None,  # If True, delete temporary directories with intermediate files
-                wait=True,  # If True, wait for the batch to finish executing before returning
+                wait=False,  # submit only; waiting (if requested) is done below so the URL prints first
                 open=False,  # If True, open the UI page for the batch
-                disable_progress_bar=False,  # If True, disable the progress bar.
+                disable_progress_bar=True,  # submit phase has no progress to show
                 callback=None,  # If not None, a URL that will receive at most one POST request after the entire batch completes.
             )
+            if result is not None and not args.dry_run:
+                print(f"Submitted batch: https://batch.hail.is/batches/{result.id}")
+                if not args.no_wait:
+                    # show the progress bar only on an interactive terminal (it renders nothing useful
+                    # in a redirected/non-TTY log)
+                    result.wait(disable_progress_bar=not sys.stdout.isatty())
         else:
             raise Exception(f"Unexpected _backend: {self._backend}")
 
