@@ -920,7 +920,8 @@ class BatchStep(Step):
 
         return total_size_bytes
 
-    def _generate_gcloud_copy_command(self, source_path, output_dir=None, output_path=None, ignore_nonzero_exit_code=False):
+    def _generate_gcloud_copy_command(self, source_path, output_dir=None, output_path=None, ignore_nonzero_exit_code=False,
+                                      content_encoding=None, content_type=None):
         """Utility method that puts together the gcloud storage cp command for copying the given source path to an
         output path or directory. Either the output path or the output directory must be provided.
 
@@ -929,6 +930,10 @@ class BatchStep(Step):
             output_dir (str): Output directory.
             output_path (str): Output file path.
             ignore_nonzero_exit_code (bool): If true, any non-zero exit codes from the command will be ignored.
+            content_encoding (str): If specified, sets the Content-Encoding metadata on the uploaded object(s) via the
+                gcloud storage cp --content-encoding flag.
+            content_type (str): If specified, sets the Content-Type metadata on the uploaded object(s) via the
+                gcloud storage cp --content-type flag.
 
         Return:
             str: gcloud storage cp command string
@@ -946,7 +951,14 @@ class BatchStep(Step):
         else:
             raise ValueError("Neither output_path nor output_dir arg was specified")
 
+        content_flags = ""
+        if content_encoding:
+            content_flags += f" --content-encoding '{content_encoding}'"
+        if content_type:
+            content_flags += f" --content-type '{content_type}'"
+
         full_gcloud_copy_command = f"{gcloud_copy_command} --recursive \"{source_path}\" \"{destination}\""
+        full_gcloud_copy_command += content_flags
 
         if args.gcloud_project and not "gs://gcp-public-data" in source_path:
             # try again, this time specifying the billing project for requester-pays buckets
@@ -957,6 +969,7 @@ class BatchStep(Step):
             full_gcloud_copy_command += f"--no-clobber "
             full_gcloud_copy_command += f"--billing-project {args.gcloud_project} "
             full_gcloud_copy_command += f"--recursive \"{source_path}\" \"{destination}\""
+            full_gcloud_copy_command += content_flags
 
         if ignore_nonzero_exit_code:
             # try uploading the file. Regardless of whether the upload succeeds or fails, create a .MARK file in the
@@ -1035,7 +1048,9 @@ EOF""")
             self.command(self._generate_gcloud_copy_command(
                             output_spec.local_path,
                             output_path=output_spec.output_path,
-                            ignore_nonzero_exit_code=output_spec.optional))
+                            ignore_nonzero_exit_code=output_spec.optional,
+                            content_encoding=output_spec.content_encoding,
+                            content_type=output_spec.content_type))
 
     def _transfer_output_spec(self, output_spec):
         """When a Step isn't skipped and is being transferred to the execution backend, this method is called for

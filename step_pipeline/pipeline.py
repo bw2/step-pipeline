@@ -937,7 +937,7 @@ class Step(ABC):
         self._output_dir = path
 
     def output(self, local_path, output_path=None, output_dir=None, name=None, delocalize_by=None, optional=False,
-               download_to_dir=None):
+               download_to_dir=None, content_encoding=None, content_type=None):
         """Specify a Step output file or directory.
 
         Args:
@@ -955,6 +955,12 @@ class Step(ABC):
                 for modifying existing pipelines to output additional files (eg. log files) without this triggering a
                 rerun of previously steps that completed previously without generating these files.
             download_to_dir (str): If specified, the output will be downloaded to this directory on the local machine.
+            content_encoding (str): Optional Content-Encoding metadata to set on the uploaded object(s) (eg. "gzip"),
+                applied via the gcloud storage cp --content-encoding flag. Only supported with
+                delocalize_by=Delocalize.GSUTIL_COPY.
+            content_type (str): Optional Content-Type metadata to set on the uploaded object(s) (eg. "image/svg+xml"),
+                applied via the gcloud storage cp --content-type flag. Only supported with
+                delocalize_by=Delocalize.GSUTIL_COPY.
 
         Returns:
             OutputSpec: An object describing this output.
@@ -972,6 +978,8 @@ class Step(ABC):
             delocalize_by=delocalize_by,
             optional=optional,
             download_to_dir=download_to_dir,
+            content_encoding=content_encoding,
+            content_type=content_type,
         )
 
         self._preprocess_output_spec(output_spec)

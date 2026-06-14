@@ -308,6 +308,8 @@ class OutputSpec:
         delocalize_by=None,
         optional=False,
         download_to_dir=None,
+        content_encoding=None,
+        content_type=None,
     ):
         """OutputSpec constructor
 
@@ -320,6 +322,10 @@ class OutputSpec:
             delocalize_by (Delocalize): Approach to use to delocalize this path.
             optional (bool): Whether this output is optional.
             download_to_dir (str): Optional directory to download the output to.
+            content_encoding (str): Optional Content-Encoding metadata to set on the uploaded object(s) (eg. "gzip").
+                Only supported with delocalize_by=Delocalize.GSUTIL_COPY.
+            content_type (str): Optional Content-Type metadata to set on the uploaded object(s) (eg. "image/svg+xml").
+                Only supported with delocalize_by=Delocalize.GSUTIL_COPY.
         """
         self._local_path = local_path
         self._local_dir = os.path.dirname(local_path)
@@ -327,9 +333,15 @@ class OutputSpec:
         self._delocalize_by = delocalize_by
         self._optional = optional
         self._download_to_dir = download_to_dir
+        self._content_encoding = content_encoding
+        self._content_type = content_type
 
         if delocalize_by and not isinstance(delocalize_by, Delocalize):
             raise ValueError(f"localize_by arg: {delocalize_by} is not an instance of the Delocalize enum")
+
+        if (content_encoding or content_type) and delocalize_by != Delocalize.GSUTIL_COPY:
+            raise ValueError("content_encoding and content_type are only supported with "
+                             "delocalize_by=Delocalize.GSUTIL_COPY")
 
         # define self._output_filename and self._output_filename_including_any_wildcards
         if output_path:
@@ -400,6 +412,14 @@ class OutputSpec:
     @property
     def delocalize_by(self):
         return self._delocalize_by
+
+    @property
+    def content_encoding(self):
+        return self._content_encoding
+
+    @property
+    def content_type(self):
+        return self._content_type
 
     @property
     def optional(self):
