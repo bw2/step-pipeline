@@ -137,11 +137,6 @@ class WdlPipeline(Pipeline):
 
         return step
 
-    def run_for_each_row(self, table):
-        """Run the pipeline in parallel for each row of the given table"""
-
-        super().run_for_each_row(self, table)
-
     def run(self):
         """Generate WDL"""
 

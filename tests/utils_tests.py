@@ -259,14 +259,14 @@ class Test(unittest.TestCase):
             ignore_access_denied_exception=False,
         )
 
-        check_gcloud_storage_region("gs://test/access-denied", expected_regions=("US"),
+        check_gcloud_storage_region("gs://test/access-denied", expected_regions=("US",),
             ignore_access_denied_exception=True,
         )
 
         self.assertIsNone(
             check_gcloud_storage_region(
                 HG38_PATH,
-                expected_regions=("US"),
+                expected_regions=("US",),
                 ignore_access_denied_exception=True,
             ))
 

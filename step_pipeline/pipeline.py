@@ -13,7 +13,7 @@ from .utils import are_any_inputs_missing, are_outputs_up_to_date, all_outputs_e
 from .io import Localize, Delocalize, InputSpec, InputValueSpec, OutputSpec
 
 TOO_MANY_COMMAND_LINE_ARGS_ERROR_THRESHOLD = 500
-TOO_MANY_COMMAND_LINE_ARGS_WARNING_THRESHOLD = 500
+TOO_MANY_COMMAND_LINE_ARGS_WARNING_THRESHOLD = 400
 
 
 class Pipeline(ABC):
@@ -313,8 +313,8 @@ class Pipeline(ABC):
 
         self._check_step_graph_for_cycles()
 
-        step_counters = collections.defaultdict(int)  # count steps seen (by name)
-        step_run_counters = collections.defaultdict(int) # count steps run (by name)
+        step_counters = collections.defaultdict(int)  # count steps seen, keyed by run-subset arg suffix
+        step_run_counters = collections.defaultdict(int) # count steps run, keyed by run-subset arg suffix
         current_steps = [s for s in self._all_steps if not s.has_upstream_steps()]
         num_steps_transferred = 0
 
@@ -336,7 +336,8 @@ class Pipeline(ABC):
                         print(f"WARNING: No commands specified for step [{step}]. Skipping...")
                         continue
 
-                    step_counters[step.name] += 1
+                    for run_offset_arg_name in step._run_offset_arg_names:
+                        step_counters[run_offset_arg_name] += 1
 
                     for output_spec in step._output_specs:
                         if output_spec.download_to_dir:
@@ -347,11 +348,11 @@ class Pipeline(ABC):
                         getattr(args, skip_arg_name.replace("-", "_")) for skip_arg_name in step._skip_this_step_arg_names
                     )
                     skip_requested |= any(
-                        (getattr(args, run_n_arg_name.replace("-", "_")) or 10**9) < step_run_counters[step.name]
+                        (getattr(args, run_n_arg_name.replace("-", "_")) or 10**9) < step_run_counters[run_n_arg_name]
                         for run_n_arg_name in step._run_n_arg_names
                     )
                     skip_requested |= any(
-                        (getattr(args, run_offset_arg_name.replace("-", "_")) or 0) > step_counters[step.name]
+                        (getattr(args, run_offset_arg_name.replace("-", "_")) or 0) > step_counters[run_offset_arg_name]
                         for run_offset_arg_name in step._run_offset_arg_names
                     )
 
@@ -414,7 +415,8 @@ class Pipeline(ABC):
                         step._is_being_skipped = False
                         try:
                             step._transfer_step()
-                            step_run_counters[step.name] += 1
+                            for run_n_arg_name in step._run_n_arg_names:
+                                step_run_counters[run_n_arg_name] += 1
                             num_steps_transferred += 1
                         except Exception as e:
                             print(f"ERROR: while transferring step {step}: {e}. Skipping..")
@@ -744,21 +746,13 @@ class Step(ABC):
     def __hash__(self):
         return self._step_id
 
-    def name(self, name):
+    def set_name(self, name):
         """Set the short name for this Step.
 
         Args:
             name (str): Name
         """
         self.name = name
-
-    def output_dir(self, output_dir):
-        """Set the default output directory for Step outputs.
-
-        Args:
-            output_dir (str): Output directory path.
-        """
-        self._output_dir = output_dir
 
     def command(self, command):
         """Add a shell command to this Step.

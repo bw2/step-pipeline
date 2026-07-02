@@ -53,7 +53,7 @@ def pipeline(name=None, backend=Backend.HAIL_BATCH_SERVICE, config_file_path="~/
     )
 
     config_arg_parser.add_argument("--backend", help="The backend system to use for executing the pipeline.",
-        default=Backend.HAIL_BATCH_SERVICE.name, choices=[e.name for e in Backend])
+        default=None, choices=[e.name for e in Backend])
 
     args, _ = config_arg_parser.parse_known_args(ignore_help_args=True)
 

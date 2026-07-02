@@ -334,9 +334,9 @@ class BatchPipeline(Pipeline):
             self._backend_obj = hb.LocalBackend()
         elif self._backend == Backend.HAIL_BATCH_SERVICE:
             if not args.batch_billing_project:
-                raise ValueError("--batch-billing-project must be set when --cluster is used")
+                raise ValueError("--batch-billing-project must be set when using the Hail Batch Service backend")
             if not args.batch_remote_tmpdir:
-                raise ValueError("--batch-remote-tmpdir must be set when --cluster is used")
+                raise ValueError("--batch-remote-tmpdir must be set when using the Hail Batch Service backend")
             self._backend_obj = hb.ServiceBackend(
                 google_project=args.gcloud_project,
                 billing_project=args.batch_billing_project,
@@ -419,13 +419,14 @@ class BatchPipeline(Pipeline):
         the execution backend).
         """
 
+        all_steps = list(self._all_steps)
         num_steps_transferred = super()._transfer_all_steps()
 
         # handle --slack-when-done by adding an always-run job
         args = self.parse_known_args()
         if args.slack_when_done and num_steps_transferred > 0:
             post_to_slack_job = self._batch.new_job(name="post to slack when done")
-            for step in self._all_steps:
+            for step in all_steps:
                 if step._job:
                     post_to_slack_job.depends_on(step._job)
             post_to_slack_job.always_run()
@@ -1079,4 +1080,4 @@ EOF""")
         elif output_spec.delocalize_by == Delocalize.GSUTIL_COPY:
             pass  # GSUTIL_COPY was already handled in _preprocess_output_spec(..)
         elif output_spec.delocalize_by == Delocalize.HAIL_HADOOP_COPY:
-            self.command(self._add_commands_for_hail_hadoop_copy(output_spec.local_path, output_spec.output_dir))
+            self._add_commands_for_hail_hadoop_copy(output_spec.local_path, output_spec.output_dir)

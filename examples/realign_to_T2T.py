@@ -32,26 +32,28 @@ def main():
 
     batch_pipeline.set_name(f"cram_to_fastq: {len(args.bam_or_cram_path)} files")
     for bam_or_cram_path in args.bam_or_cram_path:
-        # step 1: sort by queryname
-        cpus = 8
         prefix = re.sub(".bam$|.cram$", "", os.path.basename(bam_or_cram_path))
-        s1 = batch_pipeline.new_step(f"sort: {prefix}", step_number=1, arg_suffix="step1",
-            image=DOCKER_IMAGE, cpu=cpus, memory="highmem", storage="200G", output_dir=args.output_dir)
-        s1.switch_gcloud_auth_to_user_account()
 
-        local_bam_or_cram = s1.input(bam_or_cram_path, localize_by=Localize.GSUTIL_COPY)
-        output_filename_r1 = f"{prefix}.R1.fastq.gz"
-        output_filename_r2 = f"{prefix}.R2.fastq.gz"
+        if not args.dont_sort:
+            # step 1: sort by queryname
+            cpus = 8
+            s1 = batch_pipeline.new_step(f"sort: {prefix}", step_number=1, arg_suffix="step1",
+                image=DOCKER_IMAGE, cpu=cpus, memory="highmem", storage="200G", output_dir=args.output_dir)
+            s1.switch_gcloud_auth_to_user_account()
 
-        reference_arg = ""
-        if args.reference:
-            local_reference_fasta = s1.input(REFERENCE_FASTA_PATH[args.reference], localize_by=Localize.HAIL_BATCH_CLOUDFUSE)
-            reference_arg = f"--reference {local_reference_fasta}"
+            local_bam_or_cram = s1.input(bam_or_cram_path, localize_by=Localize.GSUTIL_COPY)
+            output_filename_r1 = f"{prefix}.R1.fastq.gz"
+            output_filename_r2 = f"{prefix}.R2.fastq.gz"
 
-        s1.command("set -ex")
-        s1.command("cd /io")
-        s1.command(f"time samtools sort {reference_arg} -n --threads {max(1, cpus)} -m 3G -o {prefix}.sorted.cram {local_bam_or_cram} ")
-        s1.output(f"{prefix}.sorted.cram")
+            reference_arg = ""
+            if args.reference:
+                local_reference_fasta = s1.input(REFERENCE_FASTA_PATH[args.reference], localize_by=Localize.HAIL_BATCH_CLOUDFUSE)
+                reference_arg = f"--reference {local_reference_fasta}"
+
+            s1.command("set -ex")
+            s1.command("cd /io")
+            s1.command(f"time samtools sort {reference_arg} -n --threads {max(1, cpus)} -m 3G -o {prefix}.sorted.cram {local_bam_or_cram} ")
+            s1.output(f"{prefix}.sorted.cram")
 
         # step 2: convert to fastq
         cpus = 1
@@ -59,7 +61,10 @@ def main():
             image=DOCKER_IMAGE, cpu=cpus, memory="standard", storage="300G", output_dir=args.output_dir)
         s2.switch_gcloud_auth_to_user_account()
 
-        local_bam_or_cram = s2.use_previous_step_outputs_as_inputs(s1)
+        if not args.dont_sort:
+            local_bam_or_cram = s2.use_previous_step_outputs_as_inputs(s1)
+        else:
+            local_bam_or_cram = s2.input(bam_or_cram_path, localize_by=Localize.GSUTIL_COPY)
         output_filename_r1 = f"{prefix}.R1.fastq.gz"
         output_filename_r2 = f"{prefix}.R2.fastq.gz"
 
