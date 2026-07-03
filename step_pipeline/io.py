@@ -215,9 +215,9 @@ class InputSpec(InputSpecBase):
             match = re.match("^([a-zA-Z-_]+)://(.*)", source_path)
             if match:
                 self._source_path_without_protocol = match.group(2)
+                if match.group(1) in ("http", "https"):
+                    self._source_path_without_protocol = self._source_path_without_protocol.split("?")[0]
                 self._source_bucket = self._source_path_without_protocol.split("/")[0]
-            elif source_path.startswith("http://") or source_path.startswith("https://"):
-                self._source_path_without_protocol = re.sub("^http[s]?://", "", source_path).split("?")[0]
             else:
                 self._source_path_without_protocol = source_path
 

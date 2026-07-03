@@ -169,7 +169,9 @@ class Test(unittest.TestCase):
             },
             {
                  '_source_path': 'LICENSE',
+                 '_original_source_path': 'LICENSE',
                  '_localize_by': Localize.COPY,
+                 '_localization_root_dir': '/',
                  '_source_path_without_protocol': 'LICENSE',
                  '_filename': 'LICENSE',
                  '_source_bucket': None,
@@ -191,7 +193,8 @@ class Test(unittest.TestCase):
                 k: v for k, v in input_spec.__dict__.items() if k != "_uuid"
             },
             {
-                #'_original_source_path': source_path,
+                '_source_path': source_path,
+                '_original_source_path': source_path,
                 '_source_bucket': None,
                 '_localize_by': Localize.COPY,
                 '_source_path_without_protocol': source_path,

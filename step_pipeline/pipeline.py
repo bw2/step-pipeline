@@ -266,6 +266,9 @@ class Pipeline(ABC):
         """This method runs at the completion of a 'with' block, and is used to launch the pipeline after all Steps
          have been defined."""
 
+        if exc_type is not None:
+            return
+
         self.run()
 
     def _check_step_graph_for_cycles(self, start_with_step=None):
@@ -348,11 +351,11 @@ class Pipeline(ABC):
                         getattr(args, skip_arg_name.replace("-", "_")) for skip_arg_name in step._skip_this_step_arg_names
                     )
                     skip_requested |= any(
-                        (getattr(args, run_n_arg_name.replace("-", "_")) or 10**9) < step_run_counters[run_n_arg_name]
+                        (getattr(args, run_n_arg_name.replace("-", "_")) or 10**9) <= step_run_counters[run_n_arg_name]
                         for run_n_arg_name in step._run_n_arg_names
                     )
                     skip_requested |= any(
-                        (getattr(args, run_offset_arg_name.replace("-", "_")) or 0) > step_counters[run_offset_arg_name]
+                        (getattr(args, run_offset_arg_name.replace("-", "_")) or 0) >= step_counters[run_offset_arg_name]
                         for run_offset_arg_name in step._run_offset_arg_names
                     )
 

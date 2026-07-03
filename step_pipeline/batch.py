@@ -681,11 +681,12 @@ class BatchStep(Step):
         if self._image:
             self._job.image(self._image)
 
-        if self._regions is not None:
-            self._job.regions(self._regions)
-        else:
-            # set the default region to us-central1 to avoid random egress charges
-            self._job.regions(["us-central1"])
+        if self._pipeline.backend == Backend.HAIL_BATCH_SERVICE:
+            if self._regions is not None:
+                self._job.regions(self._regions)
+            else:
+                # set the default region to us-central1 to avoid random egress charges
+                self._job.regions(["us-central1"])
 
         if self._cpu is not None:
             if self._cpu < 0.25 or self._cpu > 16:

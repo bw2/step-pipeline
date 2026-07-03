@@ -1,11 +1,13 @@
 """This module contains misc. utility functions used by other modules."""
 
+from aiohttp import ClientResponseError
 import collections
 from datetime import datetime, timezone
 from dateutil import parser
 import glob
 #import hail as hl
 import hailtop.fs as hfs
+from hailtop.aiotools.fs.exceptions import IsABucketError
 import os
 import pytz
 import subprocess
@@ -141,7 +143,12 @@ def _path_exists__cached(path, only_check_the_cache=False, verbose=False):
             for path_without_star in path_dict:
                 PATH_EXISTS_CACHE[path_without_star] = True
         else:
-            PATH_EXISTS_CACHE[path] = hfs.exists(path)
+            try:
+                PATH_EXISTS_CACHE[path] = hfs.exists(path)
+            except IsABucketError:
+                PATH_EXISTS_CACHE[path] = False
+            except ClientResponseError as e:
+                raise ValueError(f"ERROR: Access denied while checking if {path} exists: {e}")
     else:
         if "*" in path:
             path_dict = glob.glob(path)
@@ -203,7 +210,7 @@ def _file_stat__cached(path, only_check_the_cache=False, verbose=False):
                 PATH_EXISTS_CACHE[path_without_star] = True
         else:
             try:
-                stat_results = hfs.ls(path)
+                stat_results = hfs.ls(path)[0].to_legacy_dict()
             except Exception as e:
                 if "File not found" in str(e):
                     raise FileNotFoundError(f"File not found: {path}")
