@@ -357,6 +357,9 @@ class OutputSpec:
         # define self._output_dir and self._output_path and self._output_path_including_any_wildcards
         self._output_path_including_any_wildcards = None
         if output_path:
+            is_absolute = bool(re.match("^([a-zA-Z-_]+)://", output_path)) or output_path.startswith("/")
+            if output_dir and not is_absolute:
+                output_path = os.path.join(output_dir, output_path)
             self._output_path = output_path
             self._output_dir = os.path.dirname(self._output_path)
             self._output_path_including_any_wildcards = output_path

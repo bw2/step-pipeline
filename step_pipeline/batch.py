@@ -10,7 +10,7 @@ import hailtop.batch as hb
 import hailtop.fs as hfs
 
 from .constants import Backend
-from .io import InputSpec, InputValueSpec, InputType
+from .io import InputValueSpec, InputType
 from .pipeline import Pipeline, Step, Localize, Delocalize
 from .utils import check_gcloud_storage_region, MARK_FILE_SUFFIX
 
@@ -169,7 +169,7 @@ class BatchPipeline(Pipeline):
             timeout=timeout,
             custom_machine_type=custom_machine_type,
             preemptible=preemptible,
-            output_dir=self._default_output_dir or output_dir,
+            output_dir=output_dir or self._default_output_dir,
             reuse_job_from_previous_step=reuse_job_from_previous_step,
             localize_by=localize_by,
             delocalize_by=delocalize_by,
@@ -538,7 +538,6 @@ class BatchStep(Step):
         self._job = None
         self._output_file_counter = 0
 
-        self._paths_localized_via_temp_bucket = set()
         self._buckets_mounted_via_cloudfuse = set()
 
         self._step_type = BatchStepType.BASH
@@ -771,21 +770,6 @@ class BatchStep(Step):
             self._transfer_output_spec(output_spec)
             if args.verbose: print(" "*4 + f"Output: {output_spec}  ({output_spec.delocalize_by})")
 
-        # clean up any files that were copied to the temp bucket
-        if self._paths_localized_via_temp_bucket:
-            cleanup_job_name = f"clean up {len(self._paths_localized_via_temp_bucket)} files"
-            if self.name:
-                cleanup_job_name += f" from {self.name}"
-            cleanup_job = self._pipeline._batch.new_job(name=cleanup_job_name)
-            cleanup_job.image("docker.io/hailgenetics/genetics:0.2.77")
-            cleanup_job.depends_on(self._job)
-            cleanup_job.always_run()
-            cleanup_job.command("set -x")
-            cleanup_job.command(f"gcloud auth activate-service-account --key-file /gsa-key/key.json")
-            for temp_file_path in self._paths_localized_via_temp_bucket:
-                cleanup_job.command(f"gcloud storage rm --recursive {temp_file_path}")
-            self._paths_localized_via_temp_bucket = set()
-
     def _get_supported_localize_by_choices(self):
         """Returns the set of Localize options supported by BatchStep"""
 
@@ -828,41 +812,6 @@ class BatchStep(Step):
                 Localize.COPY,
                 Localize.HAIL_BATCH_CLOUDFUSE):
             pass  # these will be handled in _transfer_input_spec(..)
-        elif input_spec.localize_by == Localize.HAIL_BATCH_CLOUDFUSE_VIA_TEMP_BUCKET:
-            raise ValueError("Localize.HAIL_BATCH_CLOUDFUSE_VIA_TEMP_BUCKET is no longer supported due to changes in gcloud egress charges")
-
-            args = self._pipeline.parse_known_args()
-            source_path = input_spec.source_path
-            source_path_without_protocol = input_spec.source_path_without_protocol
-
-            if not args.batch_remote_tmpdir:
-                raise ValueError("--batch-remote-tmpdir not specified.")
-
-            temp_dir = os.path.join(
-                args.batch_remote_tmpdir,
-                f"pipeline_{self._pipeline._unique_pipeline_instance_id}/step_{self._unique_step_instance_id}",
-                os.path.dirname(source_path_without_protocol).strip("/")+"/")
-            temp_file_path = os.path.join(temp_dir, input_spec.filename)
-
-            if temp_file_path in self._paths_localized_via_temp_bucket:
-                raise ValueError(f"{source_path} has already been localized via temp bucket.")
-            self._paths_localized_via_temp_bucket.add(temp_file_path)
-
-            # copy file to temp bucket
-            self.command(self._generate_gcloud_copy_command(source_path, output_dir=temp_dir))
-
-            # create an InputSpec with the updated source path
-            input_spec = InputSpec(
-                source_path=temp_file_path,
-                name=input_spec.name,
-                localize_by=input_spec.localize_by,
-                localization_root_dir=input_spec.localization_root_dir,
-                original_source_path=input_spec.source_path,
-            )
-
-        elif input_spec.localize_by not in super()._get_supported_localize_by_choices():
-            raise ValueError(
-                f"The hail Batch backend doesn't support input_spec.localize_by={input_spec.localize_by}")
 
         return input_spec
 
