@@ -128,3 +128,14 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Claude Code working files
+.memory/
+.code_review_local/
+.prompts/
+
+# Syncthing
+.stfolder/
+
+# PyCharm AI assistant migration state
+.idea/copilot.data.migration.*.xml
