@@ -99,6 +99,7 @@ class BatchPipeline(Pipeline):
         timeout=None,
         custom_machine_type=None,
         preemptible=None,
+        n_max_attempts=None,
         output_dir=None,
         reuse_job_from_previous_step=None,
         localize_by=Localize.COPY,
@@ -169,6 +170,7 @@ class BatchPipeline(Pipeline):
             timeout=timeout,
             custom_machine_type=custom_machine_type,
             preemptible=preemptible,
+            n_max_attempts=n_max_attempts,
             output_dir=output_dir or self._default_output_dir,
             reuse_job_from_previous_step=reuse_job_from_previous_step,
             localize_by=localize_by,
@@ -455,6 +457,7 @@ class BatchStep(Step):
         timeout=None,
         custom_machine_type=None,
         preemptible=None,
+        n_max_attempts=None,
         output_dir=None,
         reuse_job_from_previous_step=None,
         localize_by=Localize.COPY,
@@ -533,6 +536,7 @@ class BatchStep(Step):
         self._timeout = timeout
         self._custom_machine_type = custom_machine_type
         self._preemptible = preemptible
+        self._n_max_attempts = n_max_attempts
         self._reuse_job_from_previous_step = reuse_job_from_previous_step
 
         self._job = None
@@ -715,6 +719,9 @@ class BatchStep(Step):
 
         if self._preemptible is not None or self._pipeline._default_preemptible is not None:
             self._job._preemptible = self._preemptible if self._preemptible is not None else self._pipeline._default_preemptible
+
+        if self._n_max_attempts is not None:
+            self._job.n_max_attempts(self._n_max_attempts)
 
         if self._storage:
             self._job.storage(self._storage)
