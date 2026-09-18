@@ -17,7 +17,8 @@ for sig in signal.SIGUSR1, signal.SIGHUP:
     signal.signal(sig, lambda _, stack: traceback.print_stack(stack))
 
 
-def pipeline(name=None, backend=Backend.HAIL_BATCH_SERVICE, config_file_path="~/.step_pipeline"):
+def pipeline(name=None, backend=Backend.HAIL_BATCH_SERVICE, config_file_path="~/.step_pipeline",
+             batch_billing_project=None, batch_remote_tmpdir=None):
     """Creates a pipeline object.
 
     Usage::
@@ -37,6 +38,12 @@ def pipeline(name=None, backend=Backend.HAIL_BATCH_SERVICE, config_file_path="~/
         name (str): Pipeline name.
         backend (Backend): The backend to use for executing the pipeline.
         config_file_path (str): path of a configargparse config file.
+        batch_billing_project (str): Hail Batch billing project to charge for compute. Takes
+            precedence over the --batch-billing-project command-line arg and over the config file, so
+            that a pipeline which must always be charged to one project can say so in code rather
+            than depending on whichever project the config file happens to name.
+        batch_remote_tmpdir (str): Hail Batch remote tmpdir, with the same precedence as
+            batch_billing_project.
 
     Return:
         Pipeline: An object that you can use to create Steps by calling `.new_step(..)` and then execute the pipeline by
@@ -60,7 +67,9 @@ def pipeline(name=None, backend=Backend.HAIL_BATCH_SERVICE, config_file_path="~/
     # create and yield the pipeline
     backend = Backend[args.backend] if args.backend else backend
     if backend in (Backend.HAIL_BATCH_SERVICE, Backend.HAIL_BATCH_LOCAL):
-        pipeline = BatchPipeline(name=name, config_arg_parser=config_arg_parser, backend=backend)
+        pipeline = BatchPipeline(name=name, config_arg_parser=config_arg_parser, backend=backend,
+                                 batch_billing_project=batch_billing_project,
+                                 batch_remote_tmpdir=batch_remote_tmpdir)
     elif backend in (Backend.TERRA, Backend.CROMWELL):
         pipeline = WdlPipeline(name=name, config_arg_parser=config_arg_parser, backend=backend)
     else:

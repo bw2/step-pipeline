@@ -27,7 +27,8 @@ class BatchStepType(Enum):
 class BatchPipeline(Pipeline):
     """This class contains Hail Batch-specific extensions of the Pipeline class"""
 
-    def __init__(self, name=None, config_arg_parser=None, backend=Backend.HAIL_BATCH_SERVICE):
+    def __init__(self, name=None, config_arg_parser=None, backend=Backend.HAIL_BATCH_SERVICE,
+                 batch_billing_project=None, batch_remote_tmpdir=None):
         """
         BatchPipeline constructor
 
@@ -36,8 +37,15 @@ class BatchPipeline(Pipeline):
             config_arg_parser (configargparse): The configargparse.ArgumentParser object to use for defining
                 command-line args
             backend (Backend): Either Backend.HAIL_BATCH_SERVICE or Backend.HAIL_BATCH_LOCAL
+            batch_billing_project (str): Billing project to charge for compute. When given, it wins
+                over both the --batch-billing-project arg and the config file, so a pipeline can pin
+                the project it must be charged to in code.
+            batch_remote_tmpdir (str): Remote tmpdir, with the same precedence.
         """
         super().__init__(name=name, config_arg_parser=config_arg_parser)
+
+        self._batch_billing_project = batch_billing_project
+        self._batch_remote_tmpdir = batch_remote_tmpdir
 
         batch_args = self.get_config_arg_parser_group("hail batch")
         batch_args.add_argument(
@@ -335,14 +343,18 @@ class BatchPipeline(Pipeline):
         if self._backend == Backend.HAIL_BATCH_LOCAL:
             self._backend_obj = hb.LocalBackend()
         elif self._backend == Backend.HAIL_BATCH_SERVICE:
-            if not args.batch_billing_project:
+            # A value passed to the constructor wins over the command-line arg and the config file.
+            billing_project = self._batch_billing_project or args.batch_billing_project
+            remote_tmpdir = self._batch_remote_tmpdir or args.batch_remote_tmpdir
+            if not billing_project:
                 raise ValueError("--batch-billing-project must be set when using the Hail Batch Service backend")
-            if not args.batch_remote_tmpdir:
+            if not remote_tmpdir:
                 raise ValueError("--batch-remote-tmpdir must be set when using the Hail Batch Service backend")
+            print(f"Billing project: {billing_project}")
             self._backend_obj = hb.ServiceBackend(
                 google_project=args.gcloud_project,
-                billing_project=args.batch_billing_project,
-                remote_tmpdir=args.batch_remote_tmpdir)
+                billing_project=billing_project,
+                remote_tmpdir=remote_tmpdir)
         else:
             raise Exception(f"Unexpected _backend: {self._backend}")
 
